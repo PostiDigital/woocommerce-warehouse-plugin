@@ -1,19 +1,36 @@
 <?php
+
+namespace PostiWarehouse\Classes;
+
 defined('ABSPATH') || exit;
 
+use PostiWarehouse\Classes\Api;
 
-class PostiOrder {
+class Order {
 
     private $orderStatus = false;
+    private $addTracking = false;
+    private $api;
 
-    public function __construct(PostiWarehouseApi $api) {
+    public function __construct(Api $api, $addTracking = false) {
         $this->api = $api;
+        $this->addTracking = $addTracking;
+
+        //on order status change
+        add_action('woocommerce_order_status_changed', array($this, 'posti_check_order'), 10, 3);
+        //api tracking columns
+        add_filter('manage_edit-shop_order_columns', array($this, 'posti_tracking_column'));
+        add_action('manage_posts_custom_column', array($this, 'posti_tracking_column_data'));
+
+        if ($this->addTracking) {
+            add_action('woocommerce_email_order_meta', array($this, 'addTrackingToEmail'), 10, 4);
+        }
     }
 
     public function getOrderStatus($order_id) {
         $order_data = $this->getOrder($order_id);
         if (!$order_data) {
-            return "Order not placed";
+            return __("Order not placed", "posti-warehouse");
         }
         $this->orderStatus = $order_data['status']['value'];
         return $order_data['status']['value'];
@@ -53,7 +70,11 @@ class PostiOrder {
     }
 
     public function getOrder($order_id) {
-        return $this->api->getOrder($this->api->getBusinessId() . '-' . $order_id);
+        $posti_order_id = get_post_meta($order_id, '_posti_id', true);
+        if ($posti_order_id){
+            return $this->api->getOrder($posti_order_id);
+        } 
+        return false;
     }
 
     public function addOrder($order) {
@@ -63,9 +84,8 @@ class PostiOrder {
         return $this->api->addOrder($this->prepare_posti_order($order));
     }
 
-    public function updatePostiOrders() {
-        //$options = get_option('posti_wh_options');
-        $options = get_option('woocommerce_posti_shipping_method_settings');
+    public function updatePostiOrders($ids = false) {
+        $options = get_option('posti_wh_options');
         $args = array(
             'post_type' => 'shop_order',
             'post_status' => 'wc-processing',
@@ -76,6 +96,9 @@ class PostiOrder {
                 ),
             ),
         );
+        if ($ids) {
+            $args['include'] = $ids;
+        }
         $orders = get_posts($args);
         if (is_array($orders)) {
             foreach ($orders as $order) {
@@ -83,9 +106,7 @@ class PostiOrder {
                 if (!$order_data) {
                     continue;
                 }
-                if (!isset($options['posti_wh_field_autocomplete'])) {
-                    continue;
-                }
+
                 $tracking = $order_data['trackingCodes'];
                 if ($tracking) {
                     if (is_array($tracking)) {
@@ -93,12 +114,21 @@ class PostiOrder {
                     }
                     update_post_meta($order->ID, '_posti_api_tracking', $tracking);
                 }
-
                 $status = $order_data['status']['value'];
+                if ($status == 'Cancelled') {
+                    $_order = wc_get_order($order->ID);
+                    if ($_order) {
+                        $_order->update_status('cancelled', __('Cancelled by Posti Glue', 'posti-warehouse'), true);
+                    }
+                }
+                //if autocomplete order disabled, do not continue
+                if (!isset($options['posti_wh_field_autocomplete'])) {
+                    continue;
+                }
                 if ($status == 'Delivered') {
                     $_order = wc_get_order($order->ID);
                     if ($_order) {
-                        $_order->update_status('completed', '', true);
+                        $_order->update_status('completed', __('Completed by Posti Glue', 'posti-warehouse'), true);
                     }
                 }
             }
@@ -115,7 +145,7 @@ class PostiOrder {
         $chosen_shipping_method = array_pop($shipping_methods);
 
         $add_cod_to_additional_services = 'cod' === $order->get_payment_method();
-        
+
         if (!empty($chosen_shipping_method)) {
             $method_id = $chosen_shipping_method->get_method_id();
 
@@ -124,7 +154,7 @@ class PostiOrder {
             }
 
             $instance_id = $chosen_shipping_method->get_instance_id();
-            
+
             $pickup_points = json_decode($settings['pickup_points'], true);
             //var_dump($pickup_points);
             if (!empty($pickup_points[$instance_id]['service'])) {
@@ -161,28 +191,28 @@ class PostiOrder {
 
         return $additional_services;
     }
-    
-    public static function calculate_reference( $id ) {
-      $weights = array( 7, 3, 1 );
-      $sum     = 0;
 
-      $base                 = str_split(strval(($id)));
-      $reversed_base        = array_reverse($base);
-      $reversed_base_length = count($reversed_base);
+    public static function calculate_reference($id) {
+        $weights = array(7, 3, 1);
+        $sum = 0;
 
-      for ( $i = 0; $i < $reversed_base_length; $i ++ ) {
-        $sum += $reversed_base[ $i ] * $weights[ $i % 3 ];
-      }
+        $base = str_split(strval(($id)));
+        $reversed_base = array_reverse($base);
+        $reversed_base_length = count($reversed_base);
 
-      $checksum = (10 - $sum % 10) % 10;
+        for ($i = 0; $i < $reversed_base_length; $i++) {
+            $sum += $reversed_base[$i] * $weights[$i % 3];
+        }
 
-      $reference = implode('', $base) . $checksum;
+        $checksum = (10 - $sum % 10) % 10;
 
-      return $reference;
+        $reference = implode('', $base) . $checksum;
+
+        return $reference;
     }
 
     private function prepare_posti_order($_order) {
-        
+
         $additional_services = $this->get_additional_services($_order);
         //var_dump($additional_services); exit;
         $additional_services = [
@@ -245,8 +275,15 @@ class PostiOrder {
             }
         }
 
+        $posti_order_id = get_post_meta($_order->get_id(), '_posti_id', true);
+        if (!$posti_order_id) {
+            $posti_order_id = bin2hex(random_bytes(16));
+            update_post_meta($_order->get_id(), '_posti_id', $posti_order_id);
+            $this->logger->log("info", "Order id " . $_order->get_id() . " set _posti_id " . $posti_order_id);
+        }
+
         $order = array(
-            "externalId" => $business_id . "-" . $_order->get_id(),
+            "externalId" => $posti_order_id,
             "clientId" => (string) $business_id,
             "orderDate" => date('Y-m-d\TH:i:s.vP', strtotime($_order->get_date_created()->__toString())),
             "metadata" => [
@@ -353,10 +390,10 @@ class PostiOrder {
                 $order['deliveryAddress'] = $address;
             }
         }
-        if ($additional_services){
+        if ($additional_services) {
             $order['additionalServices'] = $additional_services;
         }
-        
+
         return $order;
     }
 
@@ -380,6 +417,63 @@ class PostiOrder {
             }
         }
         return false;
+    }
+
+    public function posti_check_order($order_id, $old_status, $new_status) {
+        $posti_order = false;
+        if ($new_status == "processing") {
+            $options = get_option('posti_wh_options');
+            if (isset($options['posti_wh_field_autoorder'])) {
+                //if autoorder on, check if order has posti products
+                $order = wc_get_order($order_id);
+                if ($this->hasPostiProducts($order)) {
+                    update_post_meta($order_id, '_posti_wh_order', '1');
+                    $this->addOrder($order);
+                    $status = $this->api->getLastStatus();
+                    
+                    //if status 500 try to create 3 times
+                    if ($status == '500'){
+                        for ($i=0; $i<3; $i++){
+                            $this->addOrder($order);
+                            $status = $this->api->getLastStatus();
+                            if ($status == '200'){
+                                break;
+                            }
+                        }
+                    }
+                    //if sttaus 400 or 500 set order to failed
+                    if ($status == '400' || $status == '500'){
+                        $order->update_status('failed', __('Failed by Posti Glue', 'posti-warehouse'), true);
+                    }
+                    
+                }
+            }
+        }
+    }
+
+    public function posti_tracking_column($columns) {
+        $new_columns = array();
+        foreach ($columns as $key => $name) {
+            $new_columns[$key] = $name;
+            if ('order_status' === $key) {
+                $new_columns['posti_api_tracking'] = __('Posti API Tracking', 'posti-warehouse');
+            }
+        }
+        return $new_columns;
+    }
+
+    public function posti_tracking_column_data($column_name) {
+        if ($column_name == 'posti_api_tracking') {
+            $tracking = get_post_meta(get_the_ID(), '_posti_api_tracking', true);
+            echo $tracking ? $tracking : '–';
+        }
+    }
+
+    public function addTrackingToEmail($order, $sent_to_admin, $plain_text, $email) {
+        $tracking = get_post_meta($order->get_id(), '_posti_api_tracking', true);
+        if ($tracking) {
+            echo __('Tracking number', 'posti-warehouse') . ': ' . $tracking;
+        }
     }
 
 }
