@@ -1,13 +1,17 @@
 <?php
+namespace PostiWarehouse\Classes;
+
 defined('ABSPATH') || exit;
 
-class PostiWarehouseMetabox {
+use PostiWarehouse\Classes\Order;
+
+class Metabox {
 
     private $postiOrder = false;
     
     private $error = '';
 
-    public function __construct(PostiOrder $order) {
+    public function __construct(Order $order) {
         $this->postiOrder = $order;
         add_action('add_meta_boxes', array($this, 'add_order_meta_box'), 10, 2);
         add_action('wp_ajax_posti_order_meta_box', array($this, 'parse_ajax_meta_box'));

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name: Posti Warehouse Plugin
  * Version: 1.0.0
@@ -16,10 +17,13 @@
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  */
 
+namespace PostiWarehouse;
 // Prevent direct access to this script
 if ( ! defined('ABSPATH') ) {
   exit;
 }
+
+define( '__POSTI_WH_FILE__', __FILE__ );
 
 /**
  * Autoloader loads nothing but Pakettikauppa libraries. The classname of the generated autoloader is not unique,
@@ -30,6 +34,17 @@ if ( ! class_exists('\Pakettikauppa\Client') ) {
   require_once __DIR__ . '/vendor/autoload.php';
 }
 
-require_once 'classes/loader.php';
+require_once __DIR__ . '/Classes/Order.php';
+require_once __DIR__ . '/Classes/Metabox.php';
+require_once __DIR__ . '/Classes/Api.php';
+require_once __DIR__ . '/Classes/Core.php';
+require_once __DIR__ . '/Classes/Logger.php';
+require_once __DIR__ . '/Classes/Debug.php';
+require_once __DIR__ . '/Classes/Product.php';
+require_once __DIR__ . '/Classes/Dataset.php';
+
+use PostiWarehouse\Classes\Core;
+
+new Core();
 
 

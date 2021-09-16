@@ -1,26 +1,34 @@
 <?php
 
-use Pakettikauppa\Client;
+namespace PostiWarehouse\Classes;
 
-class PostiWarehouseApi {
+use Pakettikauppa\Client;
+use PostiWarehouse\Classes\Logger;
+
+class Api {
 
     private $username = null;
     private $password = null;
     private $token = null;
     private $test = false;
-    private $debug = false;
     private $business_id = false;
+    private $logger;
+    private $last_status = false;
 
-    public function __construct($business_id, $test = false, $debug = false) {
+    public function __construct(Logger $logger, $business_id, $test = false) {
         $this->business_id = $business_id;
         if ($test) {
             $this->test = true;
         }
-        
-        $this->debug = $debug;
+
         $options = get_option('posti_wh_options');
         $this->username = $options['posti_wh_field_username'];
         $this->password = $options['posti_wh_field_password'];
+        $this->logger = $logger;
+    }
+    
+    public function getLastStatus() {
+        return $this->last_status;
     }
 
     private function getApiUrl() {
@@ -83,10 +91,10 @@ class PostiWarehouseApi {
         if (isset($token_data->access_token)) {
             update_option('posti_wh_api_auth', array('token' => $token_data->access_token, 'expires' => time() + $token_data->expires_in - 100));
             $this->token = $token_data->access_token;
-            $this->log("Refreshed access token");
+            $this->logger->log('info', "Refreshed access token");
             return $token_data->access_token;
         } else {
-            $this->log("Failed to get token from api: ".json_encode($config).', reponse '.json_encode($token_data));
+            $this->logger->log('error', "Failed to get token from api: " . json_encode($config) . ', reponse ' . json_encode($token_data));
         }
         return false;
     }
@@ -99,23 +107,23 @@ class PostiWarehouseApi {
             } elseif (isset($token_data['token'])) {
                 $this->token = $token_data['token'];
             } else {
-                $this->log("Failed to get token");
+                $this->logger->log('error', "Failed to get token");
                 return false;
             }
         }
         $curl = curl_init();
         $header = array();
-//$header[] = 'Accept: application/json';
+
         $header[] = 'Authorization: Bearer ' . $this->token;
 
-        $this->log("Request to: " . $url);
+        $this->logger->log("info", "Request to: " . $url);
         if ($data) {
-            $this->log($data);
+            $this->logger->log("info", $data);
         }
 
         if ($action == "POST" || $action == "PUT") {
             $payload = json_encode($data);
-//var_dump($payload); exit;
+
             $header[] = 'Content-Type: application/json';
             $header[] = 'Content-Length: ' . strlen($payload);
             if ($action == "POST") {
@@ -126,23 +134,22 @@ class PostiWarehouseApi {
             curl_setopt($curl, CURLOPT_POSTFIELDS, $payload);
         }
         curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
-//echo $this->getApiUrl() . $url;
+
         curl_setopt($curl, CURLOPT_URL, $this->getApiUrl() . $url);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-//curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+
         $result = curl_exec($curl);
         $http_status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-//var_dump($http_status);
-//var_dump($result); exit;
+        $this->last_status = $http_status;
 
         if (!$result) {
-            $this->log($http_status . ' - response from ' . $url . ': ' . $result);
+            $this->logger->log("error", $http_status . ' - response from ' . $url . ': ' . $result);
             return false;
         }
 
 
         if ($http_status != 200) {
-            $this->log("Response code: " . $http_status);
+            $this->logger->log("error", "Request to: " . $url . "\nResponse code: " . $http_status);
             return false;
         }
         return json_decode($result, true);
@@ -153,7 +160,7 @@ class PostiWarehouseApi {
         $header = array();
 //$header[] = 'Accept: application/json';
 
-        $this->log("Request to: " . $url);
+        $this->logger->log("info", "Request to: " . $url);
 
         curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
 //echo $this->getApiUrl() . $url;
@@ -167,10 +174,10 @@ class PostiWarehouseApi {
 
         if (!$result) {
 
-            $this->log($curl);
+            $this->logger->log("error", $http_status . ' - response from ' . $url . ': ' . $result);
             return false;
         }
-        $this->log($result, 'Response from ' . $url . ': ');
+        $this->logger->log("info", 'Response from ' . $url . ': ' . json_encode($result));
 
         return $result;
     }
@@ -196,7 +203,7 @@ class PostiWarehouseApi {
 
     public function getProduct($id) {
         $product = $this->ApiCall('inventory/' . $id, '', 'GET');
-//var_dump($product);exit;
+        //var_dump($product);exit;
         return $product;
     }
 
@@ -207,7 +214,7 @@ class PostiWarehouseApi {
     }
 
     public function addProduct($product, $business_id = false) {
-//var_dump($product); exit;
+        //var_dump($product); exit;
         $status = $this->ApiCall('inventory', $product, 'PUT');
         return $status;
     }
@@ -220,25 +227,6 @@ class PostiWarehouseApi {
     public function getOrder($order_id, $business_id = false) {
         $status = $this->ApiCall('orders/' . $order_id, '', 'GET');
         return $status;
-    }
-
-    private function log($msg, $extra = '') {
-        if ($this->debug) {
-            if (is_array($msg) || is_object($msg)) {
-                $msg = $extra . print_r($msg, true);
-            }
-            $debug = get_option('posti_wh_logs', array());
-            if (!is_array($debug)) {
-                $debug = array();
-            }
-            $debug[] = date('Y-m-d H:i:s') . ': ' . $msg;
-            while (is_array($debug) && count($debug) > 20) {
-                $debug = array_shift($debug);
-            }
-
-
-            update_option('posti_wh_logs', $debug);
-        }
     }
 
 }
