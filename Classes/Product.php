@@ -19,14 +19,17 @@ class Product {
         add_action('admin_notices', array($this, 'posti_notices'));
         //upate ajax warehouses
         add_action('wp_ajax_posti_warehouses', array($this, 'get_ajax_post_warehouse'));
-
+        //upate ajax products
+        add_action('wp_ajax_posti_products', array($this, 'get_ajax_posti_products'));
+        
         add_filter('woocommerce_product_data_tabs', array($this, 'posti_wh_product_tab'), 99, 1);
 
         add_action('woocommerce_product_data_panels', array($this, 'posti_wh_product_tab_fields'));
 
         add_action('woocommerce_process_product_meta', array($this, 'posti_wh_product_tab_fields_save'));
-
-        add_action('save_post_product', array($this, 'after_product_save'));
+        
+        add_action('woocommerce_process_product_meta', array($this, 'after_product_save'), 99);
+        //add_action('save_post_product', array($this, 'after_product_save'), 99, 3);
 
         //EAN field
         add_action('woocommerce_product_options_inventory_product_data', array($this, 'woocom_simple_product_ean_field'), 10, 1);
@@ -103,6 +106,32 @@ class Product {
         return $product_data_tabs;
     }
 
+    public function get_ajax_posti_products() {
+
+        if (!isset($_POST['warehouse_id'])) {
+            wp_die('', '', 501);
+        }
+        $products = $this->parseApiProductsResponse($this->api->getProductsByWarehouse($_POST['warehouse_id']));
+        
+        foreach ($products as $id=>$product) {
+                $products_options[] = array('value' => $id, 'name' => $product);
+            }
+        
+        echo json_encode($products_options);
+        die();
+    }
+    
+    private function parseApiProductsResponse($products){
+        $products_options = array();
+        if (isset($products['content']) && is_array($products['content'])){
+            foreach ($products['content'] as $productData) {
+                $product = $productData['product'];
+                $products_options[$product['externalId']] = $product['descriptions']['en']['name']  . ' ('.$product['externalId'].')';
+            }
+        }
+        return $products_options;
+    }
+    
     public function get_ajax_post_warehouse() {
 
         if (!isset($_POST['catalog_type'])) {
@@ -114,7 +143,7 @@ class Product {
             if ($warehouse['catalogType'] !== $_POST['catalog_type']) {
                 continue;
             }
-            $warehouses_options[] = array('value' => $warehouse['externalId'], 'name' => $warehouse['externalId'] . ' - ' . $warehouse['catalogName']);
+            $warehouses_options[] = array('value' => $warehouse['externalId'], 'name' => $warehouse['catalogName'] . ' ('.$warehouse['externalId'].')');
         }
         echo json_encode($warehouses_options);
         die();
@@ -142,12 +171,19 @@ class Product {
                 if (!$type || $type !== $warehouse['catalogType']) {
                     continue;
                 }
-                $warehouses_options[$warehouse['externalId']] = $warehouse['externalId'] . ' - ' . $warehouse['catalogName'];
+                $warehouses_options[$warehouse['externalId']] = $warehouse['catalogName'] . ' ('.$warehouse['externalId'].')';
             }
+            $products_options = array('' => 'Select product');
+            $product = get_post_meta($post->ID, '_posti_wh_product', true);
+            if ($type == "Catalog" && $product_warehouse){
+                $products_options = $this->parseApiProductsResponse($this->api->getProductsByWarehouse($product_warehouse));
+            }
+            
             //var_dump($this->api->getProductsByWarehouse($product_warehouse));
             woocommerce_wp_select(
                     array(
                         'id' => '_posti_wh_stock_type',
+                        'class' => 'select short posti-wh-select2',
                         'label' => __('Stock type', 'posti-warehouse'),
                         'options' => Dataset::getSToreTypes(),
                         'value' => $type
@@ -157,9 +193,20 @@ class Product {
             woocommerce_wp_select(
                     array(
                         'id' => '_posti_wh_warehouse',
+                        'class' => 'select short posti-wh-select2',
                         'label' => __('Warehouse', 'posti-warehouse'),
                         'options' => $warehouses_options,
                         'value' => $product_warehouse
+                    )
+            );
+            
+            woocommerce_wp_select(
+                    array(
+                        'id' => '_posti_wh_product',
+                        'class' => 'select short posti-wh-select2',
+                        'label' => __('Catalog product', 'posti-warehouse'),
+                        'options' => $products_options,
+                        'value' => $product
                     )
             );
 
@@ -189,6 +236,7 @@ class Product {
 
         $this->saveWCField('_posti_wh_stock_type', $post_id);
         $this->saveWCField('_posti_wh_warehouse', $post_id);
+        $this->saveWCField('_posti_wh_product', $post_id);
         $this->saveWCField('_posti_wh_distribution', $post_id);
         $this->saveWCField('_ean', $post_id);
         $this->saveWCField('_wholesale_price', $post_id);
@@ -203,10 +251,24 @@ class Product {
         $type = get_post_meta($post_id, '_posti_wh_stock_type', true);
         $product_warehouse = get_post_meta($post_id, '_posti_wh_warehouse', true);
         $product_distributor = get_post_meta($post_id, '_posti_wh_distribution', true);
-
-        if (($type == "Posti" || $type == "Store" || $type == "Catalog") && $product_warehouse) {
-            //$options = get_option('posti_wh_options');
-            $options = get_option('woocommerce_posti_shipping_method_settings');
+        $posti_product = get_post_meta($post_id, '_posti_wh_product', true);
+        
+        
+        if ($posti_product){
+            //if have posti product and not dropshipping
+            if ($type != 'Catalog') {
+                delete_post_meta($post_id, '_posti_wh_product');
+            } else {
+                update_post_meta($post_id, '_posti_id', $posti_product);
+                update_post_meta($post_id, '_posti_last_sync', 0);
+                $this->syncProducts([$post_id]);
+            }
+        }
+        
+        if (($type == "Posti" || $type == "Store") && $product_warehouse) {
+            
+            
+            $options = get_option('posti_wh_options');
             $business_id = false;
             if (isset($options['posti_wh_field_business_id'])) {
                 $business_id = $options['posti_wh_field_business_id'];
@@ -229,10 +291,16 @@ class Product {
                 $wholesale_price = (float) $_product->get_price();
             }
             $posti_product_id = get_post_meta($post_id, '_posti_id', true);
-
-            if (!$posti_product_id) {
-                $posti_product_id = bin2hex(random_bytes(16));
+            $wh_product_id = get_post_meta($post_id, '_wh_id', true);
+            if (!$posti_product_id || !$wh_product_id || $posti_product_id !== $wh_product_id) {
+                if ($wh_product_id){
+                    $posti_product_id = $wh_product_id;
+                } else {
+                    $posti_product_id = bin2hex(random_bytes(16));
+                }
                 update_post_meta($post_id, '_posti_id', $posti_product_id);
+                //save unique id to other field, to be able to restore
+                update_post_meta($post_id, '_wh_id', $posti_product_id);
                 $this->logger->log("info", "Product id " . $post_id . " set _posti_id " . $posti_product_id);
             }
 
@@ -256,7 +324,7 @@ class Product {
                     "distributor" => $product_distributor,
                     "isFragile" => get_post_meta($post_id, '_posti_fragile', true) ? true : false,
                     "isDangerousGoods" => get_post_meta($post_id, '_posti_lq', true) ? true : false,
-                    //need is large  => get_post_meta($post_id, '_posti_large', true) ? true : false,
+                    "isOversized" => get_post_meta($post_id, '_posti_large', true) ? true : false,
                 );
 
                 $weight = $_product->get_weight();

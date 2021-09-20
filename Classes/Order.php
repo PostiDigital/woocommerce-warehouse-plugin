@@ -5,15 +5,18 @@ namespace PostiWarehouse\Classes;
 defined('ABSPATH') || exit;
 
 use PostiWarehouse\Classes\Api;
+use PostiWarehouse\Classes\Logger;
 
 class Order {
 
     private $orderStatus = false;
     private $addTracking = false;
     private $api;
+    private $logger;
 
-    public function __construct(Api $api, $addTracking = false) {
+    public function __construct(Api $api, Logger $logger, $addTracking = false) {
         $this->api = $api;
+        $this->logger = $logger;
         $this->addTracking = $addTracking;
 
         //on order status change
