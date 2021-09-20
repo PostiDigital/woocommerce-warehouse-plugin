@@ -50,32 +50,7 @@ class Api {
     }
 
     public function getToken() {
-        /*
-          $curl = curl_init();
-          $accesstoken = base64_encode($this->username . ":" . $this->password);
-          $header = array();
-          $header[] = 'Accept: application/json';
-          $header[] = 'Authorization: Basic ' . $accesstoken;
-
-          curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
-          curl_setopt($curl, CURLOPT_POST, 1);
-          //curl_setopt($curl, CURLOPT_POSTFIELDS, $auth_data);
-          curl_setopt($curl, CURLOPT_URL, $this->getAuthUrl() . 'oauth/token?grant_type=client_credentials');
-          curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-          curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-          $result = curl_exec($curl);
-          if (!$result) {
-          return false;
-          }
-          curl_close($curl);
-          $data = json_decode($result);
-          $token = $data->access_token;
-          $expires = time() + $data->expires_in;
-          update_option('posti_wh_api_auth', array($token, $expires));
-          $this->token = $token;
-          return $token;
-         * 
-         */
+   
         $config = array('wh' => [
                 'api_key' => $this->username,
                 'secret' => $this->password,
@@ -85,7 +60,7 @@ class Api {
             ]
         );
 
-        $client = new \Pakettikauppa\Client($config, 'wh');
+        $client = new Client($config, 'wh');
 
         $token_data = $client->getToken();
         if (isset($token_data->access_token)) {
@@ -116,7 +91,7 @@ class Api {
 
         $header[] = 'Authorization: Bearer ' . $this->token;
 
-        $this->logger->log("info", "Request to: " . $url);
+        
         if ($data) {
             $this->logger->log("info", $data);
         }
@@ -133,6 +108,10 @@ class Api {
             }
             curl_setopt($curl, CURLOPT_POSTFIELDS, $payload);
         }
+        if ($action == "GET" && is_array($data)){
+            $url .= '?' . http_build_query($data);
+        }
+        $this->logger->log("info", "Request to: " . $url);
         curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
 
         curl_setopt($curl, CURLOPT_URL, $this->getApiUrl() . $url);
@@ -158,19 +137,14 @@ class Api {
     public function getUrlData($url) {
         $curl = curl_init();
         $header = array();
-//$header[] = 'Accept: application/json';
 
         $this->logger->log("info", "Request to: " . $url);
 
         curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
-//echo $this->getApiUrl() . $url;
         curl_setopt($curl, CURLOPT_URL, $url);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-//curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
         $result = curl_exec($curl);
         $http_status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-//var_dump($http_status);
-//var_dump($result); exit;
 
         if (!$result) {
 
@@ -207,14 +181,12 @@ class Api {
         return $product;
     }
 
-    public function getProductsByWarehouse($id) {
-        $products = $this->ApiCall('products/all/' . $id, '', 'GET');
-
+    public function getProductsByWarehouse($id, $attrs= '') {
+        $products = $this->ApiCall('catalogs/' . $id . '/products', $attrs, 'GET');
         return $products;
     }
 
     public function addProduct($product, $business_id = false) {
-        //var_dump($product); exit;
         $status = $this->ApiCall('inventory', $product, 'PUT');
         return $status;
     }

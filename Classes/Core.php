@@ -26,6 +26,26 @@ class Core {
 
     public function __construct() {
 
+        $this->load_options();
+
+                
+        add_action('admin_init', array($this, 'posti_wh_settings_init'));
+
+        add_action('admin_menu', array($this, 'posti_wh_options_page'));
+
+        add_action('admin_enqueue_scripts', array($this, 'posti_wh_admin_styles'));
+
+        $this->WC_hooks();
+
+        register_activation_hook(__POSTI_WH_FILE__, array($this, 'install'));
+        register_deactivation_hook(__POSTI_WH_FILE__, array($this, 'uninstall'));
+
+        //after update options check login info
+        add_action('updated_option', array($this, 'after_settings_update'), 10, 3);
+        add_action('admin_notices', array($this, 'render_messages'));
+    }
+    
+    private function load_options(){
         $options = get_option('posti_wh_options');
         if (isset($options['posti_wh_field_test_mode']) && $options['posti_wh_field_test_mode'] == "1") {
             $this->is_test = true;
@@ -34,42 +54,31 @@ class Core {
         if (isset($options['posti_wh_field_debug']) && $options['posti_wh_field_debug'] == "1") {
             $this->debug = true;
         }
-        
+
         if (isset($options['posti_wh_field_addtracking']) && $options['posti_wh_field_addtracking'] == "1") {
             $this->add_tracking = true;
         }
-        
+
         if (isset($options['posti_wh_field_crontime']) && $options['posti_wh_field_crontime']) {
-            $this->cron_time = (int)$options['posti_wh_field_crontime'];
+            $this->cron_time = (int) $options['posti_wh_field_crontime'];
         }
-        
+
         if (isset($options['posti_wh_field_business_id'])) {
             $this->business_id = $options['posti_wh_field_business_id'];
         }
         
         $this->logger = new Logger();
         $this->logger->setDebug($this->debug);
-        
+
         $this->api = new Api($this->logger, $this->business_id, $this->is_test);
-        $this->order = new Order($this->api, $this->add_tracking);
+        $this->order = new Order($this->api, $this->logger, $this->add_tracking);
         $this->product = new Product($this->api, $this->logger);
         $this->metabox = new Metabox($this->order);
-
-        add_action('admin_init', array($this, 'posti_wh_settings_init'));
-
-        add_action('admin_menu', array($this, 'posti_wh_options_page'));
 
         if ($this->debug) {
             $debug = new Debug();
             $debug->setTest($this->is_test);
         }
-
-        add_action('admin_enqueue_scripts', array($this, 'posti_wh_admin_styles'));
-
-        $this->WC_hooks();
-
-        register_activation_hook(__POSTI_WH_FILE__, array($this, 'install'));
-        register_deactivation_hook(__POSTI_WH_FILE__, array($this, 'uninstall'));
     }
 
     public function install() {
@@ -88,9 +97,60 @@ class Core {
         );
     }
 
+    public function after_settings_update($option, $old_value, $value) {
+        if ($option == 'posti_wh_options') {
+            if (
+                    $old_value['posti_wh_field_username'] != $value['posti_wh_field_username'] || 
+                    $old_value['posti_wh_field_password'] != $value['posti_wh_field_password'] || 
+                    $old_value['posti_wh_field_test_mode'] != $value['posti_wh_field_test_mode']
+            ) {
+                //login info changed, try to get token
+                if (session_id() === '' || !isset($_SESSION)) {
+                    session_start();
+                }
+                $_SESSION['posti_warehouse_check_token'] = true;
+            }
+        }
+    }
+
+    public function render_messages() {
+        if (session_id() === '' || !isset($_SESSION)) {
+            session_start();
+        }
+        if (isset($_SESSION['posti_warehouse_check_token'])) {
+            $token = $this->api->getToken();
+            if ($token) {
+                $this->token_success();
+            } else {
+                $this->token_error();
+            }
+            unset($_SESSION['posti_warehouse_check_token']);
+        }
+    }
+
+    public function token_error() {
+        ?>
+        <div class="error notice">
+            <p><?php _e('Wrong credentials - access token not received!', 'posti-warehouse'); ?></p>
+        </div>
+        <?php
+    }
+
+    public function token_success() {
+        ?>
+        <div class="updated notice">
+            <p><?php _e('Credentials matched - access token received!', 'posti-warehouse'); ?></p>
+        </div>
+        <?php
+    }
+
     public function posti_wh_admin_styles($hook) {
-        wp_enqueue_style('posti_wh_admin_style', plugins_url('assets/css/admin-warehouse-settings.css', dirname(__FILE__)));
-        wp_enqueue_script('posti_wh_admin_script', plugins_url('assets/js/admin-warehouse.js', dirname(__FILE__)));
+        
+        wp_enqueue_style( 'select2-css', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css', array(), '4.1.0-rc.0');
+        wp_enqueue_script( 'select2-js', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js', 'jquery', '4.1.0-rc.0');
+    
+        wp_enqueue_style('posti_wh_admin_style', plugins_url('assets/css/admin-warehouse-settings.css', dirname(__FILE__)), [], '1.0');
+        wp_enqueue_script('posti_wh_admin_script', plugins_url('assets/js/admin-warehouse.js', dirname(__FILE__)), 'jquery', '1.0');
     }
 
     public function posti_wh_settings_init() {
@@ -197,7 +257,7 @@ class Core {
                     'posti_wh_custom_data' => 'custom',
                 ]
         );
-        
+
         add_settings_field(
                 'posti_wh_field_addtracking',
                 __('Add tracking to email', 'posti-warehouse'),
@@ -210,7 +270,7 @@ class Core {
                     'posti_wh_custom_data' => 'custom',
                 ]
         );
-        
+
         add_settings_field(
                 'posti_wh_field_crontime',
                 __('Delay between stock and order checks in seconds', 'posti-warehouse'),
@@ -272,7 +332,7 @@ class Core {
         $options = get_option('posti_wh_options');
         $value = $options[$args['label_for']];
         $type = 'text';
-        if (isset($args['input_type'])){
+        if (isset($args['input_type'])) {
             $type = $args['input_type'];
         }
         if (!$value && isset($args['default'])) {
@@ -291,49 +351,49 @@ class Core {
                 data-custom="<?php echo esc_attr($args['posti_wh_custom_data']); ?>"
                 name="posti_wh_options[<?php echo esc_attr($args['label_for']); ?>]"
                 >
-                    <?php foreach (Dataset::getSToreTypes() as $val => $type): ?>
+        <?php foreach (Dataset::getSToreTypes() as $val => $type): ?>
                 <option value="<?php echo $val; ?>" <?php echo isset($options[$args['label_for']]) ? ( selected($options[$args['label_for']], $val, false) ) : ( '' ); ?>>
-                    <?php
-                    echo $type;
-                    ?>
+                        <?php
+                        echo $type;
+                        ?>
                 </option>
-            <?php endforeach; ?>
+                <?php endforeach; ?>
         </select>
-        <?php
-    }
-
-    public function posti_wh_options_page() {
-        add_submenu_page(
-                'options-general.php',
-                'Posti Warehouse Settings',
-                'Posti Warehouse Settings',
-                'manage_options',
-                'posti_wh',
-                array($this, 'posti_wh_options_page_html')
-        );
-    }
-
-    public function posti_wh_options_page_html() {
-        if (!current_user_can('manage_options')) {
-            return;
+            <?php
         }
-        settings_errors('posti_wh_messages');
-        ?>
+
+        public function posti_wh_options_page() {
+            add_submenu_page(
+                    'options-general.php',
+                    'Posti Warehouse Settings',
+                    'Posti Warehouse Settings',
+                    'manage_options',
+                    'posti_wh',
+                    array($this, 'posti_wh_options_page_html')
+            );
+        }
+
+        public function posti_wh_options_page_html() {
+            if (!current_user_can('manage_options')) {
+                return;
+            }
+            settings_errors('posti_wh_messages');
+            ?>
         <div class="wrap">
             <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
             <form action="options.php" method="post">
-                <?php
-                settings_fields('posti_wh');
-                do_settings_sections('posti_wh');
-                submit_button('Save');
-                ?>
+        <?php
+        settings_fields('posti_wh');
+        do_settings_sections('posti_wh');
+        submit_button('Save');
+        ?>
             </form>
         </div>
         <?php
     }
 
     public function WC_hooks() {
-        
+
         //create cronjob to sync products and get order status
         add_filter('cron_schedules', array($this, 'posti_interval'));
 
@@ -364,7 +424,7 @@ class Core {
                 'relation' => 'AND',
                 array(
                     'key' => '_posti_wh_stock_type',
-                    'value' => array('Store', 'Posti'),
+                    'value' => array('Store', 'Posti', 'Catalog'),
                     'compare' => 'IN'
                 ),
                 array(
