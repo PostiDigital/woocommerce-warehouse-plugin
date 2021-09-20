@@ -392,8 +392,7 @@ class Product {
     private function syncProducts($ids) {
         foreach ($ids as $id) {
             $_product = wc_get_product($id);
-            //$options = get_option('posti_wh_options');
-            $options = get_option('woocommerce_posti_shipping_method_settings');
+            $options = get_option('posti_wh_options');
             $business_id = false;
             if (isset($options['posti_wh_field_business_id'])) {
                 $business_id = $options['posti_wh_field_business_id'];
