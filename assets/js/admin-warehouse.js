@@ -23,10 +23,10 @@ jQuery(function ($) {
     
     var check_stock_type = function(){
         if ($('#_posti_wh_stock_type').val() === 'Catalog'){
-            $('.form-field._posti_wh_product_field').slideDown();
+            //$('.form-field._posti_wh_product_field').slideDown();
             extra_services.slideUp();
         } else {
-            $('.form-field._posti_wh_product_field').slideUp();
+            //$('.form-field._posti_wh_product_field').slideUp();
             extra_services.slideDown();
         }
     };
@@ -52,7 +52,7 @@ jQuery(function ($) {
             $('#posti_wh_tab').removeClass('loading');
         });
     });
-    
+    /*
     $('#_posti_wh_warehouse').on('change', function () {
         if ($('#_posti_wh_stock_type').val() !== 'Catalog'){
             return;
@@ -76,7 +76,7 @@ jQuery(function ($) {
             $('#posti_wh_tab').removeClass('loading');
         });
     });
-    
+    */
     check_stock_type();
     
 
