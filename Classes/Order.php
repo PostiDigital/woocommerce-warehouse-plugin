@@ -277,14 +277,15 @@ class Order {
                 $item_counter++;
             }
         }
-
+        $posti_order_id = $business_id . '-' . $_order->get_id();
+        /*
         $posti_order_id = get_post_meta($_order->get_id(), '_posti_id', true);
         if (!$posti_order_id) {
             $posti_order_id = bin2hex(random_bytes(16));
             update_post_meta($_order->get_id(), '_posti_id', $posti_order_id);
             $this->logger->log("info", "Order id " . $_order->get_id() . " set _posti_id " . $posti_order_id);
         }
-
+        */
         $order = array(
             "externalId" => $posti_order_id,
             "clientId" => (string) $business_id,
