@@ -429,12 +429,13 @@ class Core {
                 ),
                 array(
                     'key' => '_posti_last_sync',
-                    'value' => (time() - 3600),
+                    'value' => (time() - 60),
                     'compare' => '<'
                 ),
             ),
         );
         $products = get_posts($args);
+        $this->logger->log("info", "Found  " . count($products) . " products to sync");
         if (is_array($products)) {
             $product_ids = [];
             foreach ($products as $product) {
@@ -469,7 +470,8 @@ class Core {
                     $posti_rates[$rate_id] = $rate;
                 }
             }
-            return $posti_rates;
+            //to do: how to check posti methods
+            //return $posti_rates;
         }
         return $rates;
     }

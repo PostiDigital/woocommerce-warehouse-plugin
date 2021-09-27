@@ -64,7 +64,7 @@ class Order {
         foreach ($items as $item_id => $item) {
             $type = get_post_meta($item['product_id'], '_posti_wh_stock_type', true);
             $product_warehouse = get_post_meta($item['product_id'], '_posti_wh_warehouse', true);
-            if (($type == "Posti" || $type == "Store") && $product_warehouse) {
+            if (($type == "Posti" || $type == "Store" || $type == "Catalog") && $product_warehouse) {
                 return true;
             }
         }
@@ -103,6 +103,7 @@ class Order {
             $args['include'] = $ids;
         }
         $orders = get_posts($args);
+        $this->logger->log("info", "Found  " . count($orders) . " orders to sync");
         if (is_array($orders)) {
             foreach ($orders as $order) {
                 $order_data = $this->getOrder($order->ID);
@@ -118,6 +119,7 @@ class Order {
                     update_post_meta($order->ID, '_posti_api_tracking', $tracking);
                 }
                 $status = $order_data['status']['value'];
+                $this->logger->log("info", "Got order " . $order->ID . " status " . $status);
                 if ($status == 'Cancelled') {
                     $_order = wc_get_order($order->ID);
                     if ($_order) {
@@ -246,7 +248,7 @@ class Order {
         foreach ($items as $item_id => $item) {
             $type = get_post_meta($item['product_id'], '_posti_wh_stock_type', true);
             $product_warehouse = get_post_meta($item['product_id'], '_posti_wh_warehouse', true);
-            if (($type == "Posti" || $type == "Store") && $product_warehouse) {
+            if (($type == "Posti" || $type == "Store" || $type == "Catalog") && $product_warehouse) {
 
 
                 $total_price += $item->get_total();
@@ -278,6 +280,7 @@ class Order {
             }
         }
         $posti_order_id = $business_id . '-' . $_order->get_id();
+        update_post_meta($_order->get_id(), '_posti_id', $posti_order_id);
         /*
         $posti_order_id = get_post_meta($_order->get_id(), '_posti_id', true);
         if (!$posti_order_id) {
@@ -430,7 +433,8 @@ class Order {
             if (isset($options['posti_wh_field_autoorder'])) {
                 //if autoorder on, check if order has posti products
                 $order = wc_get_order($order_id);
-                if ($this->hasPostiProducts($order)) {
+                $is_posti_order = $this->hasPostiProducts($order);
+                if ($is_posti_order) {
                     update_post_meta($order_id, '_posti_wh_order', '1');
                     $this->addOrder($order);
                     $status = $this->api->getLastStatus();
@@ -450,6 +454,8 @@ class Order {
                         $order->update_status('failed', __('Failed by Posti Glue', 'posti-warehouse'), true);
                     }
                     
+                } else {
+                    $this->logger->log("info", "Order  " . $order_id . " is not posti");
                 }
             }
         }

@@ -128,7 +128,7 @@ class Api {
 
 
         if ($http_status != 200) {
-            $this->logger->log("error", "Request to: " . $url . "\nResponse code: " . $http_status);
+            $this->logger->log("error", "Request to: " . $url . "\nResponse code: " . $http_status . "\nResult: " . $result);
             return false;
         }
         return json_decode($result, true);
