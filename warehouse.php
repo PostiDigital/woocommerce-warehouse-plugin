@@ -42,9 +42,11 @@ require_once __DIR__ . '/Classes/Logger.php';
 require_once __DIR__ . '/Classes/Debug.php';
 require_once __DIR__ . '/Classes/Product.php';
 require_once __DIR__ . '/Classes/Dataset.php';
+require_once __DIR__ . '/Classes/Shipping.php';
 
 use PostiWarehouse\Classes\Core;
 
 new Core();
+
 
 

@@ -73,6 +73,26 @@ class Api {
         }
         return false;
     }
+    
+    public function getClient(){
+        $options = get_option('woocommerce_posti_warehouse_settings');
+        $config = array('wh' => [
+                'api_key' => $options['account_number'],
+                'secret' => $options['secret_key'],
+                'use_posti_auth' => true,
+                //'posti_auth_url' => $this->getAuthUrl(),
+                //'base_uri' => $this->getApiUrl(),
+                'posti_auth_url' => 'https://oauth.posti.com',
+                'base_uri' => 'https://nextshipping.posti.fi',
+            ]
+        );
+        $client = new Client($config, 'wh');
+        $token_data = $client->getToken();
+        if (isset($token_data->access_token)) {
+            $client->setAccessToken($token_data->access_token);
+        }
+        return $client;
+    }
 
     private function ApiCall($url, $data = '', $action = 'GET') {
         if (!$this->token) {
