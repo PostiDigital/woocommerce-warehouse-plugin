@@ -74,9 +74,9 @@ class Order {
 
     public function getOrder($order_id) {
         $posti_order_id = get_post_meta($order_id, '_posti_id', true);
-        if ($posti_order_id){
+        if ($posti_order_id) {
             return $this->api->getOrder($posti_order_id);
-        } 
+        }
         return false;
     }
 
@@ -142,8 +142,8 @@ class Order {
 
     private function get_additional_services($order) {
         $additional_services = array();
-
-        $settings = get_option('woocommerce_posti_shipping_method_settings');
+        $shipping_service = '';
+        $settings = get_option('woocommerce_posti_warehouse_settings');
 
         $shipping_methods = $order->get_shipping_methods();
 
@@ -155,7 +155,7 @@ class Order {
             $method_id = $chosen_shipping_method->get_method_id();
 
             if ($method_id === 'local_pickup') {
-                return $additional_services;
+                return ['service' => $shipping_service, 'additional_services' => $additional_services];
             }
 
             $instance_id = $chosen_shipping_method->get_instance_id();
@@ -164,7 +164,7 @@ class Order {
             //var_dump($pickup_points);
             if (!empty($pickup_points[$instance_id]['service'])) {
                 $service_id = $pickup_points[$instance_id]['service'];
-
+                $shipping_service = $service_id;
                 $services = array();
 
                 if (!empty($pickup_points[$instance_id][$service_id]) && isset($pickup_points[$instance_id][$service_id]['additional_services'])) {
@@ -174,7 +174,7 @@ class Order {
                 if (!empty($services)) {
                     foreach ($services as $service_code => $service) {
                         if ($service === 'yes' && $service_code !== '3101') {
-                            $additional_services[] = array($service_code => null);
+                            $additional_services[$service_code] = null;
                         } elseif ($service === 'yes' && $service_code === '3101') {
                             $add_cod_to_additional_services = true;
                         }
@@ -184,17 +184,15 @@ class Order {
         }
 
         if ($add_cod_to_additional_services) {
-            $additional_services[] = array(
-                '3101' => array(
-                    'amount' => $order->get_total(),
-                    'account' => $settings['cod_iban'],
-                    'codbic' => $settings['cod_bic'],
-                    'reference' => $this->calculate_reference($order->get_id()),
-                ),
+            $additional_services['3101'] = array(
+                'amount' => $order->get_total(),
+                'account' => $settings['cod_iban'],
+                'codbic' => $settings['cod_bic'],
+                'reference' => $this->calculate_reference($order->get_id()),
             );
         }
 
-        return $additional_services;
+        return ['service' => $shipping_service, 'additional_services' => $additional_services];
     }
 
     public static function calculate_reference($id) {
@@ -218,21 +216,20 @@ class Order {
 
     private function prepare_posti_order($_order) {
 
-        $additional_services = $this->get_additional_services($_order);
-        //var_dump($additional_services); exit;
-        $additional_services = [
-            [
-                "serviceCode" => "3174"
-            ]
-        ];
+        $order_services = $this->get_additional_services($_order);
 
+        $additional_services = [];
+
+        foreach ($order_services['additional_services'] as $_service => $_service_data) {
+            $additional_services[] = ["serviceCode" => (string)$_service];
+        }
         $business_id = $this->api->getBusinessId();
         $order_items = array();
         $total_price = 0;
         $total_tax = 0;
         $items = $_order->get_items();
         $item_counter = 1;
-        $service_code = "2103";
+        $service_code = $order_services['service']; //"2103";
         $routing_service_code = "";
         $pickup_point = get_post_meta($_order->get_id(), '_woo_posti_shipping_pickup_point_id', true);
         if ($pickup_point) {
@@ -282,13 +279,13 @@ class Order {
         $posti_order_id = $business_id . '-' . $_order->get_id();
         update_post_meta($_order->get_id(), '_posti_id', $posti_order_id);
         /*
-        $posti_order_id = get_post_meta($_order->get_id(), '_posti_id', true);
-        if (!$posti_order_id) {
-            $posti_order_id = bin2hex(random_bytes(16));
-            update_post_meta($_order->get_id(), '_posti_id', $posti_order_id);
-            $this->logger->log("info", "Order id " . $_order->get_id() . " set _posti_id " . $posti_order_id);
-        }
-        */
+          $posti_order_id = get_post_meta($_order->get_id(), '_posti_id', true);
+          if (!$posti_order_id) {
+          $posti_order_id = bin2hex(random_bytes(16));
+          update_post_meta($_order->get_id(), '_posti_id', $posti_order_id);
+          $this->logger->log("info", "Order id " . $_order->get_id() . " set _posti_id " . $posti_order_id);
+          }
+         */
         $order = array(
             "externalId" => $posti_order_id,
             "clientId" => (string) $business_id,
@@ -438,22 +435,21 @@ class Order {
                     update_post_meta($order_id, '_posti_wh_order', '1');
                     $this->addOrder($order);
                     $status = $this->api->getLastStatus();
-                    
+
                     //if status 500 try to create 3 times
-                    if ($status == '500'){
-                        for ($i=0; $i<3; $i++){
+                    if ($status == '500') {
+                        for ($i = 0; $i < 3; $i++) {
                             $this->addOrder($order);
                             $status = $this->api->getLastStatus();
-                            if ($status == '200'){
+                            if ($status == '200') {
                                 break;
                             }
                         }
                     }
                     //if sttaus 400 or 500 set order to failed
-                    if ($status == '400' || $status == '500'){
+                    if ($status == '400' || $status == '500') {
                         $order->update_status('failed', __('Failed by Posti Glue', 'posti-warehouse'), true);
                     }
-                    
                 } else {
                     $this->logger->log("info", "Order  " . $order_id . " is not posti");
                 }
