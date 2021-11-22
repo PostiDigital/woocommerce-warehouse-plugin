@@ -66,6 +66,10 @@ class Product {
                     'placeholder' => '',
                     'desc_tip' => 'true',
                     'type' => 'number',
+                    'custom_attributes' => array(
+                        'step' => '0.01',
+                        'min' => '0'
+                    ),
                     'description' => __('Enter wholesale price', 'posti-warehouse')
                 )
         );
@@ -275,7 +279,7 @@ class Product {
             //if dropshipping, id without business_id
             $posti_product_id = $_product->get_sku();
             update_post_meta($post_id, '_posti_id', $posti_product_id);
-            
+
             update_post_meta($post_id, '_posti_last_sync', 0);
             $this->syncProducts([$post_id]);
         }
@@ -295,7 +299,7 @@ class Product {
             //id with business_id and sku
             $posti_product_id = $business_id . '-' . $_product->get_sku();
             update_post_meta($post_id, '_posti_id', $posti_product_id);
-            
+
             $products = array();
             $products_ids = array();
 
