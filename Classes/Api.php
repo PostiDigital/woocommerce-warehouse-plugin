@@ -21,7 +21,7 @@ class Api {
             $this->test = true;
         }
 
-        $options = get_option('posti_wh_options');
+        $options = get_option('woocommerce_posti_warehouse_settings');
         $this->username = $options['posti_wh_field_username'];
         $this->password = $options['posti_wh_field_password'];
         $this->logger = $logger;

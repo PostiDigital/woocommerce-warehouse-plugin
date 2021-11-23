@@ -161,8 +161,8 @@ class Product {
             $type = get_post_meta($post->ID, '_posti_wh_stock_type', true);
             $product_warehouse = get_post_meta($post->ID, '_posti_wh_warehouse', true);
             if (!$type) {
-                //$options = get_option('posti_wh_options');
-                $options = get_option('woocommerce_posti_shipping_method_settings');
+                $options = get_option('woocommerce_posti_warehouse_settings');
+                //$options = get_option('woocommerce_posti_shipping_method_settings');
                 if (isset($options['posti_wh_field_type'])) {
                     $type = $options['posti_wh_field_type'];
                 }
@@ -257,7 +257,7 @@ class Product {
         $product_warehouse = get_post_meta($post_id, '_posti_wh_warehouse', true);
         $product_distributor = get_post_meta($post_id, '_posti_wh_distribution', true);
         //$posti_product = get_post_meta($post_id, '_posti_wh_product', true);
-        $options = get_option('posti_wh_options');
+        $options = get_option('woocommerce_posti_warehouse_settings');
         $business_id = false;
 
         if (isset($options['posti_wh_field_business_id'])) {
@@ -413,7 +413,7 @@ class Product {
         foreach ($ids as $id) {
             try {
                 $_product = wc_get_product($id);
-                $options = get_option('posti_wh_options');
+                $options = get_option('woocommerce_posti_warehouse_settings');
                 $business_id = false;
                 if (isset($options['posti_wh_field_business_id'])) {
                     $business_id = $options['posti_wh_field_business_id'];

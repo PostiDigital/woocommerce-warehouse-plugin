@@ -88,7 +88,7 @@ class Order {
     }
 
     public function updatePostiOrders($ids = false) {
-        $options = get_option('posti_wh_options');
+        $options = get_option('woocommerce_posti_warehouse_settings');
         $args = array(
             'post_type' => 'shop_order',
             'post_status' => 'wc-processing',
@@ -426,7 +426,7 @@ class Order {
     public function posti_check_order($order_id, $old_status, $new_status) {
         $posti_order = false;
         if ($new_status == "processing") {
-            $options = get_option('posti_wh_options');
+            $options = get_option('woocommerce_posti_warehouse_settings');
             if (isset($options['posti_wh_field_autoorder'])) {
                 //if autoorder on, check if order has posti products
                 $order = wc_get_order($order_id);
