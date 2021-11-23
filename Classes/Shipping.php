@@ -6,6 +6,7 @@ namespace PostiWarehouse\Classes;
 use WC_Countries;
 use PostiWarehouse\Classes\Api;
 use PostiWarehouse\Classes\Logger;
+use PostiWarehouse\Classes\Dataset;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -36,12 +37,12 @@ function warehouse_shipping_method() {
              * @return void
              */
             public function __construct() {
-                $options = get_option('posti_wh_options');
-                if (isset($options['posti_wh_field_test_mode']) && $options['posti_wh_field_test_mode'] == "1") {
+                $options = get_option('woocommerce_posti_warehouse_settings');
+                if (isset($options['posti_wh_field_test_mode']) && $options['posti_wh_field_test_mode'] == "yes") {
                     $this->is_test = true;
                 }
 
-                if (isset($options['posti_wh_field_debug']) && $options['posti_wh_field_debug'] == "1") {
+                if (isset($options['posti_wh_field_debug']) && $options['posti_wh_field_debug'] == "yes") {
                     $this->debug = true;
                 }
 
@@ -78,9 +79,32 @@ function warehouse_shipping_method() {
              * Initialize Pakettikauppa shipping
              */
             public function init() {
+                $this->copy_old_settings();
                 $this->form_fields = $this->my_global_form_fields();
                 $this->title = "Warehouse shipping";
                 $this->init_settings();
+            }
+            
+            /**
+             * Copy setting from old settings page
+             */
+            private function copy_old_settings(){
+                $bool_fields = array_flip([
+                    'posti_wh_field_autoorder', 
+                    'posti_wh_field_autocomplete', 
+                    'posti_wh_field_addtracking', 
+                    'posti_wh_field_test_mode', 
+                    'posti_wh_field_debug'
+                    ]);
+                $old_options = get_option('posti_wh_options');
+                if (!empty($old_options)){
+                    $new_options = get_option('woocommerce_posti_warehouse_settings');
+                    foreach ($old_options as $key=>$value){
+                        $new_options[$key] = (isset($bool_fields[$key])?($value=='1'?'yes':'no'):$value); 
+                    }
+                    update_option('woocommerce_posti_warehouse_settings', $new_options);
+                    delete_option('posti_wh_options');
+                }
             }
 
             public function validate_pickuppoints_field($key, $value) {
@@ -264,18 +288,97 @@ function warehouse_shipping_method() {
                 return array(
                     'account_number' => array(
                         'title' => "Username",
-                        'desc' => "API username",
+                        'description' => "API username for shipping methods",
                         'type' => 'text',
                         'default' => '',
                         'desc_tip' => true,
                     ),
                     'secret_key' => array(
                         'title' => "Password",
-                        'desc' => "API password",
+                        'description' => "API password for shipping methods",
                         'type' => 'text',
                         'default' => '',
                         'desc_tip' => true,
                     ),
+                    'posti_wh_field_username' => array(
+                        'title' => "Username for glue",
+                        'description' => "API username for glue",
+                        'type' => 'text',
+                        'default' => '',
+                        'desc_tip' => true,
+                    ),
+                    'posti_wh_field_password' => array(
+                        'title' => "Password for glue",
+                        'description' => "API password for glue",
+                        'type' => 'text',
+                        'default' => '',
+                        'desc_tip' => true,
+                    ),
+                    'posti_wh_field_business_id' => array(
+                        'title' => __('Business ID', 'posti-warehouse'),
+                        'desc' => "",
+                        'type' => 'text',
+                        'default' => '',
+                        'desc_tip' => false,
+                    ),
+                    'posti_wh_field_contract' => array(
+                        'title' => __('Contract number', 'posti-warehouse'),
+                        'desc' => "",
+                        'type' => 'text',
+                        'default' => '',
+                        'desc_tip' => false,
+                    ),
+                    'posti_wh_field_type' => array(
+                        'title' => __('Default stock type', 'posti-warehouse'),
+                        'desc' => "",
+                        'type' => 'select',
+                        'default' => '',
+                        'desc_tip' => false,
+                        'options' => Dataset::getSToreTypes()
+                    ),
+                    'posti_wh_field_autoorder' => array(
+                        'title' => __('Auto ordering', 'posti-warehouse'),
+                        'desc' => "",
+                        'type' => 'checkbox',
+                        'default' => '',
+                        'desc_tip' => false,
+                    ),
+                    'posti_wh_field_autocomplete' => array(
+                        'title' => __('Auto mark orders as "Completed"', 'posti-warehouse'),
+                        'desc' => "",
+                        'type' => 'checkbox',
+                        'default' => '',
+                        'desc_tip' => false,
+                    ),
+                    'posti_wh_field_addtracking' => array(
+                        'title' => __('Add tracking to email', 'posti-warehouse'),
+                        'desc' => "",
+                        'type' => 'checkbox',
+                        'default' => '',
+                        'desc_tip' => false,
+                    ),
+                    'posti_wh_field_crontime' => array(
+                        'title' => __('Delay between stock and order checks in seconds', 'posti-warehouse'),
+                        'desc' => "",
+                        'type' => 'number',
+                        'default' => '7200',
+                        'desc_tip' => false,
+                    ),
+                    'posti_wh_field_test_mode' => array(
+                        'title' => __('Test mode', 'posti-warehouse'),
+                        'desc' => "",
+                        'type' => 'checkbox',
+                        'default' => '',
+                        'desc_tip' => false,
+                    ),
+                    'posti_wh_field_debug' => array(
+                        'title' => __('Debug', 'posti-warehouse'),
+                        'desc' => "",
+                        'type' => 'checkbox',
+                        'default' => '',
+                        'desc_tip' => false,
+                    ),
+                    
                     'pickup_points' => array(
                         'title' => "Pickup",
                         'type' => 'pickuppoints',

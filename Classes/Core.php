@@ -23,15 +23,16 @@ class Core {
     private $add_tracking = false;
     private $cron_time = 7200;
     private $logger;
+    private $options_checked = false;
 
     public function __construct() {
 
         $this->load_options();
 
                 
-        add_action('admin_init', array($this, 'posti_wh_settings_init'));
+        //add_action('admin_init', array($this, 'posti_wh_settings_init'));
 
-        add_action('admin_menu', array($this, 'posti_wh_options_page'));
+        //add_action('admin_menu', array($this, 'posti_wh_options_page'));
 
         add_action('admin_enqueue_scripts', array($this, 'posti_wh_admin_styles'));
 
@@ -46,16 +47,17 @@ class Core {
     }
     
     private function load_options(){
-        $options = get_option('posti_wh_options');
-        if (isset($options['posti_wh_field_test_mode']) && $options['posti_wh_field_test_mode'] == "1") {
+        $options = get_option('woocommerce_posti_warehouse_settings');
+        
+        if (isset($options['posti_wh_field_test_mode']) && $options['posti_wh_field_test_mode'] == "yes") {
             $this->is_test = true;
         }
 
-        if (isset($options['posti_wh_field_debug']) && $options['posti_wh_field_debug'] == "1") {
+        if (isset($options['posti_wh_field_debug']) && $options['posti_wh_field_debug'] == "yes") {
             $this->debug = true;
         }
 
-        if (isset($options['posti_wh_field_addtracking']) && $options['posti_wh_field_addtracking'] == "1") {
+        if (isset($options['posti_wh_field_addtracking']) && $options['posti_wh_field_addtracking'] == "yes") {
             $this->add_tracking = true;
         }
 
@@ -97,14 +99,15 @@ class Core {
         );
     }
 
-    public function after_settings_update($option, $old_value, $value) {
-        if ($option == 'posti_wh_options') {
+    public function after_settings_update($option, $old_value, $value) { 
+        if ($option == 'woocommerce_posti_warehouse_settings') {
             if (
                     $old_value['posti_wh_field_username'] != $value['posti_wh_field_username'] || 
                     $old_value['posti_wh_field_password'] != $value['posti_wh_field_password'] || 
                     $old_value['posti_wh_field_test_mode'] != $value['posti_wh_field_test_mode']
             ) {
                 //login info changed, try to get token
+                
                 if (session_id() === '' || !isset($_SESSION)) {
                     session_start();
                 }
@@ -114,10 +117,13 @@ class Core {
     }
 
     public function render_messages() {
+        
         if (session_id() === '' || !isset($_SESSION)) {
             session_start();
         }
         if (isset($_SESSION['posti_warehouse_check_token'])) {
+            //reload options, because their are saved after load
+            $this->load_options();
             $token = $this->api->getToken();
             if ($token) {
                 $this->token_success();
@@ -318,7 +324,7 @@ class Core {
     }
 
     public function posti_wh_field_checkbox_cb($args) {
-        $options = get_option('posti_wh_options');
+        $options = get_option('woocommerce_posti_warehouse_settings');
         $checked = "";
         if ($options[$args['label_for']]) {
             $checked = ' checked="checked" ';
@@ -329,7 +335,7 @@ class Core {
     }
 
     public function posti_wh_field_string_cb($args) {
-        $options = get_option('posti_wh_options');
+        $options = get_option('woocommerce_posti_warehouse_settings');
         $value = $options[$args['label_for']];
         $type = 'text';
         if (isset($args['input_type'])) {
@@ -345,7 +351,7 @@ class Core {
 
     public function posti_wh_field_type_cb($args) {
 
-        $options = get_option('posti_wh_options');
+        $options = get_option('woocommerce_posti_warehouse_settings');
         ?>
         <select id="<?php echo esc_attr($args['label_for']); ?>"
                 data-custom="<?php echo esc_attr($args['posti_wh_custom_data']); ?>"
