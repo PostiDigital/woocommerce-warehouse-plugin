@@ -77,12 +77,12 @@ class Api {
     public function getClient(){
         $options = get_option('woocommerce_posti_warehouse_settings');
         $config = array('wh' => [
-                'api_key' => $options['account_number'],
-                'secret' => $options['secret_key'],
+                'api_key' => $this->username,
+                'secret' => $this->password,
                 'use_posti_auth' => true,
                 //'posti_auth_url' => $this->getAuthUrl(),
                 //'base_uri' => $this->getApiUrl(),
-                'posti_auth_url' => 'https://oauth.posti.com',
+                'posti_auth_url' => 'https://oauth2.posti.com',
                 'base_uri' => 'https://nextshipping.posti.fi',
             ]
         );
@@ -90,6 +90,8 @@ class Api {
         $token_data = $client->getToken();
         if (isset($token_data->access_token)) {
             $client->setAccessToken($token_data->access_token);
+        } else {
+            $this->logger->log('error', "Failed to get token from api: " . json_encode($config) . ', reponse ' . json_encode($token_data));
         }
         return $client;
     }
