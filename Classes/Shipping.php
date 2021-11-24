@@ -286,30 +286,16 @@ function warehouse_shipping_method() {
             private function my_global_form_fields() {
 
                 return array(
-                    'account_number' => array(
-                        'title' => "Username",
-                        'description' => "API username for shipping methods",
-                        'type' => 'text',
-                        'default' => '',
-                        'desc_tip' => true,
-                    ),
-                    'secret_key' => array(
-                        'title' => "Password",
-                        'description' => "API password for shipping methods",
-                        'type' => 'text',
-                        'default' => '',
-                        'desc_tip' => true,
-                    ),
                     'posti_wh_field_username' => array(
-                        'title' => "Username for glue",
-                        'description' => "API username for glue",
+                        'title' => "Username",
+                        'description' => "API username",
                         'type' => 'text',
                         'default' => '',
                         'desc_tip' => true,
                     ),
                     'posti_wh_field_password' => array(
-                        'title' => "Password for glue",
-                        'description' => "API password for glue",
+                        'title' => "Password",
+                        'description' => "API password",
                         'type' => 'text',
                         'default' => '',
                         'desc_tip' => true,
@@ -447,9 +433,11 @@ function warehouse_shipping_method() {
 
                 if (empty($all_shipping_methods)) {
                     try {
+                        $this->logger->log('info', "Trying to get list of shipping methods");
                         $all_shipping_methods = $this->client->listShippingMethods();
                     } catch (\Exception $ex) {
                         $all_shipping_methods = null;
+                        $this->logger->log('error', "Failed to get list of shipping methods: " . $ex->getMessage());
                     }
 
                     if (!empty($all_shipping_methods)) {
