@@ -52,7 +52,7 @@ function warehouse_shipping_method() {
                 $this->logger = new Logger();
                 $this->logger->setDebug($this->debug);
 
-                $this->api = new Api($this->logger, $this->business_id, $this->is_test);
+                $this->api = new Api($this->logger, $this->business_id, false);
                 $this->client = $this->api->getClient();
 
                 $this->load();
@@ -296,6 +296,20 @@ function warehouse_shipping_method() {
                     'posti_wh_field_password' => array(
                         'title' => "Password",
                         'description' => "API password",
+                        'type' => 'text',
+                        'default' => '',
+                        'desc_tip' => true,
+                    ),
+                    'posti_wh_field_username_test' => array(
+                        'title' => "TEST Username",
+                        'description' => "TEST API username",
+                        'type' => 'text',
+                        'default' => '',
+                        'desc_tip' => true,
+                    ),
+                    'posti_wh_field_password_test' => array(
+                        'title' => "TEST Password",
+                        'description' => "TEST API password",
                         'type' => 'text',
                         'default' => '',
                         'desc_tip' => true,

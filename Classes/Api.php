@@ -14,16 +14,23 @@ class Api {
     private $business_id = false;
     private $logger;
     private $last_status = false;
+    private $token_option = 'posti_wh_api_auth';
 
     public function __construct(Logger $logger, $business_id, $test = false) {
         $this->business_id = $business_id;
         if ($test) {
             $this->test = true;
+            $this->token_option = 'posti_wh_api_auth_test';
         }
 
         $options = get_option('woocommerce_posti_warehouse_settings');
-        $this->username = $options['posti_wh_field_username'];
-        $this->password = $options['posti_wh_field_password'];
+        if($this->test){
+            $this->username = $options['posti_wh_field_username_test'];
+            $this->password = $options['posti_wh_field_password_test'];
+        } else {
+            $this->username = $options['posti_wh_field_username'];
+            $this->password = $options['posti_wh_field_password'];
+        }
         $this->logger = $logger;
     }
     
@@ -49,22 +56,24 @@ class Api {
         return "https://oauth2.posti.com";
     }
 
-    public function getToken() {
+    public function getToken($client = null) {
    
-        $config = array('wh' => [
-                'api_key' => $this->username,
-                'secret' => $this->password,
-                'use_posti_auth' => true,
-                'posti_auth_url' => $this->getAuthUrl(),
-                'base_uri' => $this->getApiUrl(),
-            ]
-        );
+        if ($client == null){
+            $config = array('wh' => [
+                    'api_key' => $this->username,
+                    'secret' => $this->password,
+                    'use_posti_auth' => true,
+                    'posti_auth_url' => $this->getAuthUrl(),
+                    'base_uri' => $this->getApiUrl(),
+                ]
+            );
 
-        $client = new Client($config, 'wh');
+            $client = new Client($config, 'wh');
+        }
 
         $token_data = $client->getToken();
         if (isset($token_data->access_token)) {
-            update_option('posti_wh_api_auth', array('token' => $token_data->access_token, 'expires' => time() + $token_data->expires_in - 100));
+            update_option($this->token_option, array('token' => $token_data->access_token, 'expires' => time() + $token_data->expires_in - 100));
             $this->token = $token_data->access_token;
             $this->logger->log('info', "Refreshed access token");
             return $token_data->access_token;
@@ -87,18 +96,24 @@ class Api {
             ]
         );
         $client = new Client($config, 'wh');
-        $token_data = $client->getToken();
-        if (isset($token_data->access_token)) {
-            $client->setAccessToken($token_data->access_token);
-        } else {
-            $this->logger->log('error', "Failed to get token from api: " . json_encode($config) . ', reponse ' . json_encode($token_data));
+        if (!$this->token) {
+            $token_data = get_option($this->token_option);            
+            if (!$token_data || isset($token_data['expires']) && $token_data['expires'] < time()) {
+                $this->getToken($client);
+            } elseif (isset($token_data['token'])) {
+                $this->token = $token_data['token'];
+            } else {
+                $this->logger->log('error', "Failed to get token");
+                return false;
+            }
         }
+        $client->setAccessToken($this->token);
         return $client;
     }
 
     private function ApiCall($url, $data = '', $action = 'GET') {
         if (!$this->token) {
-            $token_data = get_option('posti_wh_api_auth');
+            $token_data = get_option($this->token_option);            
             if (!$token_data || isset($token_data['expires']) && $token_data['expires'] < time()) {
                 $this->getToken();
             } elseif (isset($token_data['token'])) {
@@ -108,6 +123,8 @@ class Api {
                 return false;
             }
         }
+        
+        $env = $this->test ? "TEST ": "PROD ";
         $curl = curl_init();
         $header = array();
 
@@ -133,7 +150,7 @@ class Api {
         if ($action == "GET" && is_array($data)){
             $url .= '?' . http_build_query($data);
         }
-        $this->logger->log("info", "Request to: " . $url);
+        $this->logger->log("info", $env . "Request to: " . $url);
         curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
 
         curl_setopt($curl, CURLOPT_URL, $this->getApiUrl() . $url);
@@ -150,7 +167,7 @@ class Api {
 
 
         if ($http_status != 200) {
-            $this->logger->log("error", "Request to: " . $url . "\nResponse code: " . $http_status . "\nResult: " . $result);
+            $this->logger->log("error", $env . "Request to: " . $url . "\nResponse code: " . $http_status . "\nResult: " . $result);
             return false;
         }
         return json_decode($result, true);
@@ -159,8 +176,8 @@ class Api {
     public function getUrlData($url) {
         $curl = curl_init();
         $header = array();
-
-        $this->logger->log("info", "Request to: " . $url);
+        $env = $this->test ? "TEST ": "PROD ";
+        $this->logger->log("info", $env . "Request to: " . $url);
 
         curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
         curl_setopt($curl, CURLOPT_URL, $url);
@@ -173,7 +190,7 @@ class Api {
             $this->logger->log("error", $http_status . ' - response from ' . $url . ': ' . $result);
             return false;
         }
-        $this->logger->log("info", 'Response from ' . $url . ': ' . json_encode($result));
+        $this->logger->log("info", $env . 'Response from ' . $url . ': ' . json_encode($result));
 
         return $result;
     }
