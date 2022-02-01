@@ -40,9 +40,9 @@ class Api {
 
     private function getApiUrl() {
         if ($this->test) {
-            return "https://argon.api.posti.fi/ecommerce/v3/";
+            return "https://argon.ecom-api.posti.com//ecommerce/v3/";
         }
-        return "https://api.posti.fi/ecommerce/v3/";
+        return "https://ecom-api.posti.com/ecommerce/v3/";
     }
 
     public function getBusinessId() {
