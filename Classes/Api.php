@@ -40,7 +40,7 @@ class Api {
 
     private function getApiUrl() {
         if ($this->test) {
-            return "https://argon.ecom-api.posti.com//ecommerce/v3/";
+            return "https://argon.ecom-api.posti.com/ecommerce/v3/";
         }
         return "https://ecom-api.posti.com/ecommerce/v3/";
     }
