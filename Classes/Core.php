@@ -10,6 +10,7 @@ use PostiWarehouse\Classes\Product;
 use PostiWarehouse\Classes\Metabox;
 use PostiWarehouse\Classes\Logger;
 use PostiWarehouse\Classes\Dataset;
+use PostiWarehouse\Classes\Frontend;
 
 class Core {
 
@@ -25,8 +26,19 @@ class Core {
     private $cron_time = 7200;
     private $logger;
     private $options_checked = false;
+    private $frontend = null;
+    public $prefix = 'warehouse';
+    public $templates_dir;
+    public $templates;
 
     public function __construct() {
+        
+        $this->templates_dir = plugin_dir_path(__POSTI_WH_FILE__) . 'templates/';
+        $this->templates = array(
+          'checkout_pickup' => 'checkout-pickup.php',
+          'account_order' => 'myaccount-order.php',
+        );
+      
 
         $this->load_options();
 
@@ -84,6 +96,13 @@ class Core {
             $debug = new Debug();
             $debug->setTest($this->is_test);
         }
+        
+        $this->frontend = new Frontend($this);
+        $this->frontend->load();
+    }
+    
+    public function getApi() {
+        return $this->api;
     }
 
     public function install() {

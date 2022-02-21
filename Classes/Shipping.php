@@ -489,9 +489,9 @@ function warehouse_shipping_method() {
 
 add_action('woocommerce_shipping_init', '\PostiWarehouse\Classes\warehouse_shipping_method');
 
-function add_cloudways_shipping_method($methods) {
+function add_warehouse_shipping_method($methods) {
     $methods[] = '\PostiWarehouse\Classes\WarehouseShipping';
     return $methods;
 }
 
-add_filter('woocommerce_shipping_methods', '\PostiWarehouse\Classes\add_cloudways_shipping_method');
+add_filter('woocommerce_shipping_methods', '\PostiWarehouse\Classes\add_warehouse_shipping_method');
