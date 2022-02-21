@@ -231,7 +231,7 @@ class Order {
         $item_counter = 1;
         $service_code = $order_services['service']; //"2103";
         $routing_service_code = "";
-        $pickup_point = get_post_meta($_order->get_id(), '_woo_posti_shipping_pickup_point_id', true);
+        $pickup_point = get_post_meta($_order->get_id(), '_warehouse_pickup_point_id', true); //_woo_posti_shipping_pickup_point_id
         if ($pickup_point) {
             $routing_service_code = "3201";
         }
