@@ -402,7 +402,7 @@ class Order {
     }
 
     public function pickupPointData($id, $_order, $business_id) {
-        $data = $this->api->getUrlData('https://locationservice.posti.com/api/2/location');
+        $data = $this->api->getUrlData('https://locationservice.posti.com/api/2/location/' . $id);
         $points = json_decode($data, true);
         if (is_array($points) && isset($points['locations'])) {
             foreach ($points['locations'] as $point) {
