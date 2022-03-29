@@ -1,1 +1,8 @@
+# Eclipse
+.project
+.classpath
+.settings/
+bin/
+# Maven
+target/
 /nbproject/
