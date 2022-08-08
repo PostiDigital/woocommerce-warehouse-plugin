@@ -270,10 +270,8 @@ class Product {
         }
 
         $_product = wc_get_product($post_id);
-        if (!$_product->get_sku()) {
-            $this->logger->log("erorr", "Cannot add product id " . $post_id . " no SKU set");
-            return false;
-        }
+        $product_type = $_product->get_type();
+        
 
         if ($type == 'Catalog') {
             //if dropshipping, id without business_id
@@ -303,12 +301,10 @@ class Product {
             $products = array();
             $products_ids = array();
 
-            $type = $_product->get_type();
-            $ean = get_post_meta($post_id, '_ean', true);
+            
+            
             $wholesale_price = (float) str_ireplace(',', '.', get_post_meta($post_id, '_wholesale_price', true));
-            if (!$wholesale_price) {
-                $wholesale_price = (float) $_product->get_price();
-            }
+            
             /*
               $posti_product_id = get_post_meta($post_id, '_posti_id', true);
               $wh_product_id = get_post_meta($post_id, '_wh_id', true);
@@ -324,9 +320,104 @@ class Product {
               $this->logger->log("info", "Product id " . $post_id . " set _posti_id " . $posti_product_id);
               }
              */
-            if ($type == 'variable') {
-                $_products = $_product->get_children();
+            if ($product_type == 'variable') {
+                $_products = $_product->get_available_variations();
+                foreach ($_products as $variation) {
+                    if (!$variation['sku']) {
+                        $this->logger->log("erorr", "Cannot add product id " . $post_id . " variation ". $variation['variation_id'] ." no SKU set");
+                        continue;
+                    }
+                    $posti_variable_id = $business_id . '-' . $variation['sku'];
+                    update_post_meta($variation['variation_id'], '_posti_id', $posti_variable_id);
+                    $ean = get_post_meta($variation['variation_id'], '_ean', true);
+                    $specifications = [];
+                    $specifications[] = [
+                        "type"=> "Woocommerce data",
+                        "properties"=> [
+                            [
+                                "name" => "woo_product_id",
+                                "value"=> (string)$post_id,
+                                "specifier" => "",
+                                "description" => ""
+                            ],
+                            [
+                                "name" => "woo_product_variant_id",
+                                "value"=> (string)$variation['variation_id'],
+                                "specifier" => "",
+                                "description" => ""
+                            ]
+                        ]
+                    ];
+                    $options = [
+                        "type"=> "Options",
+                        "properties"=> [
+                        ]
+                    ];
+                    //add attributes
+                    foreach ($variation['attributes'] as $attr_id => $attr) {
+                        $options["properties"][] = [
+                            "name" => (string)str_ireplace('attribute_', '', $attr_id),
+                            "value"=> (string)$attr,
+                            "specifier" => "",
+                            "description" => ""
+                        ];
+                    }
+                    $specifications[] = $options;
+                    
+                    $product = array(
+                        'externalId' => $posti_variable_id,
+                        "supplierId" => $business_id,
+                        'descriptions' => array(
+                            'en' => array(
+                                'name' => $_product->get_name(),
+                                'description' => $_product->get_description(),
+                                'specifications' => $specifications,
+                            )
+                        ),
+                        'eanCode' => $ean, //$_product->get_sku(),
+                        "unitOfMeasure" => "KPL",
+                        "status" => "ACTIVE",
+                        "recommendedRetailPrice" => (float) $variation['display_regular_price'],
+                        "currency" => get_woocommerce_currency(),
+                        "distributor" => $product_distributor,
+                        "isFragile" => get_post_meta($post_id, '_posti_fragile', true) ? true : false,
+                        "isDangerousGoods" => get_post_meta($post_id, '_posti_lq', true) ? true : false,
+                        "isOversized" => get_post_meta($post_id, '_posti_large', true) ? true : false,
+                    );
+                    //print_r($product); exit;
+                    $weight = $variation['weight'] ? $variation['weight'] : 0;
+                    $length = $variation['dimensions']['length'] ? $variation['dimensions']['length'] : 0;
+                    $width = $variation['dimensions']['width'] ? $variation['dimensions']['width'] : 0;
+                    $height = $variation['dimensions']['height'] ? $variation['dimensions']['height'] : 0;
+                    $product['measurements'] = array(
+                        "weight" => round(wc_get_weight($weight, 'kg'), 3),
+                        "length" => round(wc_get_dimension($length, 'm'), 3),
+                        "width" => round(wc_get_dimension($width, 'm'), 3),
+                        "height" => round(wc_get_dimension($height, 'm'), 3),
+                    );
+
+                    $balances = array(
+                        array(
+                            "retailerId" => $business_id,
+                            "productExternalId" => $posti_variable_id,
+                            "catalogExternalId" => $product_warehouse,
+                            //"quantity" => 0.0,
+                            "wholesalePrice" => $wholesale_price ? $wholesale_price : (float) $variation['display_regular_price'],
+                            "currency" => get_woocommerce_currency()
+                        )
+                    );
+                    $products_ids[$posti_variable_id] = $variation['variation_id'];
+                    $products[] = array('product' => $product, 'balances' => $balances);
+                }
             } else {
+                $ean = get_post_meta($post_id, '_ean', true);
+                if (!$wholesale_price) {
+                    $wholesale_price = (float) $_product->get_price();
+                }
+                if (!$_product->get_sku()) {
+                    $this->logger->log("erorr", "Cannot add product id " . $post_id . " no SKU set");
+                    return false;
+                }
                 $product = array(
                     'externalId' => $posti_product_id,
                     "supplierId" => $business_id,
@@ -371,11 +462,14 @@ class Product {
                 $products_ids[$business_id . '-' . $_product->get_sku()] = $_product->get_id();
                 $products[] = array('product' => $product, 'balances' => $balances);
             }
+            
             if (count($products)) {
-                $this->logger->log("info", "Product id " . $post_id . " added to posti: \n" . json_encode($products));
+                $this->logger->log("info", "Product id " . implode(', ', $products_ids) . " added to posti: \n" . json_encode($products));
                 $this->api->addProduct($products, $business_id);
                 //add 0 to force sync
-                update_post_meta($_product->get_id(), '_posti_last_sync', 0);
+                foreach ($products_ids as $product_id => $_p_id) {
+                    update_post_meta($_p_id, '_posti_last_sync', 0);
+                }
                 $this->syncProducts($products_ids);
             }
         }
