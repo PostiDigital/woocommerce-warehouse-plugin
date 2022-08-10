@@ -327,6 +327,7 @@ class Product {
                         $this->logger->log("erorr", "Cannot add product id " . $post_id . " variation ". $variation['variation_id'] ." no SKU set");
                         continue;
                     }
+                    $variable_name = $_product->get_name();
                     $posti_variable_id = $business_id . '-' . $variation['sku'];
                     update_post_meta($variation['variation_id'], '_posti_id', $posti_variable_id);
                     $ean = get_post_meta($variation['variation_id'], '_ean', true);
@@ -361,6 +362,7 @@ class Product {
                             "specifier" => "",
                             "description" => ""
                         ];
+                        $variable_name .= ' ' . (string)$attr;
                     }
                     $specifications[] = $options;
                     
@@ -369,7 +371,7 @@ class Product {
                         "supplierId" => $business_id,
                         'descriptions' => array(
                             'en' => array(
-                                'name' => $_product->get_name(),
+                                'name' => $variable_name,
                                 'description' => $_product->get_description(),
                                 'specifications' => $specifications,
                             )
@@ -535,6 +537,8 @@ class Product {
                                 $stock += $balance['quantity'];
                             }
                         }
+                        //$this->logger->log("info", "Current product id " . $id . " stock: " . $_product->get_stock_quantity());
+                        update_post_meta($id, '_stock', $stock);
                         $_product->set_stock_quantity($stock);
                         $_product->save();
                         $this->logger->log("info", "Set product id " . $id . " stock: " . $stock);
