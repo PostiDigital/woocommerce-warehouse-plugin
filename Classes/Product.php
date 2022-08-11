@@ -330,6 +330,7 @@ class Product {
                     $variable_name = $_product->get_name();
                     $posti_variable_id = $business_id . '-' . $variation['sku'];
                     update_post_meta($variation['variation_id'], '_posti_id', $posti_variable_id);
+                    update_post_meta($variation['variation_id'], '_posti_wh_stock_type', $type);
                     $ean = get_post_meta($variation['variation_id'], '_ean', true);
                     $specifications = [];
                     $specifications[] = [
@@ -538,11 +539,12 @@ class Product {
                             }
                         }
                         //$this->logger->log("info", "Current product id " . $id . " stock: " . $_product->get_stock_quantity());
+                        update_post_meta($id, '_manage_stock', 'yes');
                         update_post_meta($id, '_stock', $stock);
                         $_product->set_stock_quantity($stock);
                         $_product->save();
                         $this->logger->log("info", "Set product id " . $id . " stock: " . $stock);
-                        update_post_meta($_product->get_id(), '_posti_last_sync', time());
+                        update_post_meta($id, '_posti_last_sync', time());
                         /*
                           $stocks = $product_data['warehouseBalance'];
                           foreach ($stocks as $stock){
