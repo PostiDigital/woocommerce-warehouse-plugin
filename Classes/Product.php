@@ -333,6 +333,7 @@ class Product {
                     update_post_meta($variation['variation_id'], '_posti_wh_stock_type', $type);
                     $ean = get_post_meta($variation['variation_id'], '_ean', true);
                     $specifications = [];
+                    /*
                     $specifications[] = [
                         "type"=> "Woocommerce data",
                         "properties"=> [
@@ -350,6 +351,7 @@ class Product {
                             ]
                         ]
                     ];
+                     */
                     $options = [
                         "type"=> "Options",
                         "properties"=> [
