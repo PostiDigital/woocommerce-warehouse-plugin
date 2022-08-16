@@ -12,7 +12,7 @@ Main features of the plug-in are:
 
 - You can select which Posti delivery methods are available in a shopping cart.
 - You can select if product is shipped by Posti warehouse, dropshipping supplier, or yourself.
-- When you create a new product it is also created to warehouse. 
+- When you create a new product it is also created to warehouse. Simple product and Variable product types are supported. Grouped product type is not supported.
 - Product quantities are automatically updated from warehouse and/or dropshipping supplier.
 - Send order to warehouse and/or dropshipping supplier. Your business ID is added as a prefix to WooCommerce order ID.
 - Order status is updated from Glue to WooCommerce. This includes a tracking ID of the delivery. 
@@ -23,12 +23,13 @@ More information about Posti dropshipping service is available at [Posti.fi / Gl
 
 ## Installation
 
-Please note this plug-in has been tested with WooCommerce version 5.1.0/WordPress version 5.6.8. You should always test the plug-in in your environment to ensure compatibility with other plug-ins.
+This plug-in has been tested with WooCommerce version 6.7.0/WordPress version 6.0.1. You should always test the plug-in in your environment to ensure compatibility also with other plug-ins.
 
 1. Download the plug-in software as ZIP file from this Github.
+1. Remove previous version of the plug-in.
 1. Install the plug-in via admin UI of the Wordpress > Plugins > Add plugin.
 1. Activate the plugin.
-1. Configure the plugin using the following instructions. Use test mode first.
+1. Configure the plugin using the following instructions. Settings are ready if you had previous version of the plug-in installed. Use test mode for new installations first.
 1. Update product information. 
 1. Test the plug-in to ensure compatibility with your existing environment.
 1. Switch off the test mode. Now you are ready to use the service.
@@ -68,7 +69,7 @@ Add information to configure the warehouse settings:
 **Woocommerce > Products**
 
 Select your existing product or create a new, and update the product information. Note the use of the following fields in the product information:
-
+- **Product data** - Simple product and Variable product are supported.
 - **General > Wholesales price** - Glue is able to show total value of your stock if wholesales price is available.
 - **Inventory > SKU** - product ID
   - **Warehouse service**: this is product ID, which is used by warehouse also. Product is creted to the warehouse with this ID. The plug-in adds your business ID as a prefix to the front of the product ID. For example WooCommerce SKU "2001" will be sent as "01234567-8-2001" to warehouse.
@@ -78,6 +79,8 @@ Select your existing product or create a new, and update the product information
 - **Inventory > EAN** - additional product ID. In case of warehouse service this is updated to warehouse also.
 - **Shipping > Weight** - weight is mandatory information.
 - **Shipping > Dimensions** - dimensions are mandatory information.
+- **Attributes (for Variable products)** - Add Custom product attibutes for your product, for example "color" or "size".
+- **Variations (for Variable products)** - Add SKU and enable stock management ("Manage stock?"-option), add weight and dimensions. Product name for the Glue is the name of the main product with name of the variation, for example "T-Shirt Red", where "T-shirt" is name of the product and "Red" is name of the variation.
 - **Posti > Stock type**
   - **Posti Warehouse** - product is stocked and fulfilled by Posti warehouse
   - **Dropshipping** - product is stocked and order is fulfilled by supplier. 
@@ -88,3 +91,4 @@ Select your existing product or create a new, and update the product information
 - **Posti > LQ Process permission** - if enabled then LQ addtional service is added to order/delivery.
 - **Posti > Large** - if enable then Large addtional servie is added to order/delivery.
 - **Posti > Fragile** - if enabled then Fragile addtional service is added to order/delivery. 
+
