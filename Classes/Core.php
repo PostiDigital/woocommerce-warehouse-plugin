@@ -470,7 +470,7 @@ class Core {
 
     public function posti_cronjob_callback() {
         $args = array(
-            'post_type' => 'product',
+            'post_type' => ['product', 'product_variation'],
             'meta_query' => array(
                 'relation' => 'AND',
                 array(
