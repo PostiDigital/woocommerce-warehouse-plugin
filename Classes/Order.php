@@ -247,11 +247,14 @@ class Order {
             $product_warehouse = get_post_meta($item['product_id'], '_posti_wh_warehouse', true);
             if (($type == "Posti" || $type == "Store" || $type == "Catalog") && $product_warehouse) {
 
-
                 $total_price += $item->get_total();
                 $total_tax += $item->get_subtotal_tax();
-                $_product = wc_get_product($item['product_id']);
-                $ean = get_post_meta($item['product_id'], '_ean', true);
+                if (isset($item['variation_id']) && $item['variation_id']) {
+                    $_product = wc_get_product($item['variation_id']);
+                } else {
+                    $_product = wc_get_product($item['product_id']);
+                }
+                $ean = get_post_meta($_product->get_id(), '_ean', true);
                 $order_items[] = [
                     "externalId" => (string) $item_counter,
                     "externalProductId" => $business_id . '-' . $_product->get_sku(),
