@@ -92,3 +92,8 @@ Select your existing product or create a new, and update the product information
 - **Posti > Large** - if enable then Large addtional servie is added to order/delivery.
 - **Posti > Fragile** - if enabled then Fragile addtional service is added to order/delivery. 
 
+
+## Version history
+
+- 1.0.5 Bug fix: fixed error in error message that appeared when saving variabl product.
+- 1.0.4 Added support for the variable products.
