@@ -52,7 +52,7 @@ function warehouse_shipping_method() {
                 $this->logger = new Logger();
                 $this->logger->setDebug($this->debug);
 
-                $this->api = new Api($this->logger, $this->business_id, false);
+                $this->api = new Api($this->logger, $this->business_id, $this->is_test);
                 $this->client = $this->api->getClient();
 
                 $this->load();
@@ -447,8 +447,10 @@ function warehouse_shipping_method() {
 
                 if (empty($all_shipping_methods)) {
                     try {
-                        $this->logger->log('info', "Trying to get list of shipping methods");
                         $all_shipping_methods = $this->client->listShippingMethods();
+                        
+                        $log_msg = (empty($all_shipping_methods)) ? "An empty list was received" : "List received successfully";
+                        $this->logger->log('info', "Trying to get list of shipping methods... " . $log_msg);
                     } catch (\Exception $ex) {
                         $all_shipping_methods = null;
                         $this->logger->log('error', "Failed to get list of shipping methods: " . $ex->getMessage());
