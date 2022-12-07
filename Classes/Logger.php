@@ -67,9 +67,7 @@ class Logger {
        
         $table_name = $wpdb->prefix . self::table_name;
 
-        $results = $wpdb->get_results(
-                $wpdb->prepare("SELECT * FROM " . $table_name . " order by created_at DESC, id DESC LIMIT 50")
-        );
+        $results = $wpdb->get_results("SELECT * FROM " . $table_name . " order by created_at DESC, id DESC LIMIT 50");
         return $results;
     }
 

@@ -78,7 +78,8 @@ class Api {
             $this->logger->log('info', "Refreshed access token");
             return $token_data->access_token;
         } else {
-            $this->logger->log('error', "Failed to get token from api: " . json_encode($config) . ', reponse ' . json_encode($token_data));
+            $config_data = (!empty($config)) ? json_encode($config) : '-';
+            $this->logger->log('error', "Failed to get token from api: " . $config_data . ', reponse ' . json_encode($token_data));
         }
         return false;
     }
