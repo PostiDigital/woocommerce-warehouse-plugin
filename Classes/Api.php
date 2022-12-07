@@ -133,7 +133,7 @@ class Api {
 
         
         if ($data) {
-            $this->logger->log("info", $data);
+            $this->logger->log("info", json_encode($data));
         }
 
         if ($action == "POST" || $action == "PUT") {
