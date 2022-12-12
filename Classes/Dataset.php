@@ -12,6 +12,13 @@ class Dataset {
             'Catalog' => __('Dropshipping', 'posti-warehouse'),
         );
     }
+
+    public static function getDeliveryTypes(){
+        return array(
+            'WAREHOUSE' => __('Posti Warehouse', 'posti-warehouse'),
+            'DROPSHIPPING' => __('Dropshipping', 'posti-warehouse'),
+        );
+    }
     
     public static function getServicesTypes(){
         return array(

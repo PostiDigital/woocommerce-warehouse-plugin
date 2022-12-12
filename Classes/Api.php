@@ -215,6 +215,11 @@ class Api {
         return $warehouses;
     }
 
+    public function getDeliveryServices($workflow) {
+        $services = $this->ApiCall('services', array('workflow' => $workflow) , 'GET');
+        return $services;
+    }
+
     public function getProduct($id) {
         $product = $this->ApiCall('inventory/' . $id, '', 'GET');
         //var_dump($product);exit;
