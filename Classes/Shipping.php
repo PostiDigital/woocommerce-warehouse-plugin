@@ -111,6 +111,18 @@ function warehouse_shipping_method() {
                 }
             }
 
+            public function process_admin_options() {
+                parent::process_admin_options();
+
+                if (
+                    !empty($this->settings['posti_wh_field_service'])
+                    && $this->delivery_service != $this->settings['posti_wh_field_service']
+                ) {
+                    $this->delivery_service = $this->settings['posti_wh_field_service'];
+                    delete_transient('posti_warehouse_shipping_methods');
+                }
+            }
+
             public function validate_pickuppoints_field($key, $value) {
                 $values = wp_json_encode($value);
                 return $values;
@@ -442,6 +454,9 @@ function warehouse_shipping_method() {
 
                 $additional_services = array();
                 foreach ($all_shipping_methods as $shipping_method) {
+                    if (!isset($shipping_method->additionalServices)) {
+                        continue;
+                    }
                     foreach ($shipping_method->additionalServices as $key => $service) {
                         $additional_services[strval($shipping_method->code)][$key] = (object)$service;
                     }
