@@ -141,6 +141,7 @@ function warehouse_shipping_method() {
                 }
 
                 $all_shipping_methods = $this->services();
+                $user_lang = $this->get_user_language();
 
                 if (empty($all_shipping_methods)) {
                     $all_shipping_methods = array();
@@ -256,7 +257,7 @@ function warehouse_shipping_method() {
                                                                     <input type="checkbox"
                                                                            name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($method_code) . '][additional_services][' . $additional_service->code . ']'; ?>"
                                                                            value="yes" <?php echo (!empty($values[$method_id][$method_code]['additional_services'][$additional_service->code]) && $values[$method_id][$method_code]['additional_services'][$additional_service->code] === 'yes') ? 'checked' : ''; ?>>
-                                                                           <?php echo $additional_service->description['en']; ?>
+                                                                           <?php echo $additional_service->description[$user_lang] ?? $additional_service->description['en']; ?>
                                                                 </label>
                                                             </p>
                                                         <?php endif; ?>
@@ -417,6 +418,7 @@ function warehouse_shipping_method() {
             private function services() {
                 $services = array();
 
+                $user_lang = $this->get_user_language();
                 $all_shipping_methods = $this->get_shipping_methods();
 
                 // List all available methods as shipping options on checkout page
@@ -426,12 +428,18 @@ function warehouse_shipping_method() {
                 }
 
                 foreach ($all_shipping_methods as $shipping_method) {
-                    $services[strval($shipping_method->code)] = sprintf('%1$s: %2$s', $shipping_method->provider, $shipping_method->description['en']);
+                    $services[strval($shipping_method->code)] = sprintf('%1$s: %2$s', $shipping_method->provider, $shipping_method->description[$user_lang] ?? $shipping_method->description['en']);
                 }
 
                 ksort($services);
 
                 return $services;
+            }
+
+            private function get_user_language( $user = 0 ) {
+                $user_splited_locale = explode('_', get_user_locale($user));
+
+                return $user_splited_locale[0] ?? 'en';
             }
 
             private function get_pickup_point_methods() {
