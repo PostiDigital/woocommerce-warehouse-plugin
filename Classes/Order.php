@@ -25,9 +25,19 @@ class Order {
         add_filter('manage_edit-shop_order_columns', array($this, 'posti_tracking_column'));
         add_action('manage_posts_custom_column', array($this, 'posti_tracking_column_data'));
 
+        add_filter( 'woocommerce_order_item_display_meta_key', array($this, 'change_metadata_title_for_order_shipping_method'), 20, 3 );
+
         if ($this->addTracking) {
             add_action('woocommerce_email_order_meta', array($this, 'addTrackingToEmail'), 10, 4);
         }
+    }
+
+    public function change_metadata_title_for_order_shipping_method($key, $meta, $item) {
+        if ( 'warehouse_pickup_point' === $meta->key ) {
+            $key = __( 'Pickup point', 'posti-warehouse');
+        }
+     
+        return $key;
     }
 
     public function getOrderStatus($order_id) {

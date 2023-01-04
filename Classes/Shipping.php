@@ -514,12 +514,16 @@ function warehouse_shipping_method() {
                 }
 
                 foreach ($all_shipping_methods as $shipping_method) {
-                    if (!isset($shipping_method->has_pickup_points)) {
+                    if (strval($shipping_method->code) !== strval($service_id)) {
                         continue;
                     }
-                    if (strval($shipping_method->code) === strval($service_id)) {
-                        return $shipping_method->has_pickup_points;
+                    if (!isset($shipping_method->tags)) {
+                        continue;
                     }
+                    if (!in_array('PICKUP_POINT', $shipping_method->tags)) {
+                        continue;
+                    }
+                    return true;
                 }
 
                 return false;
