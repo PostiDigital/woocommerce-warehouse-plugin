@@ -547,6 +547,11 @@ class Product {
                         $_product->save();
                         $this->logger->log("info", "Set product id " . $id . " stock: " . $stock);
                         update_post_meta($id, '_posti_last_sync', time());
+                        
+                        //if variation, update main product sync time
+                        if ($_product->get_type() == 'variation') {
+                            update_post_meta($_product->get_parent_id(), '_posti_last_sync', time());
+                        }
                         /*
                           $stocks = $product_data['warehouseBalance'];
                           foreach ($stocks as $stock){
