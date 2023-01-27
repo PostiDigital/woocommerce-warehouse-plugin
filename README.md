@@ -23,13 +23,13 @@ More information about Posti dropshipping service is available at [Posti.fi / Gl
 
 ## Installation
 
-This plug-in has been tested with WooCommerce version 6.7.0/WordPress version 6.0.1. You should always test the plug-in in your environment to ensure compatibility also with other plug-ins.
+This plug-in has been tested with WooCommerce version 6.7.0/WordPress version 6.1.1. You should always test the plug-in in your environment to ensure compatibility also with other plug-ins.
 
 1. Download the plug-in software as ZIP file from this Github.
-1. Remove previous version of the plug-in.
+1. Remove previous version of the plug-in if you are updating the plugin.
 1. Install the plug-in via admin UI of the Wordpress > Plugins > Add plugin.
 1. Activate the plugin.
-1. Configure the plugin using the following instructions. Settings are ready if you had previous version of the plug-in installed. Use test mode for new installations first.
+1. Configure the plugin using the following instructions. If you are updating the plugin, make sure you map shipping options to Posti't delivery servies again. All other settings are ready if you had previous version of the plug-in installed. Use test mode for new installations first.
 1. Update product information. 
 1. Test the plug-in to ensure compatibility with your existing environment.
 1. Switch off the test mode. Now you are ready to use the service.
@@ -52,6 +52,7 @@ Add information to configure the warehouse settings:
 - **Password** – this is API password for the production environment of the Glue, which is provided by Posti.
 - **TEST Username** -  this is API key for the test environment of the Glue, which is provided by Posti. 
 - **TEST Pasword**  – this is API password for the test environment of the Glue, which is provided by Posti.
+- **Delivery service - Select either Posti Warehouse or Dropshipping, this determines which delivery methods are available when you map shipping options..
 - **Business ID** – this is business ID (‘Y-tunnus’ in Finnish) of your	 company. Companies with Finnish business ID should write it with dash (e.g. 01234567-8).
 - **Contract number** – your contract number for Posti parcel services (6-digit long number which starts with number 6 )
 - **Default stock type** - select service you are mainly using (warehouse or dropshipping). You can change the value when you add new products.
@@ -92,8 +93,8 @@ Select your existing product or create a new, and update the product information
 - **Posti > Large** - if enable then Large addtional servie is added to order/delivery.
 - **Posti > Fragile** - if enabled then Fragile addtional service is added to order/delivery. 
 
-
 ## Version history
 
+- 1.0.6 "PickUp Parcel" and "Home delivery SE/DK" introduced as new shipping options for Sweden and Denmark. If you are updating the old version of the Warehouse plug-in please ensure update mapping of shipping options in Posti warehouse settings. Some bug fixes included also.
 - 1.0.5 Bug fix: fixed error in error message that appeared when saving variabl product.
 - 1.0.4 Added support for the variable products.
