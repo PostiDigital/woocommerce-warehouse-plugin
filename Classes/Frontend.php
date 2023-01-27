@@ -35,6 +35,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
             add_action('woocommerce_order_details_after_order_table', array($this, 'display_order_data'));
             add_action('woocommerce_checkout_update_order_meta', array($this, 'update_order_meta_pickup_point_field'));
             add_action('woocommerce_checkout_process', array($this, 'validate_checkout'));
+            add_action('woocommerce_checkout_create_order_shipping_item', array($this, 'add_metadata_to_order_shipping_method'), 10, 4);
 
             add_action('wp_ajax_pakettikauppa_save_pickup_point_info_to_session', array($this, 'save_pickup_point_info_to_session'), 10);
             add_action('wp_ajax_nopriv_pakettikauppa_save_pickup_point_info_to_session', array($this, 'save_pickup_point_info_to_session'), 10);
@@ -276,7 +277,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
                         }
                     } else if (!empty($pickup_points[$instance_id]['service'])) {
                         if (!empty($pickup_points[$instance_id]['service'])) {
-                            if ($pickup_points[$instance_id][$pickup_points[$instance_id]['service']]['pickuppoints'] === 'yes') {
+                            if (isset($pickup_points[$instance_id][$pickup_points[$instance_id]['service']]['pickuppoints']) && $pickup_points[$instance_id][$pickup_points[$instance_id]['service']]['pickuppoints'] === 'yes') {
                                 $shipping_method_providers[] = $pickup_points[$instance_id]['service'];
                             }
                         }
@@ -561,6 +562,12 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
                 foreach ($this->errors as $error) {
                     $this->display_error($error);
                 }
+            }
+        }
+
+        public function add_metadata_to_order_shipping_method($item, $package_key, $package, $order) {
+            if (isset($_POST['warehouse_pickup_point'])) {
+                $item->update_meta_data( str_replace('wc_', '', $this->core->prefix) . '_pickup_point', sanitize_text_field($_POST['warehouse_pickup_point']));
             }
         }
 

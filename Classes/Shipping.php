@@ -28,6 +28,7 @@ function warehouse_shipping_method() {
             private $api;
             private $client;
             private $business_id = false;
+            private $delivery_service = 'WAREHOUSE';
             private $logger;
 
             /**
@@ -49,10 +50,13 @@ function warehouse_shipping_method() {
                 if (isset($options['posti_wh_field_business_id'])) {
                     $this->business_id = $options['posti_wh_field_business_id'];
                 }
+                if (isset($options['posti_wh_field_service'])) {
+                    $this->delivery_service = $options['posti_wh_field_service'];
+                }
                 $this->logger = new Logger();
                 $this->logger->setDebug($this->debug);
 
-                $this->api = new Api($this->logger, $this->business_id, false);
+                $this->api = new Api($this->logger, $this->business_id, $this->is_test);
                 $this->client = $this->api->getClient();
 
                 $this->load();
@@ -107,6 +111,18 @@ function warehouse_shipping_method() {
                 }
             }
 
+            public function process_admin_options() {
+                parent::process_admin_options();
+
+                if (
+                    !empty($this->settings['posti_wh_field_service'])
+                    && $this->delivery_service != $this->settings['posti_wh_field_service']
+                ) {
+                    $this->delivery_service = $this->settings['posti_wh_field_service'];
+                    delete_transient('posti_warehouse_shipping_methods');
+                }
+            }
+
             public function validate_pickuppoints_field($key, $value) {
                 $values = wp_json_encode($value);
                 return $values;
@@ -125,6 +141,7 @@ function warehouse_shipping_method() {
                 }
 
                 $all_shipping_methods = $this->services();
+                $user_lang = $this->get_user_language();
 
                 if (empty($all_shipping_methods)) {
                     $all_shipping_methods = array();
@@ -193,10 +210,7 @@ function warehouse_shipping_method() {
                                         <th><?php echo $shipping_method->title; ?></th>
                                         <td style="vertical-align: top;">
                                             <select id="<?php echo $method_id; ?>-select" name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][service]'; ?>" onchange="pkChangeOptions(this, '<?php echo $method_id; ?>');">
-                                                <option value="__NULL__"><?php echo "No shipping"; ?></option>  //Issue: #171, was no echo
-                                                <?php if (!empty($methods)) : ?>
-                                                    <option value="__PICKUPPOINTS__" <?php echo ($selected_service === '__PICKUPPOINTS__' ? 'selected' : ''); ?>>Noutopisteet</option>
-                                                <?php endif; ?>
+                                                <option value="__NULL__"><?php echo "No shipping"; ?></option>  <?php //Issue: #171, was no echo ?>
                                                 <?php foreach ($all_shipping_methods as $service_id => $service_name) : ?>
                                                     <?php $has_pp = ($this->service_has_pickup_points($service_id)) ? true : false; ?>
                                                     <option value="<?php echo $service_id; ?>" <?php echo (strval($selected_service) === strval($service_id) ? 'selected' : ''); ?> data-haspp="<?php echo ($has_pp) ? 'true' : 'false'; ?>">
@@ -234,16 +248,16 @@ function warehouse_shipping_method() {
                                             <?php foreach ($all_additional_services as $method_code => $additional_services) : ?>
                                                 <div class="pk-services-<?php echo $method_id; ?>" style='display: none;' id="services-<?php echo $method_id; ?>-<?php echo $method_code; ?>">
                                                     <?php foreach ($additional_services as $additional_service) : ?>
-                                                        <?php if (empty($additional_service->specifiers) || in_array($additional_service->service_code, array('3102'), true)) : ?>
+                                                        <?php if (empty($additional_service->specifiers) || in_array($additional_service->code, array('3102'), true)) : ?>
                                                             <input type="hidden"
-                                                                   name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($method_code) . '][additional_services][' . $additional_service->service_code . ']'; ?>"
+                                                                   name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($method_code) . '][additional_services][' . $additional_service->code . ']'; ?>"
                                                                    value="no">
                                                             <p>
                                                                 <label>
                                                                     <input type="checkbox"
-                                                                           name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($method_code) . '][additional_services][' . $additional_service->service_code . ']'; ?>"
-                                                                           value="yes" <?php echo (!empty($values[$method_id][$method_code]['additional_services'][$additional_service->service_code]) && $values[$method_id][$method_code]['additional_services'][$additional_service->service_code] === 'yes') ? 'checked' : ''; ?>>
-                                                                           <?php echo $additional_service->name; ?>
+                                                                           name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($method_code) . '][additional_services][' . $additional_service->code . ']'; ?>"
+                                                                           value="yes" <?php echo (!empty($values[$method_id][$method_code]['additional_services'][$additional_service->code]) && $values[$method_id][$method_code]['additional_services'][$additional_service->code] === 'yes') ? 'checked' : ''; ?>>
+                                                                           <?php echo $additional_service->description[$user_lang] ?? $additional_service->description['en']; ?>
                                                                 </label>
                                                             </p>
                                                         <?php endif; ?>
@@ -313,6 +327,14 @@ function warehouse_shipping_method() {
                         'type' => 'text',
                         'default' => '',
                         'desc_tip' => true,
+                    ),
+                    'posti_wh_field_service' => array(
+                        'title' => __('Delivery service', 'posti-warehouse'),
+                        'desc' => "",
+                        'type' => 'select',
+                        'default' => '',
+                        'desc_tip' => false,
+                        'options' => Dataset::getDeliveryTypes()
                     ),
                     'posti_wh_field_business_id' => array(
                         'title' => __('Business ID', 'posti-warehouse'),
@@ -396,6 +418,7 @@ function warehouse_shipping_method() {
             private function services() {
                 $services = array();
 
+                $user_lang = $this->get_user_language();
                 $all_shipping_methods = $this->get_shipping_methods();
 
                 // List all available methods as shipping options on checkout page
@@ -405,12 +428,18 @@ function warehouse_shipping_method() {
                 }
 
                 foreach ($all_shipping_methods as $shipping_method) {
-                    $services[strval($shipping_method->shipping_method_code)] = sprintf('%1$s: %2$s', $shipping_method->service_provider, $shipping_method->name);
+                    $services[strval($shipping_method->code)] = sprintf('%1$s: %2$s', $shipping_method->provider, $shipping_method->description[$user_lang] ?? $shipping_method->description['en']);
                 }
 
                 ksort($services);
 
                 return $services;
+            }
+
+            private function get_user_language( $user = 0 ) {
+                $user_splited_locale = explode('_', get_user_locale($user));
+
+                return $user_splited_locale[0] ?? 'en';
             }
 
             private function get_pickup_point_methods() {
@@ -433,7 +462,12 @@ function warehouse_shipping_method() {
 
                 $additional_services = array();
                 foreach ($all_shipping_methods as $shipping_method) {
-                    $additional_services[strval($shipping_method->shipping_method_code)] = $shipping_method->additional_services;
+                    if (!isset($shipping_method->additionalServices)) {
+                        continue;
+                    }
+                    foreach ($shipping_method->additionalServices as $key => $service) {
+                        $additional_services[strval($shipping_method->code)][$key] = (object)$service;
+                    }
                 }
 
                 return $additional_services;
@@ -444,11 +478,13 @@ function warehouse_shipping_method() {
                 $transient_time = 86400; // 24 hours
 
                 $all_shipping_methods = get_transient($transient_name);
-
                 if (empty($all_shipping_methods)) {
                     try {
-                        $this->logger->log('info', "Trying to get list of shipping methods");
-                        $all_shipping_methods = $this->client->listShippingMethods();
+                        //$all_shipping_methods = $this->client->listShippingMethods();
+                        $all_shipping_methods = $this->api->getDeliveryServices($this->delivery_service);
+
+                        $log_msg = (empty($all_shipping_methods)) ? "An empty list was received" : "List received successfully";
+                        $this->logger->log('info', "Trying to get list of shipping methods... " . $log_msg);
                     } catch (\Exception $ex) {
                         $all_shipping_methods = null;
                         $this->logger->log('error', "Failed to get list of shipping methods: " . $ex->getMessage());
@@ -463,6 +499,10 @@ function warehouse_shipping_method() {
                     return null;
                 }
 
+                foreach ($all_shipping_methods as $key => $shipping_method) {
+                    $all_shipping_methods[$key] = (object)$shipping_method;
+                }
+
                 return $all_shipping_methods;
             }
 
@@ -474,9 +514,16 @@ function warehouse_shipping_method() {
                 }
 
                 foreach ($all_shipping_methods as $shipping_method) {
-                    if (strval($shipping_method->shipping_method_code) === strval($service_id)) {
-                        return $shipping_method->has_pickup_points;
+                    if (strval($shipping_method->code) !== strval($service_id)) {
+                        continue;
                     }
+                    if (!isset($shipping_method->tags)) {
+                        continue;
+                    }
+                    if (!in_array('PICKUP_POINT', $shipping_method->tags)) {
+                        continue;
+                    }
+                    return true;
                 }
 
                 return false;

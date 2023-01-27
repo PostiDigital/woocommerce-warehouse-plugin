@@ -28,6 +28,7 @@ class Core {
     private $options_checked = false;
     private $frontend = null;
     public $prefix = 'warehouse';
+    public $version = '0.0.0';
     public $templates_dir;
     public $templates;
 
