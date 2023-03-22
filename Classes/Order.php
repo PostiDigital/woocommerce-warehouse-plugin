@@ -96,6 +96,10 @@ class Order {
         }
         return $this->api->addOrder($this->prepare_posti_order($order));
     }
+    
+    public function sync($datetime) {
+        return false;
+    }
 
     public function updatePostiOrders($ids = false) {
         $options = get_option('woocommerce_posti_warehouse_settings');
@@ -267,7 +271,7 @@ class Order {
                 $ean = get_post_meta($_product->get_id(), '_ean', true);
                 $order_items[] = [
                     "externalId" => (string) $item_counter,
-                    "externalProductId" => $business_id . '-' . $_product->get_sku(),
+                    "externalProductId" => $_product->get_sku(),
                     "productEANCode" => $ean, //$_product->get_sku(),
                     "productUnitOfMeasure" => "KPL",
                     "productDescription" => $item['name'],
@@ -289,16 +293,10 @@ class Order {
                 $item_counter++;
             }
         }
-        $posti_order_id = $business_id . '-' . $_order->get_id();
+        
+        $posti_order_id = (string) $_order->get_id();
         update_post_meta($_order->get_id(), '_posti_id', $posti_order_id);
-        /*
-          $posti_order_id = get_post_meta($_order->get_id(), '_posti_id', true);
-          if (!$posti_order_id) {
-          $posti_order_id = bin2hex(random_bytes(16));
-          update_post_meta($_order->get_id(), '_posti_id', $posti_order_id);
-          $this->logger->log("info", "Order id " . $_order->get_id() . " set _posti_id " . $posti_order_id);
-          }
-         */
+
         $order = array(
             "externalId" => $posti_order_id,
             "clientId" => (string) $business_id,

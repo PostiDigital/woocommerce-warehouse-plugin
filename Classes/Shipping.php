@@ -380,10 +380,10 @@ function warehouse_shipping_method() {
                         'desc_tip' => false,
                     ),
                     'posti_wh_field_crontime' => array(
-                        'title' => __('Delay between stock and order checks in seconds', 'posti-warehouse'),
+                        'title' => __('Stock and order update interval (in seconds)', 'posti-warehouse'),
                         'desc' => "",
                         'type' => 'number',
-                        'default' => '7200',
+                        'default' => '600',
                         'desc_tip' => false,
                     ),
                     'posti_wh_field_test_mode' => array(
@@ -397,6 +397,20 @@ function warehouse_shipping_method() {
                         'title' => __('Debug', 'posti-warehouse'),
                         'desc' => "",
                         'type' => 'checkbox',
+                        'default' => '',
+                        'desc_tip' => false,
+                    ),
+                    'posti_wh_field_stock_sync_dttm' => array(
+                        'title' => __('Datetime of last stock update', 'posti-warehouse'),
+                        'desc' => "",
+                        'type' => 'text',
+                        'default' => '',
+                        'desc_tip' => false,
+                    ),
+                    'posti_wh_field_order_sync_dttm' => array(
+                        'title' => __('Datetime of last order update', 'posti-warehouse'),
+                        'desc' => "",
+                        'type' => 'text',
                         'default' => '',
                         'desc_tip' => false,
                     ),

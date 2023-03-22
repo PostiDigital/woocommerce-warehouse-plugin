@@ -2,6 +2,7 @@
 
 namespace PostiWarehouse\Classes;
 
+use \WP_Query;
 use PostiWarehouse\Classes\Dataset;
 use PostiWarehouse\Classes\Api;
 use PostiWarehouse\Classes\Logger;
@@ -184,7 +185,6 @@ class Product {
               $products_options = $this->parseApiProductsResponse($this->api->getProductsByWarehouse($product_warehouse));
               }
              */
-            //var_dump($this->api->getProductsByWarehouse($product_warehouse));
             woocommerce_wp_select(
                     array(
                         'id' => '_posti_wh_stock_type',
@@ -256,7 +256,6 @@ class Product {
         $type = get_post_meta($post_id, '_posti_wh_stock_type', true);
         $product_warehouse = get_post_meta($post_id, '_posti_wh_warehouse', true);
         $product_distributor = get_post_meta($post_id, '_posti_wh_distribution', true);
-        //$posti_product = get_post_meta($post_id, '_posti_wh_product', true);
         $options = get_option('woocommerce_posti_warehouse_settings');
         $business_id = false;
 
@@ -271,55 +270,25 @@ class Product {
 
         $_product = wc_get_product($post_id);
         $product_type = $_product->get_type();
-        
 
         if ($type == 'Catalog') {
             //if dropshipping, id without business_id
-            $posti_product_id = $_product->get_sku();
-            update_post_meta($post_id, '_posti_id', $posti_product_id);
+            $product_id = $_product->get_sku();
+            update_post_meta($post_id, '_posti_id', $product_id);
 
             update_post_meta($post_id, '_posti_last_sync', 0);
-            $this->syncProducts([$post_id]);
+            $this->sync_products($business_id, [$product_id]);
         }
-        /*
-          if ($posti_product){
-          //if have posti product and not dropshipping
-          if ($type != 'Catalog') {
-          delete_post_meta($post_id, '_posti_wh_product');
-          } else {
-          update_post_meta($post_id, '_posti_id', $posti_product);
-          update_post_meta($post_id, '_posti_last_sync', 0);
-          $this->syncProducts([$post_id]);
-          }
-          } */
 
         if (($type == "Posti" || $type == "Store") && $product_warehouse) {
             //id with business_id and sku
-            $posti_product_id = $business_id . '-' . $_product->get_sku();
-            update_post_meta($post_id, '_posti_id', $posti_product_id);
+            $product_id = $_product->get_sku();
+            update_post_meta($post_id, '_posti_id', $product_id);
 
             $products = array();
             $products_ids = array();
-
-            
-            
             $wholesale_price = (float) str_ireplace(',', '.', get_post_meta($post_id, '_wholesale_price', true));
-            
-            /*
-              $posti_product_id = get_post_meta($post_id, '_posti_id', true);
-              $wh_product_id = get_post_meta($post_id, '_wh_id', true);
-              if (!$posti_product_id || !$wh_product_id || $posti_product_id !== $wh_product_id) {
-              if ($wh_product_id) {
-              $posti_product_id = $wh_product_id;
-              } else {
-              $posti_product_id = bin2hex(random_bytes(16));
-              }
-              update_post_meta($post_id, '_posti_id', $posti_product_id);
-              //save unique id to other field, to be able to restore
-              update_post_meta($post_id, '_wh_id', $posti_product_id);
-              $this->logger->log("info", "Product id " . $post_id . " set _posti_id " . $posti_product_id);
-              }
-             */
+
             if ($product_type == 'variable') {
                 $_products = $_product->get_available_variations();
                 foreach ($_products as $variation) {
@@ -328,30 +297,11 @@ class Product {
                         continue;
                     }
                     $variable_name = $_product->get_name();
-                    $posti_variable_id = $business_id . '-' . $variation['sku'];
+                    $posti_variable_id = $variation['sku'];
                     update_post_meta($variation['variation_id'], '_posti_id', $posti_variable_id);
                     update_post_meta($variation['variation_id'], '_posti_wh_stock_type', $type);
                     $ean = get_post_meta($variation['variation_id'], '_ean', true);
                     $specifications = [];
-                    /*
-                    $specifications[] = [
-                        "type"=> "Woocommerce data",
-                        "properties"=> [
-                            [
-                                "name" => "woo_product_id",
-                                "value"=> (string)$post_id,
-                                "specifier" => "",
-                                "description" => ""
-                            ],
-                            [
-                                "name" => "woo_product_variant_id",
-                                "value"=> (string)$variation['variation_id'],
-                                "specifier" => "",
-                                "description" => ""
-                            ]
-                        ]
-                    ];
-                     */
                     $options = [
                         "type"=> "Options",
                         "properties"=> [
@@ -389,7 +339,7 @@ class Product {
                         "isDangerousGoods" => get_post_meta($post_id, '_posti_lq', true) ? true : false,
                         "isOversized" => get_post_meta($post_id, '_posti_large', true) ? true : false,
                     );
-                    //print_r($product); exit;
+
                     $weight = $variation['weight'] ? $variation['weight'] : 0;
                     $length = $variation['dimensions']['length'] ? $variation['dimensions']['length'] : 0;
                     $width = $variation['dimensions']['width'] ? $variation['dimensions']['width'] : 0;
@@ -404,17 +354,17 @@ class Product {
                     $balances = array(
                         array(
                             "retailerId" => $business_id,
-                            "productExternalId" => $posti_variable_id,
                             "catalogExternalId" => $product_warehouse,
                             //"quantity" => 0.0,
                             "wholesalePrice" => $wholesale_price ? $wholesale_price : (float) $variation['display_regular_price'],
                             "currency" => get_woocommerce_currency()
                         )
                     );
-                    $products_ids[$posti_variable_id] = $variation['variation_id'];
+                    array_push($products_ids, $posti_variable_id);
                     $products[] = array('product' => $product, 'balances' => $balances);
                 }
             } else {
+                $product_id = $_product->get_sku();
                 $ean = get_post_meta($post_id, '_ean', true);
                 if (!$wholesale_price) {
                     $wholesale_price = (float) $_product->get_price();
@@ -424,7 +374,7 @@ class Product {
                     return false;
                 }
                 $product = array(
-                    'externalId' => $posti_product_id,
+                    'externalId' => $product_id,
                     "supplierId" => $business_id,
                     'descriptions' => array(
                         'en' => array(
@@ -457,25 +407,19 @@ class Product {
                 $balances = array(
                     array(
                         "retailerId" => $business_id,
-                        "productExternalId" => $posti_product_id,
                         "catalogExternalId" => $product_warehouse,
-                        //"quantity" => 0.0,
                         "wholesalePrice" => $wholesale_price,
                         "currency" => get_woocommerce_currency()
                     )
                 );
-                $products_ids[$business_id . '-' . $_product->get_sku()] = $_product->get_id();
+                array_push($products_ids, $product_id);
                 $products[] = array('product' => $product, 'balances' => $balances);
             }
             
             if (count($products)) {
-                $this->logger->log("info", "Product id " . implode(', ', $products_ids) . " added to posti: \n" . json_encode($products));
-                $this->api->addProduct($products, $business_id);
-                //add 0 to force sync
-                foreach ($products_ids as $product_id => $_p_id) {
-                    update_post_meta($_p_id, '_posti_last_sync', 0);
-                }
-                $this->syncProducts($products_ids);
+                $this->logger->log("info", "Products " . implode(', ', $products_ids) . " sent to Posti: \n" . json_encode($products));
+                $this->api->addProduct($products);
+                $this->sync_products($business_id, $products_ids);
             }
         }
     }
@@ -508,66 +452,157 @@ class Product {
         }
     }
 
-    public function syncProducts($ids) {
-        foreach ($ids as $id) {
+    public function sync($datetime) {        
+        $options = get_option('woocommerce_posti_warehouse_settings');
+        $business_id = $options['posti_wh_field_business_id'];
+        if (!isset($business_id) || strlen($business_id) <= 0) {
+            $this->logger->log("error", "Cannot sync products: no Business id set");
+            return false;
+        }
+
+        $response = $this->api->getBalancesUpdatedSince($datetime, 50);
+        if (!$this->sync_page($business_id, $response)) {
+            return false;
+        }
+
+        $pages = $response['page']['totalPages'];
+        for ($page = 1; $page < $pages; $page++) {
+            $page_response = $this->api->getBalancesUpdatedSince($datetime, 50, $page);
+            if (!$this->sync_page($business_id, $page_response)) {
+                break;
+            }
+        }
+        
+        return true;
+    }
+    
+    private function sync_page($business_id, $page) {
+        if (!isset($page)) {
+            return false;
+        }
+
+        $balances = $page['content'];
+        if (!isset($balances) || !is_array($balances) || count($balances) == 0) {
+            return false;
+        }
+
+        $product_ids_tmp = array();
+        foreach ($balances as $balance) {
+            $product_id = $balance['productExternalId'];
+            if (isset($product_id) && strlen($product_id) > 0) {
+                array_push($product_ids_tmp, $product_id);
+            }
+        }
+        $product_ids = array_unique($product_ids_tmp);
+        $this->sync_products($business_id, $product_ids);
+
+        return true;
+    }
+    
+    private function sync_products($business_id, $product_ids) {
+        if (count($product_ids) == 0) {
+            return;
+        }
+
+        $prefix_deprecated = $business_id . '-';
+        $product_ids_deprecated = array();
+        foreach ($product_ids as $product_id) {
+            array_push($product_ids_deprecated, $prefix_deprecated . $product_id);
+        }
+
+        $posts_query = array(
+            'post_type' => ['product', 'product_variation'],
+            'meta_query' => array(
+                'relation' => 'OR',
+                array(
+                    'key' => '_posti_id',
+                    'value' => $product_ids,
+                    'compare' => 'IN'
+                ),
+                array(
+                    'key' => '_posti_id',
+                    'value' => $product_ids_deprecated,
+                    'compare' => 'IN'
+                )
+            )
+        );
+        $posts = get_posts($posts_query);
+        $post_by_product_id = array();
+        foreach ($posts as $post) {
+            $product_id = get_post_meta($post->ID, '_posti_id', true);
+            if (isset($product_id) && strlen($product_id) > 0) {
+                $post_by_product_id[$product_id] = $post->ID;
+            }
+        }
+
+        $product_ids_chunks = array_chunk($product_ids, 30);
+        foreach ($product_ids_chunks as $product_ids_chunk) {
             try {
-                $_product = wc_get_product($id);
-                $options = get_option('woocommerce_posti_warehouse_settings');
-                $business_id = false;
-                if (isset($options['posti_wh_field_business_id'])) {
-                    $business_id = $options['posti_wh_field_business_id'];
-                }
-                if (!$business_id) {
-                    $this->logger->log("error", "Cannot sync  product id " . $id . " no Business id set");
-                    return;
-                }
-                $posti_product_id = get_post_meta($id, '_posti_id', true);
-                if (!$posti_product_id) {
-                    $this->logger->log("error", "Cannot sync  product id " . $id . " no _posti_id set");
-                    return;
-                }
-                $stock_type = get_post_meta($id, '_posti_wh_stock_type', true);
-                if ($stock_type == "Not_in_stock") {
-                    return;
-                }
-                $product_data = $this->api->getProduct($posti_product_id);
-                if (is_array($product_data)) {
-                    $this->logger->log("info", "Posti info for product id " . $id . ":\n" . json_encode($product_data));
-                    if (isset($product_data['balances']) && is_array($product_data['balances'])) {
-                        $stock = 0;
-                        foreach ($product_data['balances'] as $balance) {
-                            if (isset($balance['quantity'])) {
-                                $stock += $balance['quantity'];
+                $response = $this->api->getProducts($product_ids_chunk);
+                if (isset($response)) {
+                    $products_with_balances = $response['content'];
+                    if (isset($products_with_balances) && is_array($products_with_balances)) {
+                        foreach ($products_with_balances as $product_with_balances) {
+                            $product = $product_with_balances['product'];
+                            $product_id = $product['externalId'];
+                            $id = $post_by_product_id[$product_id];
+                            if (!isset($id) || strlen($id) <= 0) {
+                                if (substr($product_id, 0, strlen($prefix_deprecated)) === $prefix_deprecated) {
+                                    $id = $post_by_product_id[substr($product_id, strlen($prefix_deprecated))];
+                                }
+                                else {
+                                    $id = $post_by_product_id[$prefix_deprecated . $product_id];
+                                }
+                            }
+                            
+                            if (isset($id) && strlen($id) > 0) {
+                                $this->sync_product($id, $product_id, $product_with_balances['balances']);
                             }
                         }
-                        //$this->logger->log("info", "Current product id " . $id . " stock: " . $_product->get_stock_quantity());
-                        update_post_meta($id, '_manage_stock', 'yes');
-                        update_post_meta($id, '_stock', $stock);
-                        $_product->set_stock_quantity($stock);
-                        $_product->save();
-                        $this->logger->log("info", "Set product id " . $id . " stock: " . $stock);
-                        update_post_meta($id, '_posti_last_sync', time());
-                        
-                        //if variation, update main product sync time
-                        if ($_product->get_type() == 'variation') {
-                            update_post_meta($_product->get_parent_id(), '_posti_last_sync', time());
-                        }
-                        /*
-                          $stocks = $product_data['warehouseBalance'];
-                          foreach ($stocks as $stock){
-                          if ($stock['externalWarehouseId'] == $product_warehouse){
-                          $_product = set_stock_quantity(0)
-                          }
-                          }
-                         */
                     }
-                } else {
-                    $this->logger->log("error", "No data from glue for " . $posti_product_id . " product");
                 }
             } catch (\Exception $e) {
                 $this->logger->log("error", $e->getMessage());
             }
         }
     }
+    
+    private function sync_product($id, $product_id, $balances) {
+        $_product = wc_get_product($id);
+        if (!isset($_product)) {
+            return;
+        }
 
+        $totalStock = 0;
+        if (isset($balances) && is_array($balances)) {
+            $stock = 0;
+            $sharedStock = 0;
+            foreach ($balances as $balance) {
+                if (isset($balance['quantity'])) {
+                    if (isset($balance['sharedStock']) && $balance['sharedStock']) {
+                        $sharedStock = $balance['quantity'];
+                    }
+                    else {
+                        $stock += $balance['quantity'];
+                    }
+                }
+            }
+
+            $totalStock = $stock + $sharedStock;
+        }
+
+        $total_stock_old = $_product->get_stock_quantity();
+        if (!isset($total_stock_old) || $total_stock_old != $totalStock) {
+            $_product->set_stock_quantity($totalStock);
+            $_product->save();
+            $this->logger->log("info", "Set product $id ($product_id) stock: $total_stock_old -> $totalStock");
+        }
+
+        update_post_meta($id, '_posti_id', $product_id);
+        update_post_meta($id, '_posti_last_sync', time());
+        //if variation, update main product sync time
+        if ($_product->get_type() == 'variation') {
+            update_post_meta($_product->get_parent_id(), '_posti_last_sync', time());
+        }
+    }
 }

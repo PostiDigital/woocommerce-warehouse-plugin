@@ -216,14 +216,28 @@ class Api {
     }
 
     public function getDeliveryServices($workflow) {
-        $services = $this->ApiCall('services', array('workflow' => $workflow) , 'GET');
+        $services = $this->ApiCall('services', array('workflow' => urlencode($workflow)) , 'GET');
         return $services;
     }
 
     public function getProduct($id) {
-        $product = $this->ApiCall('inventory/' . $id, '', 'GET');
-        //var_dump($product);exit;
+        $product = $this->ApiCall('inventory/' . urlencode($id), '', 'GET');
         return $product;
+    }
+    
+    public function getProducts($ids) {
+        $ids_encoded = array();
+        foreach ($ids as $id) {
+            array_push($ids_encoded, urlencode($id));
+        }
+        
+        $products = $this->ApiCall('inventory?productExternalId=' . implode(',', $ids_encoded), '', 'GET');
+        return $products;
+    }
+    
+    public function getBalancesUpdatedSince($dttm_since, $size, $page = 0) {
+        $products = $this->ApiCall('inventory/balances?modifiedFromDate=' . urlencode($dttm_since) . '&size=' . $size . '&page=' . $page, '', 'GET');
+        return $products;
     }
 
     public function getProductsByWarehouse($id, $attrs= '') {
@@ -231,19 +245,18 @@ class Api {
         return $products;
     }
 
-    public function addProduct($product, $business_id = false) {
+    public function addProduct($product) {
         $status = $this->ApiCall('inventory', $product, 'PUT');
         return $status;
     }
 
-    public function addOrder($order, $business_id = false) {
+    public function addOrder($order) {
         $status = $this->ApiCall('orders', $order, 'POST');
         return $status;
     }
 
-    public function getOrder($order_id, $business_id = false) {
-        $status = $this->ApiCall('orders/' . $order_id, '', 'GET');
+    public function getOrder($order_id) {
+        $status = $this->ApiCall('orders/' . urlencode($order_id), '', 'GET');
         return $status;
     }
-
 }

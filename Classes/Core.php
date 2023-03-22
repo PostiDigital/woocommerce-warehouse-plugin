@@ -23,7 +23,7 @@ class Core {
     private $is_test = false;
     private $debug = false;
     private $add_tracking = false;
-    private $cron_time = 7200;
+    private $cron_time = 600;
     private $logger;
     private $options_checked = false;
     private $frontend = null;
@@ -325,7 +325,7 @@ class Core {
 
         add_settings_field(
                 'posti_wh_field_crontime',
-                __('Delay between stock and order checks in seconds', 'posti-warehouse'),
+                __('Stock and order update interval (in seconds)', 'posti-warehouse'),
                 array($this, 'posti_wh_field_string_cb'),
                 'posti_wh',
                 'posti_wh_settings_section',
@@ -334,7 +334,7 @@ class Core {
                     'class' => 'posti_wh_row',
                     'posti_wh_custom_data' => 'custom',
                     'input_type' => 'number',
-                    'default' => '7200'
+                    'default' => '600'
                 ]
         );
 
@@ -359,6 +359,32 @@ class Core {
                 'posti_wh_settings_section',
                 [
                     'label_for' => 'posti_wh_field_debug',
+                    'class' => 'posti_wh_row',
+                    'posti_wh_custom_data' => 'custom',
+                ]
+        );
+
+        add_settings_field(
+                'posti_wh_field_stock_sync_dttm',
+                __('Datetime of last stock update', 'posti-warehouse'),
+                array($this, 'posti_wh_field_string_cb'),
+                'posti_wh',
+                'posti_wh_settings_section',
+                [
+                    'label_for' => 'posti_wh_field_stock_sync_dttm',
+                    'class' => 'posti_wh_row',
+                    'posti_wh_custom_data' => 'custom',
+                ]
+        );
+        
+        add_settings_field(
+                'posti_wh_field_order_sync_dttm',
+                __('Datetime of last order update', 'posti-warehouse'),
+                array($this, 'posti_wh_field_string_cb'),
+                'posti_wh',
+                'posti_wh_settings_section',
+                [
+                    'label_for' => 'posti_wh_field_order_sync_dttm',
                     'class' => 'posti_wh_row',
                     'posti_wh_custom_data' => 'custom',
                 ]
@@ -470,37 +496,30 @@ class Core {
      */
 
     public function posti_cronjob_callback() {
-        $args = array(
-            'post_type' => ['product', 'product_variation'],
-            'meta_query' => array(
-                'relation' => 'AND',
-                array(
-                    'key' => '_posti_wh_stock_type',
-                    'value' => array('Store', 'Posti', 'Catalog'),
-                    'compare' => 'IN'
-                ),
-                array(
-                    'key' => '_posti_last_sync',
-                    'value' => (time() - 60),
-                    'compare' => '<'
-                ),
-            ),
-        );
-        $products = get_posts($args);
-        $this->logger->log("info", "Found  " . count($products) . " products to sync");
-        if (is_array($products)) {
-            $product_ids = [];
-            foreach ($products as $product) {
-                $product_ids[] = $product->ID;
+        $options = get_option('woocommerce_posti_warehouse_settings');
+
+        $stockSyncDttm = $this->get_option_datetime_sync($options, 'posti_wh_field_stock_sync_dttm');
+        $nextStockSyncDttm = (new \DateTime())->format(\DateTimeInterface::RFC3339_EXTENDED);
+        $syncedProducts = $this->product->sync($stockSyncDttm);
+
+        $orderSyncDttm = $this->get_option_datetime_sync($options, 'posti_wh_field_order_sync_dttm');
+        $nextOrderSyncDttm = (new \DateTime())->format(\DateTimeInterface::RFC3339_EXTENDED);
+        $syncedOrders = $this->order->sync($orderSyncDttm);
+        
+        if ($syncedProducts || $syncedOrders) {
+            $new_options = get_option('woocommerce_posti_warehouse_settings');
+            if ($syncedProducts) {
+                $new_options['posti_wh_field_stock_sync_dttm'] = $nextStockSyncDttm;
             }
-            if (count($product_ids)) {
-                $this->product->syncProducts($product_ids);
+            
+            if ($syncedOrders) {
+                $new_options['posti_wh_field_order_sync_dttm'] = $nextOrderSyncDttm;
             }
+
+            update_option('woocommerce_posti_warehouse_settings', $new_options);
         }
-
-        $this->order->updatePostiOrders();
     }
-
+    
     public function hide_other_shipping_if_posti_products($rates) {
         global $woocommerce;
         $hide_other = false;
@@ -528,4 +547,13 @@ class Core {
         return $rates;
     }
 
+    private function get_option_datetime_sync($options, $option) {
+        $value = $options[$option];
+        if (!isset($value)) {
+            $now = new \DateTime('now - 1 year');
+            $value = $now->format(\DateTimeInterface::RFC3339_EXTENDED);
+        }
+        
+        return $value;
+    }
 }
