@@ -527,6 +527,10 @@ class Product {
             )
         );
         $posts = get_posts($posts_query);
+        if (count($posts) == 0) {
+            return;
+        }
+        
         $post_by_product_id = array();
         foreach ($posts as $post) {
             $product_id = get_post_meta($post->ID, '_posti_id', true);

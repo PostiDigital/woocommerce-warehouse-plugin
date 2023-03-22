@@ -498,26 +498,51 @@ class Core {
     public function posti_cronjob_callback() {
         $options = get_option('woocommerce_posti_warehouse_settings');
 
-        $stockSyncDttm = $this->get_option_datetime_sync($options, 'posti_wh_field_stock_sync_dttm');
-        $nextStockSyncDttm = (new \DateTime())->format(\DateTimeInterface::RFC3339_EXTENDED);
-        $syncedProducts = $this->product->sync($stockSyncDttm);
+        $nextStockSyncDttm = $this->posti_cronjob_sync_stock($options);
+        $nextOrderSyncDttm = $this->posti_cronjob_sync_orders($options);
 
-        $orderSyncDttm = $this->get_option_datetime_sync($options, 'posti_wh_field_order_sync_dttm');
-        $nextOrderSyncDttm = (new \DateTime())->format(\DateTimeInterface::RFC3339_EXTENDED);
-        $syncedOrders = $this->order->sync($orderSyncDttm);
-        
-        if ($syncedProducts || $syncedOrders) {
+        if ($nextStockSyncDttm !== false || $nextOrderSyncDttm !== false) {
             $new_options = get_option('woocommerce_posti_warehouse_settings');
-            if ($syncedProducts) {
+            if ($nextStockSyncDttm !== false) {
                 $new_options['posti_wh_field_stock_sync_dttm'] = $nextStockSyncDttm;
             }
             
-            if ($syncedOrders) {
+            if ($nextOrderSyncDttm !== false) {
                 $new_options['posti_wh_field_order_sync_dttm'] = $nextOrderSyncDttm;
             }
 
             update_option('woocommerce_posti_warehouse_settings', $new_options);
         }
+    }
+
+    public function posti_cronjob_sync_stock($options) {
+        try {
+            $syncDttm = $this->get_option_datetime_sync($options, 'posti_wh_field_stock_sync_dttm');
+            $nextSyncDttm = (new \DateTime())->format(\DateTimeInterface::RFC3339_EXTENDED);
+            $synced = $this->product->sync($syncDttm);
+
+            return $synced ? $nextSyncDttm : false;
+
+        } catch (\Exception $e) {
+            $this->logger->log("error", $e->getMessage());
+        }
+        
+        return false;
+    }
+    
+    public function posti_cronjob_sync_orders($options) {
+        try {
+            $syncDttm = $this->get_option_datetime_sync($options, 'posti_wh_field_order_sync_dttm');
+            $nextSyncDttm = (new \DateTime())->format(\DateTimeInterface::RFC3339_EXTENDED);
+            $synced = $this->order->sync($syncDttm);
+
+            return $synced ? $nextSyncDttm : false;
+
+        } catch (\Exception $e) {
+            $this->logger->log("error", $e->getMessage());
+        }
+        
+        return false;
     }
     
     public function hide_other_shipping_if_posti_products($rates) {
@@ -550,7 +575,7 @@ class Core {
     private function get_option_datetime_sync($options, $option) {
         $value = $options[$option];
         if (!isset($value)) {
-            $now = new \DateTime('now - 1 year');
+            $now = new \DateTime('now - 1 week');
             $value = $now->format(\DateTimeInterface::RFC3339_EXTENDED);
         }
         

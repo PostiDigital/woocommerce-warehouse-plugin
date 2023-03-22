@@ -259,4 +259,9 @@ class Api {
         $status = $this->ApiCall('orders/' . urlencode($order_id), '', 'GET');
         return $status;
     }
+    
+    public function getOrdersUpdatedSince($dttm_since, $size, $page = 0) {
+        $products = $this->ApiCall('orders?modifiedFromDate=' . urlencode($dttm_since) . '&size=' . $size . '&page=' . $page, '', 'GET');
+        return $products;
+    }
 }

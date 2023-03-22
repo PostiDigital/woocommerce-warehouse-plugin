@@ -98,58 +98,104 @@ class Order {
     }
     
     public function sync($datetime) {
-        return false;
-    }
-
-    public function updatePostiOrders($ids = false) {
         $options = get_option('woocommerce_posti_warehouse_settings');
-        $args = array(
+        $business_id = $options['posti_wh_field_business_id'];
+        if (!isset($business_id) || strlen($business_id) <= 0) {
+            $this->logger->log("error", "Cannot sync orders: no Business id set");
+            return false;
+        }
+
+        $response = $this->api->getOrdersUpdatedSince($datetime, 30);
+        if (!$this->sync_page($response)) {
+            return false;
+        }
+
+        $pages = $response['page']['totalPages'];
+        for ($page = 1; $page < $pages; $page++) {
+            $page_response = $this->api->getOrdersUpdatedSince($datetime, 30, $page);
+            if (!$this->sync_page($page_response)) {
+                break;
+            }
+        }
+        
+        return true;
+    }
+    
+    private function sync_page($page) {
+        if (!isset($page)) {
+            return false;
+        }
+
+        $orders = $page['content'];
+        if (!isset($orders) || !is_array($orders) || count($orders) == 0) {
+            return false;
+        }
+
+        $order_ids = array();
+        foreach ($orders as $order) {
+            $order_id = $order['externalId'];
+            if (isset($order_id) && strlen($order_id) > 0) {
+                array_push($order_ids, $order_id);
+            }
+        }
+        
+        $posts_query = array(
             'post_type' => 'shop_order',
-            'post_status' => 'wc-processing',
             'meta_query' => array(
                 array(
-                    'key' => '_posti_wh_order',
-                    'value' => '1',
-                ),
-            ),
+                    'key' => '_posti_id',
+                    'value' => $order_ids,
+                    'compare' => 'IN'
+                )
+            )
         );
-        if ($ids) {
-            $args['include'] = $ids;
+        $posts = get_posts($posts_query);
+        if (count($posts) == 0) {
+            return true;
         }
-        $orders = get_posts($args);
-        $this->logger->log("info", "Found  " . count($orders) . " orders to sync");
-        if (is_array($orders)) {
-            foreach ($orders as $order) {
-                $order_data = $this->getOrder($order->ID);
-                if (!$order_data) {
-                    continue;
-                }
+        
+        $post_by_order_id = array();
+        foreach ($posts as $post) {
+            $order_id = get_post_meta($post->ID, '_posti_id', true);
+            if (isset($order_id) && strlen($order_id) > 0) {
+                $post_by_order_id[$order_id] = $post->ID;
+            }
+        }
 
-                $tracking = $order_data['trackingCodes'];
-                if ($tracking) {
-                    if (is_array($tracking)) {
-                        $tracking = implode(', ', $tracking);
-                    }
-                    update_post_meta($order->ID, '_posti_api_tracking', $tracking);
-                }
-                $status = $order_data['status']['value'];
-                $this->logger->log("info", "Got order " . $order->ID . " status " . $status);
-                if ($status == 'Cancelled') {
-                    $_order = wc_get_order($order->ID);
-                    if ($_order) {
-                        $_order->update_status('cancelled', __('Cancelled by Posti Glue', 'posti-warehouse'), true);
-                    }
-                }
-                //if autocomplete order disabled, do not continue
-                if (!isset($options['posti_wh_field_autocomplete'])) {
-                    continue;
-                }
-                if ($status == 'Delivered') {
-                    $_order = wc_get_order($order->ID);
-                    if ($_order) {
-                        $_order->update_status('completed', __('Completed by Posti Glue', 'posti-warehouse'), true);
-                    }
-                }
+        $options = get_option('woocommerce_posti_warehouse_settings');
+        $autocomplete = $options['posti_wh_field_autocomplete'];
+        foreach ($orders as $order) {
+            $order_id = $order['externalId'];
+            $id = $post_by_order_id[$order_id];
+            if (isset($id) && strlen($id) > 0) {
+                $this->sync_order($id, $order, $autocomplete);
+            }
+        }
+
+        return true;
+    }
+
+    public function sync_order($id, $order, $autocomplete) {
+        $tracking = $order['trackingCodes'];
+        if ($tracking) {
+            if (is_array($tracking)) {
+                $tracking = implode(', ', $tracking);
+            }
+            update_post_meta($id, '_posti_api_tracking', $tracking);
+        }
+
+        $status = $order['status']['value'];
+        $this->logger->log("info", "Got order " . $id . " status " . $status);
+        if ($status == 'Cancelled') {
+            $_order = wc_get_order($id);
+            if ($_order) {
+                $_order->update_status('cancelled', __('Cancelled by Posti Glue', 'posti-warehouse'), true);
+            }
+        }
+        else if ($status == 'Delivered' && isset($autocomplete)) {
+            $_order = wc_get_order($id);
+            if ($_order) {
+                $_order->update_status('completed', __('Completed by Posti Glue', 'posti-warehouse'), true);
             }
         }
     }
@@ -272,23 +318,11 @@ class Order {
                 $order_items[] = [
                     "externalId" => (string) $item_counter,
                     "externalProductId" => $_product->get_sku(),
-                    "productEANCode" => $ean, //$_product->get_sku(),
+                    "productEANCode" => $ean,
                     "productUnitOfMeasure" => "KPL",
                     "productDescription" => $item['name'],
                     "externalWarehouseId" => $product_warehouse,
-                    //"weight" => 0,
-                    //"volume" => 0,
-                    "quantity" => $item['qty'],
-                        //"deliveredQuantity" => 0,
-                        /*
-                          "comments" => [
-                          [
-                          "name" => "string",
-                          "value" => "string",
-                          "type" => "string"
-                          ]
-                          ]
-                         */
+                    "quantity" => $item['qty']
                 ];
                 $item_counter++;
             }
@@ -355,47 +389,12 @@ class Order {
                 "email" => $_order->get_billing_email()
             ],
             "currency" => $_order->get_currency(),
-            /*
-              "additionalServices" => [
-              [
-              "serviceCode" => "string",
-              "telephone" => "string",
-              "email" => "string",
-              "attributes" => [
-              [
-              "name" => "string",
-              "value" => "string"
-              ]
-              ]
-              ]
-              ], */
             "serviceCode" => $service_code,
             "routingServiceCode" => $routing_service_code,
             "totalPrice" => $total_price,
             "totalTax" => $total_tax,
-            //"totalWeight" => 0,
             "totalWholeSalePrice" => $total_price + $total_tax,
             "deliveryOperator" => "Posti",
-            /*
-              "trackingCodes" => [
-              "string"
-              ],
-             */
-            /*
-              "comments" => [
-              [
-              "name" => "string",
-              "value" => "string",
-              "type" => "string"
-              ]
-              ],
-             * */
-            /*
-              "status" => [
-              "value" => "string",
-              "timestamp" => "string"
-              ],
-             */
             "rows" => $order_items
         );
 
