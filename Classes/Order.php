@@ -13,12 +13,21 @@ class Order {
     private $addTracking = false;
     private $api;
     private $logger;
+    private $status_mapping;
 
     public function __construct(Api $api, Logger $logger, $addTracking = false) {
         $this->api = $api;
         $this->logger = $logger;
         $this->addTracking = $addTracking;
-
+        
+        $statuses = array();
+        $statuses['Delivered'] = 'completed';
+        $statuses['Accepted'] = 'processing';
+        $statuses['Submitted'] = 'processing';
+        $statuses['Error'] = 'failed';
+        $statuses['Cancelled'] = 'cancelled';
+        $this->status_mapping = $statuses;
+        
         //on order status change
         add_action('woocommerce_order_status_changed', array($this, 'posti_check_order'), 10, 3);
         //api tracking columns
@@ -30,6 +39,7 @@ class Order {
         if ($this->addTracking) {
             add_action('woocommerce_email_order_meta', array($this, 'addTrackingToEmail'), 10, 4);
         }
+        
     }
 
     public function change_metadata_title_for_order_shipping_method($key, $meta, $item) {
@@ -135,13 +145,15 @@ class Order {
         foreach ($orders as $order) {
             $order_id = $order['externalId'];
             if (isset($order_id) && strlen($order_id) > 0) {
-                array_push($order_ids, $order_id);
+                array_push($order_ids, (string) $order_id);
             }
         }
         
         $posts_query = array(
             'post_type' => 'shop_order',
+            'post_status' => 'any',
             'meta_query' => array(
+                'relation' => 'AND',
                 array(
                     'key' => '_posti_id',
                     'value' => $order_ids,
@@ -161,7 +173,7 @@ class Order {
                 $post_by_order_id[$order_id] = $post->ID;
             }
         }
-
+        
         $options = get_option('woocommerce_posti_warehouse_settings');
         $autocomplete = $options['posti_wh_field_autocomplete'];
         foreach ($orders as $order) {
@@ -185,17 +197,28 @@ class Order {
         }
 
         $status = $order['status']['value'];
-        $this->logger->log("info", "Got order " . $id . " status " . $status);
-        if ($status == 'Cancelled') {
-            $_order = wc_get_order($id);
-            if ($_order) {
-                $_order->update_status('cancelled', __('Cancelled by Posti Glue', 'posti-warehouse'), true);
-            }
+        $status_new = $this->status_mapping[$status];
+        if (!isset($status_new)) {
+            return;
         }
-        else if ($status == 'Delivered' && isset($autocomplete)) {
-            $_order = wc_get_order($id);
-            if ($_order) {
-                $_order->update_status('completed', __('Completed by Posti Glue', 'posti-warehouse'), true);
+        
+        $_order = wc_get_order($id);
+        if ($_order === false) {
+            return;
+        }
+
+        $data = $_order->get_data();
+        $status_old = $data !== false ? $data['status'] : '';
+        if ($status_old !== $status_new) {
+            if ($status_new == 'completed') {
+                if (isset($autocomplete)) {
+                    $_order->update_status($status_new, "Posti Glue: $status", true);
+                    $this->logger->log("info", "Changed order $id status $status_old -> $status_new");
+                }
+            }
+            else {
+                $_order->update_status($status_new, "Posti Glue: $status", true);
+                $this->logger->log("info", "Changed order $id status $status_old -> $status_new");
             }
         }
     }

@@ -236,6 +236,10 @@ class Api {
     }
     
     public function getBalancesUpdatedSince($dttm_since, $size, $page = 0) {
+        if (!isset($dttm_since)) {
+            return [];
+        }
+        
         $products = $this->ApiCall('inventory/balances?modifiedFromDate=' . urlencode($dttm_since) . '&size=' . $size . '&page=' . $page, '', 'GET');
         return $products;
     }
@@ -261,6 +265,10 @@ class Api {
     }
     
     public function getOrdersUpdatedSince($dttm_since, $size, $page = 0) {
+        if (!isset($dttm_since)) {
+            return [];
+        }
+        
         $products = $this->ApiCall('orders?modifiedFromDate=' . urlencode($dttm_since) . '&size=' . $size . '&page=' . $page, '', 'GET');
         return $products;
     }

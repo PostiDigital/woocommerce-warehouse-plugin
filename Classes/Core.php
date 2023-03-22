@@ -517,11 +517,11 @@ class Core {
 
     public function posti_cronjob_sync_stock($options) {
         try {
-            $syncDttm = $this->get_option_datetime_sync($options, 'posti_wh_field_stock_sync_dttm');
-            $nextSyncDttm = (new \DateTime())->format(\DateTimeInterface::RFC3339_EXTENDED);
-            $synced = $this->product->sync($syncDttm);
+            $sync_dttm = $this->get_option_datetime_sync($options, 'posti_wh_field_stock_sync_dttm');
+            $next_sync_dttm = (new \DateTime())->format(\DateTimeInterface::RFC3339_EXTENDED);
+            $synced = $this->product->sync($sync_dttm);
 
-            return $synced ? $nextSyncDttm : false;
+            return $synced ? $next_sync_dttm : false;
 
         } catch (\Exception $e) {
             $this->logger->log("error", $e->getMessage());
@@ -532,11 +532,11 @@ class Core {
     
     public function posti_cronjob_sync_orders($options) {
         try {
-            $syncDttm = $this->get_option_datetime_sync($options, 'posti_wh_field_order_sync_dttm');
-            $nextSyncDttm = (new \DateTime())->format(\DateTimeInterface::RFC3339_EXTENDED);
-            $synced = $this->order->sync($syncDttm);
+            $sync_dttm = $this->get_option_datetime_sync($options, 'posti_wh_field_order_sync_dttm');
+            $next_sync_dttm = (new \DateTime())->format(\DateTimeInterface::RFC3339_EXTENDED);
+            $synced = $this->order->sync($sync_dttm);
 
-            return $synced ? $nextSyncDttm : false;
+            return $synced ? $next_sync_dttm : false;
 
         } catch (\Exception $e) {
             $this->logger->log("error", $e->getMessage());
@@ -574,8 +574,8 @@ class Core {
 
     private function get_option_datetime_sync($options, $option) {
         $value = $options[$option];
-        if (!isset($value)) {
-            $now = new \DateTime('now - 1 week');
+        if (!isset($value) || strlen($value) <= 0) {
+            $now = new \DateTime('now -7 day');
             $value = $now->format(\DateTimeInterface::RFC3339_EXTENDED);
         }
         
