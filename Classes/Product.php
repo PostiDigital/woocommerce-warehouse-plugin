@@ -250,178 +250,222 @@ class Product {
             $this->saveWCField($id, $post_id);
         }
     }
-
+    
     public function after_product_save($post_id) {
-        //update product information
-        $type = get_post_meta($post_id, '_posti_wh_stock_type', true);
-        $product_warehouse = get_post_meta($post_id, '_posti_wh_warehouse', true);
-        $product_distributor = get_post_meta($post_id, '_posti_wh_distribution', true);
         $options = get_option('woocommerce_posti_warehouse_settings');
-        $business_id = false;
-
-        if (isset($options['posti_wh_field_business_id'])) {
-            $business_id = $options['posti_wh_field_business_id'];
-        }
-
-        if (!$business_id) {
-            $this->logger->log("erorr", "Cannot add  product id " . $post_id . " no Business id set");
+        $business_id = $options['posti_wh_field_business_id'];
+        if (!isset($business_id) || strlen($business_id) == 0) {
+            $this->logger->log("error", "Cannot add  product id " . $post_id . " no Business id set");
             return;
         }
 
         $_product = wc_get_product($post_id);
-        $product_type = $_product->get_type();
-
+        $product_id_diffs = array();
+        $type = get_post_meta($post_id, '_posti_wh_stock_type', true);
         if ($type == 'Catalog') {
-            //if dropshipping, id without business_id
-            $product_id = $_product->get_sku();
-            update_post_meta($post_id, '_posti_id', $product_id);
-
             update_post_meta($post_id, '_posti_last_sync', 0);
-            $this->sync_products($business_id, [$product_id]);
+            
+            $product_id = $this->get_update_product_id($post_id, $business_id, $_product->get_sku(), $product_id_diffs);
+            if (isset($product_id) && strlen($product_id) > 0) {
+                $this->sync_products($business_id, [$product_id]);
+            }
         }
+        
+        $products = null;
+        $product_warehouse = get_post_meta($post_id, '_posti_wh_warehouse', true);
+        if ($product_warehouse && ($type == "Posti" || $type == "Store")) {
+            update_post_meta($post_id, '_posti_last_sync', 0);
 
-        if (($type == "Posti" || $type == "Store") && $product_warehouse) {
-            //id with business_id and sku
-            $product_id = $_product->get_sku();
-            update_post_meta($post_id, '_posti_id', $product_id);
-
-            $products = array();
-            $products_ids = array();
+            $product_distributor = get_post_meta($post_id, '_posti_wh_distribution', true);
             $wholesale_price = (float) str_ireplace(',', '.', get_post_meta($post_id, '_wholesale_price', true));
 
+            $product_type = $_product->get_type();
             if ($product_type == 'variable') {
-                $_products = $_product->get_available_variations();
-                foreach ($_products as $variation) {
-                    if (!$variation['sku']) {
-                        $this->logger->log("erorr", "Cannot add product id " . $post_id . " variation ". $variation['variation_id'] ." no SKU set");
-                        continue;
-                    }
-                    $variable_name = $_product->get_name();
-                    $posti_variable_id = $variation['sku'];
-                    update_post_meta($variation['variation_id'], '_posti_id', $posti_variable_id);
-                    update_post_meta($variation['variation_id'], '_posti_wh_stock_type', $type);
-                    $ean = get_post_meta($variation['variation_id'], '_ean', true);
-                    $specifications = [];
-                    $options = [
-                        "type"=> "Options",
-                        "properties"=> [
-                        ]
-                    ];
-                    //add attributes
-                    foreach ($variation['attributes'] as $attr_id => $attr) {
-                        $options["properties"][] = [
-                            "name" => (string)str_ireplace('attribute_', '', $attr_id),
-                            "value"=> (string)$attr,
-                            "specifier" => "",
-                            "description" => ""
-                        ];
-                        $variable_name .= ' ' . (string)$attr;
-                    }
-                    $specifications[] = $options;
-                    
-                    $product = array(
-                        'externalId' => $posti_variable_id,
-                        "supplierId" => $business_id,
-                        'descriptions' => array(
-                            'en' => array(
-                                'name' => $variable_name,
-                                'description' => $_product->get_description(),
-                                'specifications' => $specifications,
-                            )
-                        ),
-                        'eanCode' => $ean, //$_product->get_sku(),
-                        "unitOfMeasure" => "KPL",
-                        "status" => "ACTIVE",
-                        "recommendedRetailPrice" => (float) $variation['display_regular_price'],
-                        "currency" => get_woocommerce_currency(),
-                        "distributor" => $product_distributor,
-                        "isFragile" => get_post_meta($post_id, '_posti_fragile', true) ? true : false,
-                        "isDangerousGoods" => get_post_meta($post_id, '_posti_lq', true) ? true : false,
-                        "isOversized" => get_post_meta($post_id, '_posti_large', true) ? true : false,
-                    );
-
-                    $weight = $variation['weight'] ? $variation['weight'] : 0;
-                    $length = $variation['dimensions']['length'] ? $variation['dimensions']['length'] : 0;
-                    $width = $variation['dimensions']['width'] ? $variation['dimensions']['width'] : 0;
-                    $height = $variation['dimensions']['height'] ? $variation['dimensions']['height'] : 0;
-                    $product['measurements'] = array(
-                        "weight" => round(wc_get_weight($weight, 'kg'), 3),
-                        "length" => round(wc_get_dimension($length, 'm'), 3),
-                        "width" => round(wc_get_dimension($width, 'm'), 3),
-                        "height" => round(wc_get_dimension($height, 'm'), 3),
-                    );
-
-                    $balances = array(
-                        array(
-                            "retailerId" => $business_id,
-                            "catalogExternalId" => $product_warehouse,
-                            //"quantity" => 0.0,
-                            "wholesalePrice" => $wholesale_price ? $wholesale_price : (float) $variation['display_regular_price'],
-                            "currency" => get_woocommerce_currency()
-                        )
-                    );
-                    array_push($products_ids, $posti_variable_id);
-                    $products[] = array('product' => $product, 'balances' => $balances);
-                }
-            } else {
-                $product_id = $_product->get_sku();
-                $ean = get_post_meta($post_id, '_ean', true);
-                if (!$wholesale_price) {
-                    $wholesale_price = (float) $_product->get_price();
-                }
-                if (!$_product->get_sku()) {
-                    $this->logger->log("erorr", "Cannot add product id " . $post_id . " no SKU set");
-                    return false;
-                }
-                $product = array(
-                    'externalId' => $product_id,
-                    "supplierId" => $business_id,
-                    'descriptions' => array(
-                        'en' => array(
-                            'name' => $_product->get_name(),
-                            'description' => $_product->get_description()
-                        )
-                    ),
-                    'eanCode' => $ean, //$_product->get_sku(),
-                    "unitOfMeasure" => "KPL",
-                    "status" => "ACTIVE",
-                    "recommendedRetailPrice" => (float) $_product->get_price(),
-                    "currency" => get_woocommerce_currency(),
-                    "distributor" => $product_distributor,
-                    "isFragile" => get_post_meta($post_id, '_posti_fragile', true) ? true : false,
-                    "isDangerousGoods" => get_post_meta($post_id, '_posti_lq', true) ? true : false,
-                    "isOversized" => get_post_meta($post_id, '_posti_large', true) ? true : false,
-                );
-
-                $weight = $_product->get_weight();
-                $length = $_product->get_length();
-                $width = $_product->get_width();
-                $height = $_product->get_height();
-                $product['measurements'] = array(
-                    "weight" => round(wc_get_weight($weight, 'kg'), 3),
-                    "length" => round(wc_get_dimension($length, 'm'), 3),
-                    "width" => round(wc_get_dimension($width, 'm'), 3),
-                    "height" => round(wc_get_dimension($height, 'm'), 3),
-                );
-
-                $balances = array(
-                    array(
-                        "retailerId" => $business_id,
-                        "catalogExternalId" => $product_warehouse,
-                        "wholesalePrice" => $wholesale_price,
-                        "currency" => get_woocommerce_currency()
-                    )
-                );
-                array_push($products_ids, $product_id);
-                $products[] = array('product' => $product, 'balances' => $balances);
+                $products = $this->create_products_variations($post_id, $business_id,
+                        $_product, $product_distributor, $product_warehouse, $wholesale_price, $product_id_diffs);
             }
-            
-            if (count($products)) {
-                $this->logger->log("info", "Products " . implode(', ', $products_ids) . " sent to Posti: \n" . json_encode($products));
-                $this->api->addProduct($products);
-                $this->sync_products($business_id, $products_ids);
+            else {
+                $products = $this->create_products_simple($post_id, $business_id,
+                        $_product, $product_distributor, $product_warehouse, $wholesale_price, $product_id_diffs);
+
             }
         }
+        
+        if (isset($products) && count($products) > 0) {
+            $product_ids = array();
+            foreach ($products as $product) {
+                $product_id = $product['externalId'];
+                array_push($product_ids. $product_id);
+            }
+            $this->logger->log("info", "Products " . implode(', ', $product_ids) . " sent to Posti: \n" . json_encode($products));
+            $this->api->putProducts($products);
+            
+            $product_ids_obsolete = array();
+            foreach ($product_id_diffs as $diff) {
+                update_post_meta($diff->id, '_posti_id', $diff->to);
+                
+                if (isset($diff->from) && !$this->contains_product($products, $diff->from)) {
+                    array_push($product_ids_obsolete, $diff->from);
+                }
+            }
+            
+            if (count($product_ids_obsolete) > 0) {
+                $products_obsolete = array();
+                foreach ($product_ids_obsolete as $product_id_obsolete) {
+                    $product = array(
+                        'externalId' => $product_id_obsolete,
+                        'status' => 'EOS'
+                    );
+                    array_push($products_obsolete, array('product' => $product));
+                }
+                
+                $this->api->putProducts($products_obsolete);
+            }
+            
+            $this->sync_products($business_id, $product_ids);
+        }
+    }
+    
+    private function create_products_variations($post_id, $business_id,
+            $_product, $product_distributor, $product_warehouse, $wholesale_price, $product_id_diff) {
+
+        $result = array();
+        $variations = $_product->get_available_variations();
+        foreach ($variations as $variation) {
+            $variation_post_id = $variation['variation_id'];
+            $variation_product_id = $this->get_update_product_id($variation_post_id, $business_id, $variation['sku'], $product_id_diff);
+            if (!isset($variation_product_id) || strlen($variation_product_id) == 0) {
+                $this->logger->log("error", "Cannot add product id " . $post_id . " variation ". $variation['variation_id'] ." no SKU set");
+                continue;
+            }
+            
+            $variable_name = $_product->get_name();
+            update_post_meta($variation_post_id, '_posti_id', $variation_product_id);
+            update_post_meta($variation_post_id, '_posti_wh_stock_type', $type);
+            $ean = get_post_meta($variation_post_id, '_ean', true);
+            $specifications = [];
+            $options = [
+                'type' => 'Options',
+                'properties' => [
+                ]
+            ];
+            
+            foreach ($variation['attributes'] as $attr_id => $attr) {
+                $options["properties"][] = [
+                    'name' => (string) str_ireplace('attribute_', '', $attr_id),
+                    'value' => (string) $attr,
+                    'specifier' => '',
+                    'description' => ''
+                ];
+                $variable_name .= ' ' . (string) $attr;
+            }
+            $specifications[] = $options;
+
+            $product = array(
+                'externalId' => $variation_product_id,
+                "supplierId" => $business_id,
+                'descriptions' => array(
+                    'en' => array(
+                        'name' => $variable_name,
+                        'description' => $_product->get_description(),
+                        'specifications' => $specifications,
+                    )
+                ),
+                'eanCode' => $ean,
+                'unitOfMeasure' => 'KPL',
+                'status' => 'ACTIVE',
+                'recommendedRetailPrice' => (float) $variation['display_regular_price'],
+                'currency' => get_woocommerce_currency(),
+                'distributor' => $product_distributor,
+                'isFragile' => get_post_meta($post_id, '_posti_fragile', true) ? true : false,
+                'isDangerousGoods' => get_post_meta($post_id, '_posti_lq', true) ? true : false,
+                'isOversized' => get_post_meta($post_id, '_posti_large', true) ? true : false,
+            );
+
+            $weight = $variation['weight'] ? $variation['weight'] : 0;
+            $length = $variation['dimensions']['length'] ? $variation['dimensions']['length'] : 0;
+            $width = $variation['dimensions']['width'] ? $variation['dimensions']['width'] : 0;
+            $height = $variation['dimensions']['height'] ? $variation['dimensions']['height'] : 0;
+            $product['measurements'] = array(
+                'weight' => round(wc_get_weight($weight, 'kg'), 3),
+                'length' => round(wc_get_dimension($length, 'm'), 3),
+                'width' => round(wc_get_dimension($width, 'm'), 3),
+                'height' => round(wc_get_dimension($height, 'm'), 3),
+            );
+
+            $balances = array(
+                array(
+                    'retailerId' => $business_id,
+                    'catalogExternalId' => $product_warehouse,
+                    'wholesalePrice' => $wholesale_price ? $wholesale_price : (float) $variation['display_regular_price'],
+                    'currency' => get_woocommerce_currency()
+                )
+            );
+
+            array_push($result, array('product' => $product, 'balances' => $balances));
+        }
+        
+        return $result;
+    }
+    
+    private function create_products_simple($post_id, $business_id,
+            $_product, $product_distributor, $product_warehouse, $wholesale_price, $product_id_diffs) {
+
+        $result = array();
+        $ean = get_post_meta($post_id, '_ean', true);
+        if (!$wholesale_price) {
+            $wholesale_price = (float) $_product->get_price();
+        }
+
+        $product_id = $this->get_update_product_id($post_id, $business_id, $_product->get_sku(), $product_id_diffs);
+        if (!isset($product_id) || strlen($product_id) == 0) {
+            $this->logger->log("error", "Cannot add product id " . $post_id . " no SKU set");
+            return $result;
+        }
+
+        $product = array(
+            'externalId' => $product_id,
+            "supplierId" => $business_id,
+            'descriptions' => array(
+                'en' => array(
+                    'name' => $_product->get_name(),
+                    'description' => $_product->get_description()
+                )
+            ),
+            'eanCode' => $ean,
+            'unitOfMeasure' => 'KPL',
+            'status' => 'ACTIVE',
+            'recommendedRetailPrice' => (float) $_product->get_price(),
+            'currency' => get_woocommerce_currency(),
+            'distributor' => $product_distributor,
+            'isFragile' => get_post_meta($post_id, '_posti_fragile', true) ? true : false,
+            'isDangerousGoods' => get_post_meta($post_id, '_posti_lq', true) ? true : false,
+            'isOversized' => get_post_meta($post_id, '_posti_large', true) ? true : false,
+        );
+
+        $weight = $_product->get_weight();
+        $length = $_product->get_length();
+        $width = $_product->get_width();
+        $height = $_product->get_height();
+        $product['measurements'] = array(
+            'weight' => round(wc_get_weight($weight, 'kg'), 3),
+            'length' => round(wc_get_dimension($length, 'm'), 3),
+            'width' => round(wc_get_dimension($width, 'm'), 3),
+            'height' => round(wc_get_dimension($height, 'm'), 3),
+        );
+
+        $balances = array(
+            array(
+                'retailerId' => $business_id,
+                'catalogExternalId' => $product_warehouse,
+                'wholesalePrice' => $wholesale_price,
+                'currency' => get_woocommerce_currency()
+            )
+        );
+        
+        array_push($result, array('product' => $product, 'balances' => $balances));
+        
+        return $result;
     }
 
     private function saveWCField($name, $post_id) {
@@ -504,24 +548,12 @@ class Product {
             return;
         }
 
-        $prefix_deprecated = $business_id . '-';
-        $product_ids_deprecated = array();
-        foreach ($product_ids as $product_id) {
-            array_push($product_ids_deprecated, $prefix_deprecated . $product_id);
-        }
-
         $posts_query = array(
             'post_type' => ['product', 'product_variation'],
             'meta_query' => array(
-                'relation' => 'OR',
                 array(
                     'key' => '_posti_id',
                     'value' => $product_ids,
-                    'compare' => 'IN'
-                ),
-                array(
-                    'key' => '_posti_id',
-                    'value' => $product_ids_deprecated,
                     'compare' => 'IN'
                 )
             )
@@ -550,15 +582,6 @@ class Product {
                             $product = $product_with_balances['product'];
                             $product_id = $product['externalId'];
                             $id = $post_by_product_id[$product_id];
-                            if (!isset($id) || strlen($id) <= 0) {
-                                if (substr($product_id, 0, strlen($prefix_deprecated)) === $prefix_deprecated) {
-                                    $id = $post_by_product_id[substr($product_id, strlen($prefix_deprecated))];
-                                }
-                                else {
-                                    $id = $post_by_product_id[$prefix_deprecated . $product_id];
-                                }
-                            }
-                            
                             if (isset($id) && strlen($id) > 0) {
                                 $this->sync_product($id, $product_id, $product_with_balances['balances']);
                             }
@@ -602,11 +625,45 @@ class Product {
             $this->logger->log("info", "Set product $id ($product_id) stock: $total_stock_old -> $totalStock");
         }
 
-        update_post_meta($id, '_posti_id', $product_id);
-        update_post_meta($id, '_posti_last_sync', time());
         //if variation, update main product sync time
+        $post_id = $id;
         if ($_product->get_type() == 'variation') {
-            update_post_meta($_product->get_parent_id(), '_posti_last_sync', time());
+            $post_id = $_product->get_parent_id();
         }
+
+        if (isset($post_id)) {
+            update_post_meta($post_id, '_posti_last_sync', time());
+        }
+    }
+    
+    private function contains_product($products, $product_id) {
+        foreach ($products as $product) {
+            if ($product['externalId'] === $product_id) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    private function get_update_product_id($post_id, $business_id, $product_id_latest, $product_id_diffs) {
+        if (!isset($product_id_latest) || strlen($product_id_latest) == 0) {
+            return null;
+        }
+        
+        $product_id = get_post_meta($post_id, '_posti_id', true);
+        if (!isset($product_id) || strlen($product_id) == 0) {
+            $product_id = $product_id_latest;
+            array_push($product_id_diffs, array('id' => post_id, 'to' => $product_id_latest));
+        }
+        elseif ($product_id !== $product_id_latest) {
+            $product_id_deprecated = $business_id . '-' . $product_id_latest;
+            if ($product_id !== $product_id_deprecated) {
+                array_push($product_id_diffs, array('id' => post_id, 'from' => $product_id, 'to' => $product_id_latest));
+                $product_id = $product_id_latest; // SKU changed since last update
+            }
+        }
+        
+        return $product_id;
     }
 }

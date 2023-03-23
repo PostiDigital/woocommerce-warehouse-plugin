@@ -249,8 +249,8 @@ class Api {
         return $products;
     }
 
-    public function addProduct($product) {
-        $status = $this->ApiCall('inventory', $product, 'PUT');
+    public function putProducts($products) {
+        $status = $this->ApiCall('inventory', $products, 'PUT');
         return $status;
     }
 
