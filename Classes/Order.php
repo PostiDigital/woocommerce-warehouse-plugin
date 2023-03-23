@@ -337,10 +337,12 @@ class Order {
                 } else {
                     $_product = wc_get_product($item['product_id']);
                 }
+                
+                $external_id = get_post_meta($_product->get_id(), '_posti_id', true);
                 $ean = get_post_meta($_product->get_id(), '_ean', true);
                 $order_items[] = [
                     "externalId" => (string) $item_counter,
-                    "externalProductId" => $_product->get_sku(),
+                    "externalProductId" => $external_id,
                     "productEANCode" => $ean,
                     "productUnitOfMeasure" => "KPL",
                     "productDescription" => $item['name'],
