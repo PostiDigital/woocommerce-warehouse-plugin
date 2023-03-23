@@ -270,7 +270,7 @@ class Product {
                 $this->sync_products($business_id, [$product_id]);
             }
         }
-        
+
         $products = null;
         $product_warehouse = get_post_meta($post_id, '_posti_wh_warehouse', true);
         if ($product_warehouse && ($type == "Posti" || $type == "Store")) {
@@ -285,30 +285,30 @@ class Product {
                         $_product, $product_distributor, $product_warehouse, $wholesale_price, $product_id_diffs);
             }
             else {
+
                 $products = $this->create_products_simple($post_id, $business_id,
                         $_product, $product_distributor, $product_warehouse, $wholesale_price, $product_id_diffs);
 
             }
         }
-        
+
         if (isset($products) && count($products) > 0) {
             $product_ids = array();
             foreach ($products as $product) {
-                $product_id = $product['externalId'];
-                array_push($product_ids. $product_id);
+                $product_id = $product['product']['externalId'];
+                array_push($product_ids, $product_id);
             }
             $this->logger->log("info", "Products " . implode(', ', $product_ids) . " sent to Posti: \n" . json_encode($products));
             $this->api->putProducts($products);
-            
+
             $product_ids_obsolete = array();
             foreach ($product_id_diffs as $diff) {
-                update_post_meta($diff->id, '_posti_id', $diff->to);
-                
-                if (isset($diff->from) && !$this->contains_product($products, $diff->from)) {
-                    array_push($product_ids_obsolete, $diff->from);
+                update_post_meta($diff['id'], '_posti_id', $diff['to']);
+                if (isset($diff['from']) && !$this->contains_product($products, $diff['from'])) {
+                    array_push($product_ids_obsolete, $diff['from']);
                 }
             }
-            
+
             if (count($product_ids_obsolete) > 0) {
                 $products_obsolete = array();
                 foreach ($product_ids_obsolete as $product_id_obsolete) {
@@ -318,16 +318,15 @@ class Product {
                     );
                     array_push($products_obsolete, array('product' => $product));
                 }
-                
                 $this->api->putProducts($products_obsolete);
             }
-            
+
             $this->sync_products($business_id, $product_ids);
         }
     }
     
     private function create_products_variations($post_id, $business_id,
-            $_product, $product_distributor, $product_warehouse, $wholesale_price, $product_id_diff) {
+            $_product, $product_distributor, $product_warehouse, $wholesale_price, &$product_id_diff) {
 
         $result = array();
         $variations = $_product->get_available_variations();
@@ -409,7 +408,7 @@ class Product {
     }
     
     private function create_products_simple($post_id, $business_id,
-            $_product, $product_distributor, $product_warehouse, $wholesale_price, $product_id_diffs) {
+            $_product, $product_distributor, $product_warehouse, $wholesale_price, &$product_id_diffs) {
 
         $result = array();
         $ean = get_post_meta($post_id, '_ean', true);
@@ -462,9 +461,8 @@ class Product {
                 'currency' => get_woocommerce_currency()
             )
         );
-        
         array_push($result, array('product' => $product, 'balances' => $balances));
-        
+
         return $result;
     }
 
@@ -562,7 +560,7 @@ class Product {
         if (count($posts) == 0) {
             return;
         }
-        
+
         $post_by_product_id = array();
         foreach ($posts as $post) {
             $product_id = get_post_meta($post->ID, '_posti_id', true);
@@ -646,11 +644,11 @@ class Product {
         return false;
     }
     
-    private function get_update_product_id($post_id, $business_id, $product_id_latest, $product_id_diffs) {
+    private function get_update_product_id($post_id, $business_id, $product_id_latest, &$product_id_diffs) {
         if (!isset($product_id_latest) || strlen($product_id_latest) == 0) {
             return null;
         }
-        
+
         $product_id = get_post_meta($post_id, '_posti_id', true);
         if (!isset($product_id) || strlen($product_id) == 0) {
             $product_id = $product_id_latest;
@@ -659,11 +657,11 @@ class Product {
         elseif ($product_id !== $product_id_latest) {
             $product_id_deprecated = $business_id . '-' . $product_id_latest;
             if ($product_id !== $product_id_deprecated) {
-                array_push($product_id_diffs, array('id' => post_id, 'from' => $product_id, 'to' => $product_id_latest));
+                array_push($product_id_diffs, array('id' => $post_id, 'from' => $product_id, 'to' => $product_id_latest));
                 $product_id = $product_id_latest; // SKU changed since last update
             }
         }
-        
+
         return $product_id;
     }
 }
