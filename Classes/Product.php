@@ -163,14 +163,12 @@ $this->logger->log("info", "redirect_to " . $redirect_to . ", action = " . $acti
     }
 
     public function get_ajax_post_warehouse() {
-
-        if (!isset($_POST['catalog_type'])) {
-            wp_die('', '', 501);
-        }
         $warehouses = $this->api->getWarehouses();
         $warehouses_options = array();
+        
+        $catalogType = $_POST['catalog_type'];
         foreach ($warehouses as $warehouse) {
-            if ($warehouse['catalogType'] !== $_POST['catalog_type']) {
+            if (isset($catalogType) && $warehouse['catalogType'] !== $catalogType) {
                 continue;
             }
             $warehouses_options[] = array('value' => $warehouse['externalId'], 'name' => $warehouse['catalogName'] . ' (' . $warehouse['externalId'] . ')');
