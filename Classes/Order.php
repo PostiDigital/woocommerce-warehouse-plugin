@@ -410,8 +410,8 @@ class Order {
                 "postalCode" => $_order->get_shipping_postcode(),
                 "postOffice" => $_order->get_shipping_city(),
                 "country" => $_order->get_shipping_country(),
-                "telephone" => $_order->get_billing_phone(),
-                "email" => $_order->get_billing_email()
+                "telephone" => $_order->get_shipping_phone(),
+                "email" => $_order->get_shipping_email()
             ],
             "currency" => $_order->get_currency(),
             "serviceCode" => $service_code,
