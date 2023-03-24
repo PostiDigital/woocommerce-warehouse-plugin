@@ -299,6 +299,9 @@ class Order {
           $this->logger->log("info", "Order id " . $_order->get_id() . " set _posti_id " . $posti_order_id);
           }
          */
+        
+        $shipping_phone = $_order->get_shipping_phone();
+        $shipping_email = get_post_meta($_order->get_id(), '_shipping_email', true);
         $order = array(
             "externalId" => $posti_order_id,
             "clientId" => (string) $business_id,
@@ -353,8 +356,8 @@ class Order {
                 "postalCode" => $_order->get_shipping_postcode(),
                 "postOffice" => $_order->get_shipping_city(),
                 "country" => $_order->get_shipping_country(),
-                "telephone" => $_order->get_billing_phone(),
-                "email" => $_order->get_billing_email()
+                "telephone" => (!empty($shipping_phone) ? $shipping_phone : $order->get_billing_phone()),
+                "email" => (!empty($shipping_email) ? $shipping_email : $order->get_billing_email())
             ],
             "currency" => $_order->get_currency(),
             /*
