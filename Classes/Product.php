@@ -43,28 +43,27 @@ class Product {
         add_filter('handle_bulk_actions-edit-product', array($this, 'handle_bulk_actions_publish_products'), 10, 3);
     }
 
-public function bulk_actions_publish_products($bulk_actions) {
-    //$bulk_actions['_posti_wh_bulk_actions_publish_products'] = __( 'Publish to warehouse (Posti)', 'posti-warehouse' );
-    $bulk_actions['_posti_wh_bulk_actions_publish_products'] = 'Publish to warehouse (Posti)';
-    return $bulk_actions;
-}
-
-public function handle_bulk_actions_publish_products($redirect_to, $action, $post_ids) {
-$this->logger->log("info", "redirect_to " . $redirect_to . ", action = " . $action . ", request param = " . $_REQUEST['_posti_wh_bulk_actions_publish_products'] . ", ids = " . print_r($post_ids, true));
-    if ($action !== '_posti_wh_bulk_actions_publish_products') {
-        return $redirect_to;
-    } else if (!isset( $_REQUEST['_posti_wh_bulk_actions_publish_products']) || empty($_REQUEST['_posti_wh_bulk_actions_publish_products'])) {
-        return $redirect_to;
+    public function bulk_actions_publish_products($bulk_actions) {
+        //$bulk_actions['_posti_wh_bulk_actions_publish_products'] = __( 'Publish to warehouse (Posti)', 'posti-warehouse' );
+        $bulk_actions['_posti_wh_bulk_actions_publish_products'] = 'Publish to warehouse (Posti)';
+        return $bulk_actions;
     }
 
-//    return $redirect_to = add_query_arg( array(
-//        'write_downloads' => '1',
-//        'processed_count' => count( $processed_ids ),
-//        'processed_ids' => implode( ',', $processed_ids ),
-//    ), $redirect_to );
-    
-    return $redirect_to;
-}
+    public function handle_bulk_actions_publish_products($redirect_to, $action, $post_ids) {
+        if ($action !== '_posti_wh_bulk_actions_publish_products') {
+            return $redirect_to;
+        } else if (!isset( $_REQUEST['_posti_wh_bulk_actions_publish_products']) || empty($_REQUEST['_posti_wh_bulk_actions_publish_products'])) {
+            return $redirect_to;
+        }
+
+    //    return $redirect_to = add_query_arg( array(
+    //        'write_downloads' => '1',
+    //        'processed_count' => count( $processed_ids ),
+    //        'processed_ids' => implode( ',', $processed_ids ),
+    //    ), $redirect_to );
+
+        return $redirect_to;
+    }
 
     public function woocom_simple_product_ean_field() {
         global $woocommerce, $post;
@@ -660,7 +659,7 @@ $this->logger->log("info", "redirect_to " . $redirect_to . ", action = " . $acti
     
     private function contains_product($products, $product_id) {
         foreach ($products as $product) {
-            if ($product['externalId'] === $product_id) {
+            if ($product['product']['externalId'] === $product_id) {
                 return true;
             }
         }

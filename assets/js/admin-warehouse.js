@@ -80,19 +80,16 @@ jQuery(function ($) {
     */
     check_stock_type();
     
-
     $('.posti-wh-select2').select2();
     
     var attach_action_bulk_publish = function(){
         $(document).ready(function() {
-            // Watch the bulk actions dropdown, looking for custom bulk actions
             $("#bulk-action-selector-top, #bulk-action-selector-bottom").on('change', function(e) {
                 var $this = $(this);
 
                 if ( $this.val() === '_posti_wh_bulk_actions_publish_products' ) {                    
                     //$('#posti_wh_tab').addClass('loading');
                     var opts_warehouses = $("<select>", { name: "_posti_wh_bulk_actions_publish_products" });
-                    opts_warehouses.html('');
                     opts_warehouses.attr("id", "_posti_wh_warehouse_bulk_publish");
                     $this.after(opts_warehouses);
 
