@@ -82,5 +82,17 @@ jQuery(function ($) {
 
     $('.posti-wh-select2').select2();
 
+    $(document).ready(function() {
+        // Watch the bulk actions dropdown, looking for custom bulk actions
+        $("#bulk-action-selector-top, #bulk-action-selector-bottom").on('change', function(e) {
+            var $this = $(this);
+
+            if ( $this.val() === '_posti_wh_bulk_actions_publish_products' ) {
+                $this.after($("<input>", { type: 'text', placeholder: "e.g. 14.99", name: "_posti_wh_bulk_actions_publish_products" }).addClass("posti_wh_bulk_actions_publish_products_elements"));
+            } else {
+                $(".posti_wh_bulk_actions_publish_products_elements").remove();
+            }
+        }); 
+    });
 
 });
