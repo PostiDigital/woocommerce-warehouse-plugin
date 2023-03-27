@@ -89,18 +89,20 @@ jQuery(function ($) {
 
                 if ( $this.val() === '_posti_wh_bulk_actions_publish_products' ) {                    
                     //$('#posti_wh_tab').addClass('loading');
-                    var opts_warehouses = $("<select>", { name: "_posti_wh_bulk_actions_publish_products" });
-                    opts_warehouses.attr("id", "_posti_wh_warehouse_bulk_publish");
+                    var opts_warehouses = $("<select>", { name: "_posti_wh_warehouse_bulk" });
+                    opts_warehouses.attr("id", "_posti_wh_warehouse_bulk");
                     $this.after(opts_warehouses);
 
                     var data = {
                         action: 'posti_warehouses'
                     };
                     $.post(woocommerce_admin_meta_boxes.ajax_url, data, function (response) {
-                        $("#_posti_wh_warehouse_bulk_publish").append('<option value="">Select warehouse</option>');
+                        $("#_posti_wh_warehouse_bulk").append('<option value="">Select warehouse</option>');
                         var data = JSON.parse(response);
                         $.each(data, function () {
-                            $("#_posti_wh_warehouse_bulk_publish").append('<option value="' + this.value + '">' + this.name + '</option>');
+                            if (this.type !== 'Catalog') { // product with Catalog warehouse are not published
+                                $("#_posti_wh_warehouse_bulk").append('<option value="' + this.value + '">' + this.name + '</option>');
+                            }
                         });
                     }).fail(function () {
                     }).always(function () {
@@ -109,7 +111,7 @@ jQuery(function ($) {
                     
                 } else {
                     //$(".posti_wh_bulk_actions_publish_products_elements").remove();
-                    $("#_posti_wh_warehouse_bulk_publish").remove();
+                    $("#_posti_wh_warehouse_bulk").remove();
                     
                 }
             }); 
