@@ -44,8 +44,19 @@ class Product {
     }
 
     public function bulk_actions_publish_products($bulk_actions) {
-        //$bulk_actions['_posti_wh_bulk_actions_publish_products'] = __( 'Publish to warehouse (Posti)', 'posti-warehouse' );
-        $bulk_actions['_posti_wh_bulk_actions_publish_products'] = 'Publish to warehouse (Posti)';
+        $has_warehouse_workflow = false;
+        $warehouses = $this->api->getWarehouses();
+        foreach ($warehouses as $warehouse) {
+            if ($warehouse['catalogType'] !== 'Catalog') {
+                $has_warehouse_workflow = true;
+                break;
+            }
+        }
+        
+        if ($has_warehouse_workflow) {
+            $bulk_actions['_posti_wh_bulk_actions_publish_products'] = __( 'Publish to warehouse (Posti)', 'posti-warehouse' );
+        }
+
         return $bulk_actions;
     }
 
@@ -649,31 +660,25 @@ class Product {
             return;
         }
 
-        $totalStock = 0;
-        if (isset($balances) && is_array($balances)) {
-            $stock = 0;
-            $sharedStock = 0;
-            foreach ($balances as $balance) {
-                if (isset($balance['quantity'])) {
-                    if (isset($balance['sharedStock']) && $balance['sharedStock']) {
-                        $sharedStock = $balance['quantity'];
-                    }
-                    else {
-                        $stock += $balance['quantity'];
+        $product_warehouse = get_post_meta($id, '_posti_wh_warehouse', true);
+        if (!empty($product_warehouse)) {
+            $totalStock = 0;
+            if (isset($balances) && is_array($balances)) {
+                foreach ($balances as $balance) {
+                    if (isset($balance['quantity']) && $balance['catalogExternalId'] === $product_warehouse) {
+                        $totalStock += $balance['quantity'];
                     }
                 }
             }
 
-            $totalStock = $stock + $sharedStock;
+            $total_stock_old = $_product->get_stock_quantity();
+            if (!isset($total_stock_old) || $total_stock_old != $totalStock) {
+                $_product->set_stock_quantity($totalStock);
+                $_product->save();
+                $this->logger->log("info", "Set product $id ($product_id) stock: $total_stock_old -> $totalStock");
+            }
         }
-
-        $total_stock_old = $_product->get_stock_quantity();
-        if (!isset($total_stock_old) || $total_stock_old != $totalStock) {
-            $_product->set_stock_quantity($totalStock);
-            $_product->save();
-            $this->logger->log("info", "Set product $id ($product_id) stock: $total_stock_old -> $totalStock");
-        }
-
+        
         //if variation, update main product sync time
         $post_id = $id;
         if ($_product->get_type() == 'variation') {
