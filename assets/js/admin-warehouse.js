@@ -65,15 +65,15 @@ jQuery(function ($) {
 
                 if ( $this.val() === '_posti_wh_bulk_actions_publish_products' ) {                    
                     //$('#posti_wh_tab').addClass('loading');
-                    var opts_warehouses = $("<select>", { name: "_posti_wh_warehouse_bulk" });
-                    opts_warehouses.attr("id", "_posti_wh_warehouse_bulk");
+                    var opts_warehouses = $("<select>", { name: "_posti_wh_warehouse_bulk_publish" });
+                    opts_warehouses.attr("id", "_posti_wh_warehouse_bulk_publish");
 
                     var data = {
                         action: 'posti_warehouses',
                         catalog_type: 'Posti'
                     };
                     $.post(woocommerce_admin_meta_boxes.ajax_url, data, function (response) {
-                        var options = $("#_posti_wh_warehouse_bulk");
+                        var options = $("#_posti_wh_warehouse_bulk_publish");
                         var whs = JSON.parse(response);
                         if (whs.length !== 1) {
                             options.append('<option value="">Select warehouse</option>');
@@ -94,12 +94,12 @@ jQuery(function ($) {
                     $this.after(opts_warehouses);
 
                 } else {
-                    //$(".posti_wh_bulk_actions_publish_products_elements").remove();
-                    $("#_posti_wh_warehouse_bulk").remove();
+                    $("#_posti_wh_warehouse_bulk_publish").remove();
                     
                 }
             }); 
         });
     };
+
     attach_action_bulk_publish();
 });

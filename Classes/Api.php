@@ -136,7 +136,7 @@ class Api {
             $this->logger->log("info", json_encode($data));
         }
 
-        if ($action == "POST" || $action == "PUT") {
+        if ($action == "POST" || $action == "PUT" || $action == "DELETE") {
             $payload = json_encode($data);
 
             $header[] = 'Content-Type: application/json';
@@ -148,7 +148,7 @@ class Api {
             }
             curl_setopt($curl, CURLOPT_POSTFIELDS, $payload);
         }
-        if ($action == "GET" && is_array($data)){
+        elseif ($action == "GET" && is_array($data)){
             $url .= '?' . http_build_query($data);
         }
         $this->logger->log("info", $env . "Request to: " . $url);
@@ -244,13 +244,13 @@ class Api {
         return $products;
     }
 
-    public function getProductsByWarehouse($id, $attrs= '') {
-        $products = $this->ApiCall('catalogs/' . $id . '/products', $attrs, 'GET');
-        return $products;
-    }
-
-    public function putProducts($products) {
+    public function putInventory($products) {
         $status = $this->ApiCall('inventory', $products, 'PUT');
+        return $status;
+    }
+    
+    public function deleteInventory($products) {
+        $status = $this->ApiCall('inventory', $products, 'DELETE');
         return $status;
     }
 

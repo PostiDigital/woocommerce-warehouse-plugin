@@ -18,27 +18,22 @@ class Product {
         $this->logger = $logger;
 
         add_action('admin_notices', array($this, 'posti_notices'));
-        //upate ajax warehouses
+
         add_action('wp_ajax_posti_warehouses', array($this, 'get_ajax_posti_warehouse'));
 
         add_filter('woocommerce_product_data_tabs', array($this, 'posti_wh_product_tab'), 99, 1);
-
         add_action('woocommerce_product_data_panels', array($this, 'posti_wh_product_tab_fields'));
-
         add_action('woocommerce_process_product_meta', array($this, 'posti_wh_product_tab_fields_save'));
-
         add_action('woocommerce_process_product_meta', array($this, 'after_product_save'), 99);
-        //add_action('save_post_product', array($this, 'after_product_save'), 99, 3);
-        //EAN field
+
         add_action('woocommerce_product_options_inventory_product_data', array($this, 'woocom_simple_product_ean_field'), 10, 1);
-        //wholesale field
         add_action('woocommerce_product_options_general_product_data', array($this, 'woocom_simple_product_wholesale_field'), 10, 1);
 
         add_action('woocommerce_product_after_variable_attributes', array($this, 'variation_settings_fields'), 10, 3);
         add_action('woocommerce_save_product_variation', array($this, 'save_variation_settings_fields'), 10, 2);
         
-        add_filter('bulk_actions-edit-product', array($this, 'bulk_actions_publish_products'));
-        add_filter('handle_bulk_actions-edit-product', array($this, 'handle_bulk_actions_publish_products'), 10, 3);
+        add_filter('bulk_actions-edit-product', array($this, 'bulk_actions_warehouse_products'));
+        add_filter('handle_bulk_actions-edit-product', array($this, 'handle_bulk_actions_warehouse_products'), 10, 3);
         
         add_filter('manage_edit-product_columns', array($this, 'custom_columns_register'), 11);
         add_action('manage_product_posts_custom_column', array($this, 'custom_columns_show'), 10, 2);
@@ -58,29 +53,25 @@ class Product {
         }
     }
     
-    public function bulk_actions_publish_products($bulk_actions) {
+    public function bulk_actions_warehouse_products($bulk_actions) {
         if ($this->has_warehouse()) {
             $bulk_actions['_posti_wh_bulk_actions_publish_products'] = __( 'Publish to warehouse (Posti)', 'posti-warehouse' );
+            $bulk_actions['_posti_wh_bulk_actions_remove_products'] = __( 'Remove from warehouse (Posti)', 'posti-warehouse' );
         }
 
         return $bulk_actions;
     }
 
-    public function handle_bulk_actions_publish_products($redirect_to, $action, $post_ids) {
-        if ($action !== '_posti_wh_bulk_actions_publish_products') {
-            return $redirect_to;
-        } else if (!isset($_REQUEST['_posti_wh_warehouse_bulk']) || empty($_REQUEST['_posti_wh_warehouse_bulk'])) {
-            return $redirect_to;
-        }
+    public function handle_bulk_actions_warehouse_products($redirect_to, $action, $post_ids) {
+        if ($action === '_posti_wh_bulk_actions_publish_products') {
+            $warehouse = $_REQUEST['_posti_wh_warehouse_bulk_publish'];
+            if (!empty($warehouse)) {
+                $this->handle_products($post_ids, $warehouse);
+            }
 
-        $warehouse = $_REQUEST['_posti_wh_warehouse_bulk'];
-        $this->publish_products($post_ids, $warehouse);
-        
-    //    return $redirect_to = add_query_arg( array(
-    //        'write_downloads' => '1',
-    //        'processed_count' => count( $processed_ids ),
-    //        'processed_ids' => implode( ',', $processed_ids ),
-    //    ), $redirect_to );
+        } elseif ($action === '_posti_wh_bulk_actions_remove_products') {
+            $this->handle_products($post_ids, '--delete');
+        }
 
         return $redirect_to;
     }
@@ -197,14 +188,7 @@ class Product {
                 }
                 $warehouses_options[$warehouse['externalId']] = $warehouse['catalogName'] . ' (' . $warehouse['externalId'] . ')';
             }
-            //can be used for product mapping
-            /*
-              $products_options = array('' => 'Select product');
-              $product = get_post_meta($post->ID, '_posti_wh_product', true);
-              if ($type == "Catalog" && $product_warehouse) {
-              $products_options = $this->parseApiProductsResponse($this->api->getProductsByWarehouse($product_warehouse));
-              }
-             */
+
             woocommerce_wp_select(
                     array(
                         'id' => '_posti_wh_stock_type',
@@ -224,17 +208,7 @@ class Product {
                         'value' => $product_warehouse
                     )
             );
-            /*
-              woocommerce_wp_select(
-              array(
-              'id' => '_posti_wh_product',
-              'class' => 'select short posti-wh-select2',
-              'label' => __('Catalog product', 'posti-warehouse'),
-              'options' => $products_options,
-              'value' => $product
-              )
-              );
-             */
+
             woocommerce_wp_text_input(
                     array(
                         'id' => '_posti_wh_distribution',
@@ -259,23 +233,26 @@ class Product {
 
     public function posti_wh_product_tab_fields_save($post_id) {
 
-        $this->saveWCField('_posti_wh_stock_type', $post_id);
-        $this->saveWCField('_posti_wh_warehouse', $post_id);
-        $this->saveWCField('_posti_wh_product', $post_id);
-        $this->saveWCField('_posti_wh_distribution', $post_id);
-        $this->saveWCField('_ean', $post_id);
-        $this->saveWCField('_wholesale_price', $post_id);
+        $this->save_form_field('_posti_wh_stock_type', $post_id);
+        $this->save_form_field('_posti_wh_product', $post_id);
+        $this->save_form_field('_posti_wh_distribution', $post_id);
+        $this->save_form_field('_ean', $post_id);
+        $this->save_form_field('_wholesale_price', $post_id);
 
         foreach (Dataset::getServicesTypes() as $id => $name) {
-            $this->saveWCField($id, $post_id);
+            $this->save_form_field($id, $post_id);
         }
+        
+        $warehouse = $_POST['_posti_wh_warehouse'];
+        update_post_meta($post_id, '_posti_wh_warehouse_single', (empty($warehouse) ? '--delete' : $warehouse));
     }
     
     public function after_product_save($post_id) {
-        $this->publish_products([$post_id]);
+        $warehouse = get_post_meta($post_id, '_posti_wh_warehouse_single', true);
+        $this->handle_products([$post_id], $warehouse);
     }
     
-    public function publish_products($post_ids, $product_warehouse_override = false) {
+    public function handle_products($post_ids, $product_warehouse_override) {
         $options = get_option('woocommerce_posti_warehouse_settings');
         $business_id = $options['posti_wh_field_business_id'];
         if (!isset($business_id) || strlen($business_id) == 0) {
@@ -285,12 +262,22 @@ class Product {
 
         $products = array();
         $product_id_diffs = array();
+        $product_whs_diffs = array();
         foreach ($post_ids as $post_id) {
             $_product = wc_get_product($post_id);
 
             $product_warehouse = get_post_meta($post_id, '_posti_wh_warehouse', true);
-            if ($product_warehouse_override !== false // condition must not include empty string
-                && (empty($product_warehouse) || $product_warehouse !== $product_warehouse_override)) {
+            if ($product_warehouse_override === '--delete') {
+                if (!empty($product_warehouse)) {
+                    array_push($product_whs_diffs, array('id' => $post_id, 'from' => $product_warehouse));
+
+                    delete_post_meta($post_id, '_posti_wh_warehouse');
+                    $product_warehouse = '';
+                }
+            }
+            elseif (!empty($product_warehouse_override) && $product_warehouse_override !== $product_warehouse) {
+                array_push($product_whs_diffs, array('id' => $post_id, 'from' => $product_warehouse, 'to' => $product_warehouse_override));
+
                 update_post_meta($post_id, '_posti_wh_warehouse', $product_warehouse_override);
                 $product_warehouse = $product_warehouse_override;
             }
@@ -320,7 +307,7 @@ class Product {
  */
             }
 
-            if ($product_warehouse && ($type == "Posti" || $type == "Store")) {
+            if (!empty($product_warehouse) && ($type == "Posti" || $type == "Store")) {
                 update_post_meta($post_id, '_posti_last_sync', 0);
 
                 $product_distributor = get_post_meta($post_id, '_posti_wh_distribution', true);
@@ -340,14 +327,14 @@ class Product {
             }
         }
 
-        if (isset($products) && count($products) > 0) {
+        if (count($products) > 0) {
             $product_ids = array();
             foreach ($products as $product) {
                 $product_id = $product['product']['externalId'];
                 array_push($product_ids, $product_id);
             }
             $this->logger->log("info", "Products " . implode(', ', $product_ids) . " sent to Posti: \n" . json_encode($products));
-            $this->api->putProducts($products);
+            $this->api->putInventory($products);
 
             $product_ids_obsolete = array();
             foreach ($product_id_diffs as $diff) {
@@ -367,10 +354,35 @@ class Product {
                     array_push($products_obsolete, array('product' => $product));
                 }
 
-                $this->api->putProducts($products_obsolete);
+                $this->api->putInventory($products_obsolete);
             }
 
             $this->sync_products($business_id, $product_ids);
+        }
+
+        if (count($product_whs_diffs) > 0) {
+            $product_balances_obsolete = array();
+            foreach ($product_whs_diffs as $diff) {
+                $product_id = get_post_meta($diff['id'], '_posti_id', true);
+                $warehouse = $diff['from'];
+                if (!empty($product_id) && !empty($warehouse)) {
+                    $product_balance = array(
+                        'product' => array('externalId' => $product_id),
+                        'balances' => array(
+                            array(
+                                'retailerId' => $business_id,
+                                'catalogExternalId' => $warehouse
+                            )
+                        )
+                    );
+
+                    array_push($product_balances_obsolete, $product_balance);
+                }
+            }
+
+            if (count($product_balances_obsolete) > 0) {
+                $this->api->deleteInventory($product_balances_obsolete);
+            }
         }
     }
     
@@ -504,12 +516,8 @@ class Product {
                 'currency' => get_woocommerce_currency()
             )
         );
-        array_push($products, array('product' => $product, 'balances' => $balances));
-    }
 
-    private function saveWCField($name, $post_id) {
-        $value = isset($_POST[$name]) ? $_POST[$name] : '';
-        update_post_meta($post_id, $name, $value);
+        array_push($products, array('product' => $product, 'balances' => $balances));
     }
 
     public function posti_notices() {
@@ -668,7 +676,14 @@ class Product {
             update_post_meta($post_id, '_posti_last_sync', time());
         }
     }
-    
+
+    private function save_form_field($name, $post_id) {
+        $value = isset($_POST[$name]) ? $_POST[$name] : '';
+        update_post_meta($post_id, $name, $value);
+        
+        return $value;
+    }
+
     private function contains_product($products, $product_id) {
         foreach ($products as $product) {
             if ($product['product']['externalId'] === $product_id) {
@@ -678,7 +693,7 @@ class Product {
         
         return false;
     }
-    
+
     private function has_warehouse() {
         $warehouses = $this->api->getWarehouses();
         foreach ($warehouses as $warehouse) {
@@ -689,7 +704,7 @@ class Product {
         
         return false;
     }
-    
+
     private function get_update_product_id($post_id, $business_id, $product_id_latest, &$product_id_diffs) {
         if (!isset($product_id_latest) || strlen($product_id_latest) == 0) {
             return null;
