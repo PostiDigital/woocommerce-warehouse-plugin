@@ -91,24 +91,32 @@ jQuery(function ($) {
                     //$('#posti_wh_tab').addClass('loading');
                     var opts_warehouses = $("<select>", { name: "_posti_wh_warehouse_bulk" });
                     opts_warehouses.attr("id", "_posti_wh_warehouse_bulk");
-                    $this.after(opts_warehouses);
 
                     var data = {
-                        action: 'posti_warehouses'
+                        action: 'posti_warehouses',
+                        catalog_type: 'Posti'
                     };
                     $.post(woocommerce_admin_meta_boxes.ajax_url, data, function (response) {
-                        $("#_posti_wh_warehouse_bulk").append('<option value="">Select warehouse</option>');
-                        var data = JSON.parse(response);
-                        $.each(data, function () {
-                            if (this.type !== 'Catalog') { // product with Catalog warehouse are not published
-                                $("#_posti_wh_warehouse_bulk").append('<option value="' + this.value + '">' + this.name + '</option>');
-                            }
+                        var options = $("#_posti_wh_warehouse_bulk");
+                        var whs = JSON.parse(response);
+                        if (whs.length !== 1) {
+                            options.append('<option value="">Select warehouse</option>');
+                        }
+                        
+                        $.each(whs, function () {
+                            options.append('<option value="' + this.value + '">' + this.name + '</option>');
                         });
+                        
+                        if (whs.length === 1) {
+                            options.hide();
+                        }
                     }).fail(function () {
                     }).always(function () {
                         //$('#posti_wh_tab').removeClass('loading');
                     });
-                    
+
+                    $this.after(opts_warehouses);
+
                 } else {
                     //$(".posti_wh_bulk_actions_publish_products_elements").remove();
                     $("#_posti_wh_warehouse_bulk").remove();

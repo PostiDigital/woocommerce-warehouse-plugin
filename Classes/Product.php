@@ -47,7 +47,7 @@ class Product {
         $has_warehouse_workflow = false;
         $warehouses = $this->api->getWarehouses();
         foreach ($warehouses as $warehouse) {
-            if ($warehouse['catalogType'] !== 'Catalog') {
+            if ($warehouse['catalogType'] === 'Posti') {
                 $has_warehouse_workflow = true;
                 break;
             }
