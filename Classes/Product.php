@@ -19,9 +19,7 @@ class Product {
 
         add_action('admin_notices', array($this, 'posti_notices'));
         //upate ajax warehouses
-        add_action('wp_ajax_posti_warehouses', array($this, 'get_ajax_post_warehouse'));
-        //upate ajax products
-        add_action('wp_ajax_posti_products', array($this, 'get_ajax_posti_products'));
+        add_action('wp_ajax_posti_warehouses', array($this, 'get_ajax_posti_warehouse'));
 
         add_filter('woocommerce_product_data_tabs', array($this, 'posti_wh_product_tab'), 99, 1);
 
@@ -41,19 +39,27 @@ class Product {
         
         add_filter('bulk_actions-edit-product', array($this, 'bulk_actions_publish_products'));
         add_filter('handle_bulk_actions-edit-product', array($this, 'handle_bulk_actions_publish_products'), 10, 3);
+        
+        add_filter('manage_edit-product_columns', array($this, 'custom_columns_register'), 11);
+        add_action('manage_product_posts_custom_column', array($this, 'custom_columns_show'), 10, 2);
     }
-
-    public function bulk_actions_publish_products($bulk_actions) {
-        $has_warehouse_workflow = false;
-        $warehouses = $this->api->getWarehouses();
-        foreach ($warehouses as $warehouse) {
-            if ($warehouse['catalogType'] === 'Posti') {
-                $has_warehouse_workflow = true;
-                break;
-            }
+    
+    public function custom_columns_register($columns) {
+        if ($this->has_warehouse()) {
+            $columns['warehouse'] = __( 'Warehouse','posti-warehouse');
         }
         
-        if ($has_warehouse_workflow) {
+        return $columns;
+    }
+
+    public function custom_columns_show($column, $product_id) {
+        if ($column === 'warehouse') {
+            echo get_post_meta($product_id, '_posti_wh_warehouse', true);
+        }
+    }
+    
+    public function bulk_actions_publish_products($bulk_actions) {
+        if ($this->has_warehouse()) {
             $bulk_actions['_posti_wh_bulk_actions_publish_products'] = __( 'Publish to warehouse (Posti)', 'posti-warehouse' );
         }
 
@@ -149,46 +155,19 @@ class Product {
         return $product_data_tabs;
     }
 
-    public function get_ajax_posti_products() {
-
-        if (!isset($_POST['warehouse_id'])) {
-            wp_die('', '', 501);
-        }
-        $products = $this->parseApiProductsResponse($this->api->getProductsByWarehouse($_POST['warehouse_id']));
-
-        foreach ($products as $id => $product) {
-            $products_options[] = array('value' => $id, 'name' => $product);
-        }
-
-        echo json_encode($products_options);
-        die();
-    }
-
-    private function parseApiProductsResponse($products) {
-        $products_options = array();
-        if (isset($products['content']) && is_array($products['content'])) {
-            foreach ($products['content'] as $productData) {
-                $product = $productData['product'];
-                $products_options[$product['externalId']] = $product['descriptions']['en']['name'] . ' (' . $product['externalId'] . ')';
-            }
-        }
-        return $products_options;
-    }
-
-    public function get_ajax_post_warehouse() {
+    public function get_ajax_posti_warehouse() {
         $warehouses = $this->api->getWarehouses();
         $warehouses_options = array();
         
         $catalogType = $_POST['catalog_type'];
         foreach ($warehouses as $warehouse) {
-            if (isset($catalogType) && $warehouse['catalogType'] !== $catalogType) {
-                continue;
+            if (empty($catalogType) || $warehouse['catalogType'] === $catalogType) {
+                array_push($warehouses_options, array(
+                    'value' => $warehouse['externalId'],
+                    'name' => $warehouse['catalogName'] . ' (' . $warehouse['externalId'] . ')',
+                    'type' => $warehouse['catalogType']
+                ));
             }
-            $warehouses_options[] = array(
-                'value' => $warehouse['externalId'],
-                'name' => $warehouse['catalogName'] . ' (' . $warehouse['externalId'] . ')',
-                'type' => $warehouse['catalogType']
-            );
         }
         echo json_encode($warehouses_options);
         die();
@@ -197,7 +176,7 @@ class Product {
     public function posti_wh_product_tab_fields() {
         global $woocommerce, $post;
         ?>
-        <!-- id below must match target registered in above add_my_custom_product_data_tab function -->
+        <!-- id below must match target registered in posti_wh_product_tab function -->
         <div id="posti_wh_tab" class="panel woocommerce_options_panel">
             <?php
             $type = get_post_meta($post->ID, '_posti_wh_stock_type', true);
@@ -693,6 +672,17 @@ class Product {
     private function contains_product($products, $product_id) {
         foreach ($products as $product) {
             if ($product['product']['externalId'] === $product_id) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    private function has_warehouse() {
+        $warehouses = $this->api->getWarehouses();
+        foreach ($warehouses as $warehouse) {
+            if ($warehouse['catalogType'] === 'Posti') {
                 return true;
             }
         }

@@ -53,31 +53,7 @@ jQuery(function ($) {
             $('#posti_wh_tab').removeClass('loading');
         });
     });
-    /*
-    $('#_posti_wh_warehouse').on('change', function () {
-        if ($('#_posti_wh_stock_type').val() !== 'Catalog'){
-            return;
-        }
-        var data = {
-            action: 'posti_products',
-            warehouse_id: $("#_posti_wh_warehouse").val()
-        };
 
-        $('#posti_wh_tab').addClass('loading');
-
-        $("#_posti_wh_product").html('');
-        $.post(woocommerce_admin_meta_boxes.ajax_url, data, function (response) {
-            $("#_posti_wh_product").append('<option value="">Select product</option>');
-            var data = JSON.parse(response);
-            $.each(data, function () {
-                $("#_posti_wh_product").append('<option value="' + this.value + '">' + this.name + '</option>');
-            });
-        }).fail(function () {
-        }).always(function () {
-            $('#posti_wh_tab').removeClass('loading');
-        });
-    });
-    */
     check_stock_type();
     
     $('.posti-wh-select2').select2();
