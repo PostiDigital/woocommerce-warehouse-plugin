@@ -157,11 +157,11 @@ class Api {
         $this->last_status = $http_status;
 
         if ($http_status < 200 || $http_status >= 300) {
-            $this->logger->log("error", "$env HTTP $http_status : $action request to $url" . (isset($payload) ? " with payload: $payload" : '') . " and result: $result");
+            $this->logger->log("error", "$env HTTP $http_status : $action request to $url" . (isset($payload) ? " with payload:\r\n $payload" : '') . "\r\n\r\nand result:\r\n $result");
             return false;
         }
 
-        $this->logger->log("info", "$env HTTP $http_status : $action request to $url" . (isset($payload) ? " with payload $payload" : ''));
+        $this->logger->log("info", "$env HTTP $http_status : $action request to $url" . (isset($payload) ? " with payload\r\n $payload" : ''));
         
         return json_decode($result, true);
     }
