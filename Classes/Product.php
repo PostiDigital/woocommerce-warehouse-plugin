@@ -265,24 +265,8 @@ class Product {
         $product_whs_diffs = array();
         foreach ($post_ids as $post_id) {
             $_product = wc_get_product($post_id);
-
-            $product_warehouse = get_post_meta($post_id, '_posti_wh_warehouse', true);
-            if ($product_warehouse_override === '--delete') {
-                if (!empty($product_warehouse)) {
-                    array_push($product_whs_diffs, array('id' => $post_id, 'from' => $product_warehouse));
-
-                    delete_post_meta($post_id, '_posti_wh_warehouse');
-                    $product_warehouse = '';
-                }
-            }
-            elseif (!empty($product_warehouse_override) && $product_warehouse_override !== $product_warehouse) {
-                array_push($product_whs_diffs, array('id' => $post_id, 'from' => $product_warehouse, 'to' => $product_warehouse_override));
-
-                update_post_meta($post_id, '_posti_wh_warehouse', $product_warehouse_override);
-                $product_warehouse = $product_warehouse_override;
-            }
-
             $type = get_post_meta($post_id, '_posti_wh_stock_type', true);
+            $product_warehouse = $this->get_update_warehouse_id($post_id, $product_warehouse_override, &$product_whs_diffs);
             if (empty($type) && !empty($product_warehouse)) {
                 $warehouses = $this->api->getWarehouses();
                 foreach ($warehouses as $warehouse) {
@@ -300,14 +284,8 @@ class Product {
             if ($type == 'Catalog') {
                 update_post_meta($post_id, '_posti_last_sync', 0);
                 $product_id = $this->get_update_product_id($post_id, $business_id, $_product->get_sku(), $product_id_diffs);
-/*
-                if (isset($product_id) && strlen($product_id) > 0) {
-                    $this->sync_products($business_id, [$product_id]);
-                }
- */
             }
-
-            if (!empty($product_warehouse) && ($type == "Posti" || $type == "Store")) {
+            elseif (!empty($product_warehouse) && ($type == "Posti" || $type == "Store")) {
                 update_post_meta($post_id, '_posti_last_sync', 0);
 
                 $product_distributor = get_post_meta($post_id, '_posti_wh_distribution', true);
@@ -316,7 +294,7 @@ class Product {
                 $product_type = $_product->get_type();
                 if ($product_type == 'variable') {
                     $this->collect_products_variations($post_id, $business_id,
-                            $_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs);
+                            $_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs, $product_whs_diffs);
                 }
                 else {
 
@@ -324,6 +302,34 @@ class Product {
                             $_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs);
 
                 }
+            }
+        }
+
+        if (count($product_whs_diffs) > 0 || count($product_id_diffs) > 0) {
+            $products_obsolete = array();
+            foreach ($product_whs_diffs as $diff) {
+                $product_id = get_post_meta($diff['id'], '_posti_id', true);
+                $warehouse = $diff['from'];
+                if (!empty($product_id) && !empty($warehouse)) {
+                    $product = array('externalId' => $product_id);
+                    array_push($products_obsolete, array('product' => $product));
+                    update_post_meta($diff['id'], '_posti_wh_stock_type', 'Not_in_stock');
+                }
+            }
+            
+            foreach ($product_id_diffs as $diff) {
+                update_post_meta($diff['id'], '_posti_id', $diff['to']);
+
+                $product_id = $diff['from'];
+                if (!empty($product_id) && !$this->contains_product($products, $product_id)) {
+                    $product = array('externalId' => $product_id);
+                    array_push($products_obsolete, array('product' => $product));
+                    update_post_meta($diff['id'], '_posti_wh_stock_type', 'Not_in_stock');
+                }
+            }
+
+            if (count($products_obsolete) > 0) {
+                $this->api->deleteInventory($products_obsolete);
             }
         }
 
@@ -335,59 +341,12 @@ class Product {
             }
             $this->logger->log("info", "Products " . implode(', ', $product_ids) . " sent to Posti: \n" . json_encode($products));
             $this->api->putInventory($products);
-
-            $product_ids_obsolete = array();
-            foreach ($product_id_diffs as $diff) {
-                update_post_meta($diff['id'], '_posti_id', $diff['to']);
-                if (isset($diff['from']) && !$this->contains_product($products, $diff['from'])) {
-                    array_push($product_ids_obsolete, $diff['from']);
-                }
-            }
-
-            if (count($product_ids_obsolete) > 0) {
-                $products_obsolete = array();
-                foreach ($product_ids_obsolete as $product_id_obsolete) {
-                    $product = array(
-                        'externalId' => $product_id_obsolete,
-                        'status' => 'EOS'
-                    );
-                    array_push($products_obsolete, array('product' => $product));
-                }
-
-                $this->api->putInventory($products_obsolete);
-            }
-
             $this->sync_products($business_id, $product_ids);
-        }
-
-        if (count($product_whs_diffs) > 0) {
-            $product_balances_obsolete = array();
-            foreach ($product_whs_diffs as $diff) {
-                $product_id = get_post_meta($diff['id'], '_posti_id', true);
-                $warehouse = $diff['from'];
-                if (!empty($product_id) && !empty($warehouse)) {
-                    $product_balance = array(
-                        'product' => array('externalId' => $product_id),
-                        'balances' => array(
-                            array(
-                                'retailerId' => $business_id,
-                                'catalogExternalId' => $warehouse
-                            )
-                        )
-                    );
-
-                    array_push($product_balances_obsolete, $product_balance);
-                }
-            }
-
-            if (count($product_balances_obsolete) > 0) {
-                $this->api->deleteInventory($product_balances_obsolete);
-            }
         }
     }
     
     private function collect_products_variations($post_id, $business_id,
-            $_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diff) {
+            $_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diff, &$product_whs_diffs) {
 
         $variations = $_product->get_available_variations();
         foreach ($variations as $variation) {
@@ -398,6 +357,7 @@ class Product {
                 continue;
             }
             
+            $warehouse = $this->get_update_warehouse_id($variation_post_id, $product_warehouse, &$product_whs_diffs);
             $variable_name = $_product->get_name();
             $ean = get_post_meta($variation_post_id, '_ean', true);
             $specifications = [];
@@ -453,7 +413,7 @@ class Product {
             $balances = array(
                 array(
                     'retailerId' => $business_id,
-                    'catalogExternalId' => $product_warehouse,
+                    'catalogExternalId' => $warehouse,
                     'wholesalePrice' => $wholesale_price ? $wholesale_price : (float) $variation['display_regular_price'],
                     'currency' => get_woocommerce_currency()
                 )
@@ -724,5 +684,25 @@ class Product {
         }
 
         return $product_id;
+    }
+    
+    private function get_update_warehouse_id($post_id, $product_warehouse_override, &$product_whs_diffs) {
+        $product_warehouse = get_post_meta($post_id, '_posti_wh_warehouse', true);
+        if ($product_warehouse_override === '--delete') {
+            if (!empty($product_warehouse)) {
+                array_push($product_whs_diffs, array('id' => $post_id, 'from' => $product_warehouse));
+
+                delete_post_meta($post_id, '_posti_wh_warehouse');
+                $product_warehouse = '';
+            }
+        }
+        elseif (!empty($product_warehouse_override) && $product_warehouse_override !== $product_warehouse) {
+            array_push($product_whs_diffs, array('id' => $post_id, 'from' => $product_warehouse, 'to' => $product_warehouse_override));
+
+            update_post_meta($post_id, '_posti_wh_warehouse', $product_warehouse_override);
+            $product_warehouse = $product_warehouse_override;
+        }
+
+        return $product_warehouse;
     }
 }

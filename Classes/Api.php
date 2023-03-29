@@ -40,9 +40,9 @@ class Api {
 
     private function getApiUrl() {
         if ($this->test) {
-            return "https://argon.ecom-api.posti.com/ecommerce/v3/";
+            return "https://argon.ecom-api.posti.com/ecommerce";
         }
-        return "https://ecom-api.posti.com/ecommerce/v3/";
+        return "https://ecom-api.posti.com/ecommerce";
     }
 
     public function getBusinessId() {
@@ -130,12 +130,7 @@ class Api {
         $header = array();
 
         $header[] = 'Authorization: Bearer ' . $this->token;
-
-        
-        if ($data) {
-            $this->logger->log("info", json_encode($data));
-        }
-
+        $payload = null;
         if ($action == "POST" || $action == "PUT" || $action == "DELETE") {
             $payload = json_encode($data);
 
@@ -151,7 +146,7 @@ class Api {
         elseif ($action == "GET" && is_array($data)){
             $url .= '?' . http_build_query($data);
         }
-        $this->logger->log("info", $env . "Request to: " . $url);
+        
         curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
 
         curl_setopt($curl, CURLOPT_URL, $this->getApiUrl() . $url);
@@ -161,16 +156,13 @@ class Api {
         $http_status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         $this->last_status = $http_status;
 
-        if (!$result) {
-            $this->logger->log("error", $http_status . ' - response from ' . $url . ': ' . $result);
+        if ($http_status < 200 || $http_status >= 300) {
+            $this->logger->log("error", "$env HTTP $http_status : $action request to $url" . (isset($payload) ? " with payload: $payload" : '') . " and result: $result");
             return false;
         }
 
-
-        if ($http_status != 200) {
-            $this->logger->log("error", $env . "Request to: " . $url . "\nResponse code: " . $http_status . "\nResult: " . $result);
-            return false;
-        }
+        $this->logger->log("info", "$env HTTP $http_status : $action request to $url" . (isset($payload) ? " with payload $payload" : ''));
+        
         return json_decode($result, true);
     }
 
@@ -199,7 +191,7 @@ class Api {
     public function getWarehouses() {
         $warehouses_data = get_option('posti_wh_api_warehouses');
         if (!$warehouses_data || $warehouses_data['last_sync'] < time() - 1800) {
-            $warehouses = $this->ApiCall('catalogs?role=RETAILER', '', 'GET');
+            $warehouses = $this->ApiCall('/v3/catalogs?role=RETAILER', '', 'GET');
             if (is_array($warehouses) && isset($warehouses['content'])) {
                 update_option('posti_wh_api_warehouses', array(
                     'warehouses' => $warehouses['content'],
@@ -216,12 +208,12 @@ class Api {
     }
 
     public function getDeliveryServices($workflow) {
-        $services = $this->ApiCall('services', array('workflow' => urlencode($workflow)) , 'GET');
+        $services = $this->ApiCall('/v3/services', array('workflow' => urlencode($workflow)) , 'GET');
         return $services;
     }
 
     public function getProduct($id) {
-        $product = $this->ApiCall('inventory/' . urlencode($id), '', 'GET');
+        $product = $this->ApiCall('/v3/inventory/' . urlencode($id), '', 'GET');
         return $product;
     }
     
@@ -231,7 +223,7 @@ class Api {
             array_push($ids_encoded, urlencode($id));
         }
         
-        $products = $this->ApiCall('inventory?productExternalId=' . implode(',', $ids_encoded), '', 'GET');
+        $products = $this->ApiCall('/v3/inventory?productExternalId=' . implode(',', $ids_encoded), '', 'GET');
         return $products;
     }
     
@@ -240,27 +232,27 @@ class Api {
             return [];
         }
         
-        $products = $this->ApiCall('inventory/balances?modifiedFromDate=' . urlencode($dttm_since) . '&size=' . $size . '&page=' . $page, '', 'GET');
+        $products = $this->ApiCall('/v3/inventory/balances?modifiedFromDate=' . urlencode($dttm_since) . '&size=' . $size . '&page=' . $page, '', 'GET');
         return $products;
     }
 
     public function putInventory($products) {
-        $status = $this->ApiCall('inventory', $products, 'PUT');
+        $status = $this->ApiCall('/v3/inventory', $products, 'PUT');
         return $status;
     }
     
     public function deleteInventory($products) {
-        $status = $this->ApiCall('inventory', $products, 'DELETE');
+        $status = $this->ApiCall('/v3/inventory', $products, 'DELETE');
         return $status;
     }
 
     public function addOrder($order) {
-        $status = $this->ApiCall('orders', $order, 'POST');
+        $status = $this->ApiCall('/v3/orders', $order, 'POST');
         return $status;
     }
 
     public function getOrder($order_id) {
-        $status = $this->ApiCall('orders/' . urlencode($order_id), '', 'GET');
+        $status = $this->ApiCall('/v3/orders/' . urlencode($order_id), '', 'GET');
         return $status;
     }
     
@@ -269,7 +261,7 @@ class Api {
             return [];
         }
         
-        $products = $this->ApiCall('orders?modifiedFromDate=' . urlencode($dttm_since) . '&size=' . $size . '&page=' . $page, '', 'GET');
+        $products = $this->ApiCall('/v3/orders?modifiedFromDate=' . urlencode($dttm_since) . '&size=' . $size . '&page=' . $page, '', 'GET');
         return $products;
     }
 }
