@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name: Posti Warehouse Plugin
- * Version: 1.0.7
+ * Version: 1.0.8
  * Description: Warehouse plugin for WooCommerce.
  * Author: Posti
  * Author URI: https://www.posti.fi/

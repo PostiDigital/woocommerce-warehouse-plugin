@@ -302,6 +302,8 @@ class Order {
         
         $shipping_phone = $_order->get_shipping_phone();
         $shipping_email = get_post_meta($_order->get_id(), '_shipping_email', true);
+        $phone = !empty($shipping_phone) ? $shipping_phone : $_order->get_billing_phone();
+        $email = !empty($shipping_email) ? $shipping_email : $_order->get_billing_email();
         $order = array(
             "externalId" => $posti_order_id,
             "clientId" => (string) $business_id,
@@ -356,8 +358,8 @@ class Order {
                 "postalCode" => $_order->get_shipping_postcode(),
                 "postOffice" => $_order->get_shipping_city(),
                 "country" => $_order->get_shipping_country(),
-                "telephone" => (!empty($shipping_phone) ? $shipping_phone : $order->get_billing_phone()),
-                "email" => (!empty($shipping_email) ? $shipping_email : $order->get_billing_email())
+                "telephone" => $phone,
+                "email" => $email
             ],
             "currency" => $_order->get_currency(),
             /*
@@ -405,7 +407,7 @@ class Order {
         );
 
         if ($pickup_point) {
-            $address = $this->pickupPointData($pickup_point, $_order, $business_id);
+            $address = $this->pickupPointData($pickup_point, $_order, $business_id, $email, $phone);
             if ($address) {
                 $order['deliveryAddress'] = $address;
             }
@@ -417,7 +419,7 @@ class Order {
         return $order;
     }
 
-    public function pickupPointData($id, $_order, $business_id) {
+    public function pickupPointData($id, $_order, $business_id, $email, $phone) {
         $data = $this->api->getUrlData('https://locationservice.posti.com/api/2/location/' . $id);
         $points = json_decode($data, true);
         if (is_array($points) && isset($points['locations'])) {
@@ -430,8 +432,8 @@ class Order {
                         "postalCode" => $point['postalCode'],
                         "postOffice" => $point['address']['en']['postalCodeName'],
                         "country" => $point['countryCode'],
-                        "telephone" => $_order->get_billing_phone(),
-                        "email" => $_order->get_billing_email()
+                        "telephone" => $phone,
+                        "email" => $email
                     );
                 }
             }
