@@ -85,26 +85,18 @@ class Core {
     public function after_settings_update($option, $old_value, $value) { 
         if ($option == 'posti_wh_options') {
             if (
-                    $old_value['posti_wh_field_username'] != $value['posti_wh_field_username'] || 
-                    $old_value['posti_wh_field_password'] != $value['posti_wh_field_password']
-            ) {
+                $old_value['posti_wh_field_username'] != $value['posti_wh_field_username'] || 
+                $old_value['posti_wh_field_password'] != $value['posti_wh_field_password'] ||
+                $old_value['posti_wh_field_username_test'] != $value['posti_wh_field_username_test'] || 
+                $old_value['posti_wh_field_password_test'] != $value['posti_wh_field_password_test']) {
+
                 //login info changed, try to get token
                 delete_option('posti_wh_api_auth');
                 if (session_id() === '' || !isset($_SESSION)) {
                     session_start();
                 }
+                
                 $_SESSION['posti_warehouse_check_token'] = true;
-            }
-            if (
-                    $old_value['posti_wh_field_username_test'] != $value['posti_wh_field_username_test'] || 
-                    $old_value['posti_wh_field_password_test'] != $value['posti_wh_field_password_test']
-            ) {
-                //login info changed, try to get token
-                delete_option('posti_wh_api_auth_test');
-                if (session_id() === '' || !isset($_SESSION)) {
-                    session_start();
-                }
-                $_SESSION['posti_warehouse_check_test_token'] = true;
             }
         }
     }
@@ -116,7 +108,7 @@ class Core {
         }
         
         if (isset($_SESSION['posti_warehouse_check_token'])) {
-            //reload options, because their are saved after load
+            // reload updated options
             $this->load_options();
             $token = $this->api->getToken();
             if ($token) {
@@ -124,34 +116,23 @@ class Core {
             } else {
                 $this->token_error();
             }
+
             unset($_SESSION['posti_warehouse_check_token']);
-        }
-        
-        if (isset($_SESSION['posti_warehouse_check_test_token'])) {
-            //reload options, because their are saved after load
-            $this->load_options();
-            $token = $this->test_api->getToken();
-            if ($token) {
-                $this->token_success(true);
-            } else {
-                $this->token_error(true);
-            }
-            unset($_SESSION['posti_warehouse_check_test_token']);
         }
     }
 
-    public function token_error($test = false) {
+    public function token_error() {
         ?>
         <div class="error notice">
-            <p><?php echo $test?'TEST ':'';?><?php _e('Wrong credentials - access token not received!', 'posti-warehouse'); ?></p>
+            <p><?php _e('Wrong credentials - access token not received!', 'posti-warehouse'); ?></p>
         </div>
         <?php
     }
 
-    public function token_success($test = false) {
+    public function token_success() {
         ?>
         <div class="updated notice">
-            <p><?php echo $test?'TEST ':'';?><?php _e('Credentials matched - access token received!', 'posti-warehouse'); ?></p>
+            <p><?php _e('Credentials matched - access token received!', 'posti-warehouse'); ?></p>
         </div>
         <?php
     }

@@ -533,11 +533,11 @@ class Product {
     }
     
     private function sync_page($business_id, $page) {
-        if (!isset($page)) {
+        if (!isset($page) || $page === false) {
             return false;
         }
 
-        $balances = $page['content'];
+        $balances = isset($page['content']) ? $page['content'] : null;
         if (!isset($balances) || !is_array($balances) || count($balances) == 0) {
             return false;
         }

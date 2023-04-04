@@ -3,7 +3,6 @@
 namespace PostiWarehouse\Classes;
 
 use PostiWarehouse\Classes\Logger;
-//use PostiWarehouse\Classes\Settings;
 
 class Api {
 
@@ -16,19 +15,13 @@ class Api {
     private $options;
     private $last_status = false;
     private $token_option = 'posti_wh_api_auth';
+    private $user_agent = 'woo-wh-client/2.0';
 
     public function __construct(Logger $logger, $business_id, array &$options, $test = false) {
         $this->business_id = $business_id;
-        if ($test) {
-            $this->test = true;
-            $this->token_option = 'posti_wh_api_auth_test';
-        }
-        
+        $this->test = $test;
         $this->logger = $logger;
-        //$this->settings = $settings;
         $this->options = $options;
-        
-        //$options = $this->settings->get_plugin_settings();
         
         if ($options) {
             if($this->test) {
@@ -45,26 +38,12 @@ class Api {
         return $this->last_status;
     }
 
-    private function getApiUrl() {
-        if ($this->test) {
-            return "https://argon.ecom-api.posti.com/ecommerce";
-        }
-        return "https://ecom-api.posti.com/ecommerce";
-    }
-
     public function getBusinessId() {
         return $this->business_id;
     }
 
-    private function getAuthUrl() {
-        if ($this->test) {
-            return "https://argon.ecom-api.posti.com";
-        }
-        return "https://ecom-api.posti.com";
-    }
-
     public function getToken() {
-        $token_data = $this->createToken($this->getAuthUrl() . '/auth/token', $this->username, $this->password);
+        $token_data = $this->createToken($this->getBaseUrl() . '/auth/token', $this->username, $this->password);
         if (isset($token_data->access_token)) {
             update_option($this->token_option, array('token' => $token_data->access_token, 'expires' => time() + $token_data->expires_in - 100));
             $this->token = $token_data->access_token;
@@ -112,9 +91,9 @@ class Api {
         }
         
         curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
-
-        curl_setopt($curl, CURLOPT_URL, $this->getApiUrl() . $url);
+        curl_setopt($curl, CURLOPT_URL, $this->getBaseUrl() . $url);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_USERAGENT, $this->user_agent);
 
         $result = curl_exec($curl);
         $http_status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
@@ -133,7 +112,7 @@ class Api {
     public function getWarehouses() {
         $warehouses_data = get_option('posti_wh_api_warehouses');
         if (!$warehouses_data || $warehouses_data['last_sync'] < time() - 1800) {
-            $warehouses = $this->ApiCall('/v3/catalogs?role=RETAILER', '', 'GET');
+            $warehouses = $this->ApiCall('/ecommerce/v3/catalogs?role=RETAILER', '', 'GET');
             if (is_array($warehouses) && isset($warehouses['content'])) {
                 update_option('posti_wh_api_warehouses', array(
                     'warehouses' => $warehouses['content'],
@@ -150,12 +129,12 @@ class Api {
     }
 
     public function getDeliveryServices($workflow) {
-        $services = $this->ApiCall('/v3/services', array('workflow' => urlencode($workflow)) , 'GET');
+        $services = $this->ApiCall('/ecommerce/v3/services', array('workflow' => urlencode($workflow)) , 'GET');
         return $services;
     }
 
     public function getProduct($id) {
-        $product = $this->ApiCall('/v3/inventory/' . urlencode($id), '', 'GET');
+        $product = $this->ApiCall('/ecommerce/v3/inventory/' . urlencode($id), '', 'GET');
         return $product;
     }
     
@@ -165,7 +144,7 @@ class Api {
             array_push($ids_encoded, urlencode($id));
         }
         
-        $products = $this->ApiCall('/v3/inventory?productExternalId=' . implode(',', $ids_encoded), '', 'GET');
+        $products = $this->ApiCall('/ecommerce/v3/inventory?productExternalId=' . implode(',', $ids_encoded), '', 'GET');
         return $products;
     }
     
@@ -174,27 +153,27 @@ class Api {
             return [];
         }
         
-        $products = $this->ApiCall('/v3/inventory/balances?modifiedFromDate=' . urlencode($dttm_since) . '&size=' . $size . '&page=' . $page, '', 'GET');
+        $products = $this->ApiCall('/ecommerce/v3/inventory/balances?modifiedFromDate=' . urlencode($dttm_since) . '&size=' . $size . '&page=' . $page, '', 'GET');
         return $products;
     }
 
     public function putInventory($products) {
-        $status = $this->ApiCall('/v3/inventory', $products, 'PUT');
+        $status = $this->ApiCall('/ecommerce/v3/inventory', $products, 'PUT');
         return $status;
     }
     
     public function deleteInventory($products) {
-        $status = $this->ApiCall('/v3/inventory', $products, 'DELETE');
+        $status = $this->ApiCall('/ecommerce/v3/inventory', $products, 'DELETE');
         return $status;
     }
 
     public function addOrder($order) {
-        $status = $this->ApiCall('/v3/orders', $order, 'POST');
+        $status = $this->ApiCall('/ecommerce/v3/orders', $order, 'POST');
         return $status;
     }
 
     public function getOrder($order_id) {
-        $status = $this->ApiCall('/v3/orders/' . urlencode($order_id), '', 'GET');
+        $status = $this->ApiCall('/ecommerce/v3/orders/' . urlencode($order_id), '', 'GET');
         return $status;
     }
     
@@ -203,7 +182,7 @@ class Api {
             return [];
         }
         
-        $products = $this->ApiCall('/v3/orders'
+        $products = $this->ApiCall('/ecommerce/v3/orders'
                 . '?modifiedFromDate=' . urlencode($dttm_since)
                 . '&size=' . $size
                 . '&page=' . $page, '', 'GET');
@@ -215,7 +194,7 @@ class Api {
             return array();
         }
 
-        return $this->ApiCall('/v3/pickup-points'
+        return $this->ApiCall('/ecommerce/v3/pickup-points'
                 . '?serviceProvider=' . urlencode($service_provider)
                 . '&postalCode=' . urlencode($postcode)
                 . '&streetAddress=' . urlencode($street_address)
@@ -227,11 +206,18 @@ class Api {
             return array();
         }
 
-        return $this->ApiCall('/v3/pickup-points'
+        return $this->ApiCall('/ecommerce/v3/pickup-points'
                 . '?serviceProvider=' . urlencode($service_provider)
                 . '&search=' . urlencode($query_text), '', 'GET');
     }
-    
+
+    private function getBaseUrl() {
+        if ($this->test) {
+            return "https://argon.ecom-api.posti.com";
+        }
+        return "https://ecom-api.posti.com";
+    }
+
     private function createToken($url, $user, $secret) {
         $headers = array();
         $headers[] = 'Accept: application/json';

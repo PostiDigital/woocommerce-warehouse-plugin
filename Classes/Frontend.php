@@ -478,36 +478,38 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 
         private function process_pickup_points_to_option_array($pickup_points) {
             $options_array = array('' => array('text' => '- ' . __('Select a pickup point', 'woo-pakettikauppa') . ' -'));
-
             if (!empty($pickup_points)) {
                 $show_provider = false;
                 $provider = '';
-                foreach ($pickup_points as $key => $value) {
-                    if (!isset($value->provider)) {
+                foreach ($pickup_points as $pickup_point) {
+                    if (!isset($pickup_point['serviceProvider'])) {
                         $show_provider = true;
                         break;
                     }
-                    if (!empty($provider) && $provider !== $value->provider) {
+                    if (!empty($provider) && $provider !== $pickup_point['serviceProvider']) {
                         $show_provider = true;
                         break;
                     }
-                    $provider = $value->provider;
+                    $provider = $pickup_point['serviceProvider'];
                 }
-                foreach ($pickup_points as $key => $value) {
-                    if (!isset($value->provider)) {
+                foreach ($pickup_points as $pickup_point) {
+                    if (!isset($pickup_point['serviceProvider'])) {
                         continue;
                     }
-                    $pickup_point_key = $value->provider . ': ' . $value->name . ' (#' . $value->pickup_point_id . ')';
-                    $pickup_point_value = $value->name . ' (' . $value->street_address . ')';
+                    $pickup_point_key = $pickup_point['serviceProvider']
+                            . ': ' . $pickup_point['name']
+                            . ' (#' . $pickup_point['externalId'] . ')';
+                    $pickup_point_value = $pickup_point['name']
+                            . ' (' . $pickup_point['streetAddress'] . ')';
 
                     if ($show_provider) {
-                        $pickup_point_value = $value->provider . ': ' . $pickup_point_value;
+                        $pickup_point_value = $pickup_point['serviceProvider'] . ': ' . $pickup_point_value;
                     }
 
                     // $options_array[ $pickup_point_key ] = $pickup_point_value;
                     $options_array[$pickup_point_key] = array(
                         'text' => $pickup_point_value,
-                        'is_private' => $value->point_type === 'PRIVATE_LOCKER',
+                        'is_private' => $pickup_point['type'] === 'PRIVATE_LOCKER',
                     );
                 }
             }
@@ -573,14 +575,14 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 
         public function get_pickup_points($postcode, $street_address = null, $country = null, $service_provider = null) {
             $pickup_point_data = $this->api->getPickupPoints(trim($postcode), trim($street_address), trim($country), $service_provider);
-            if ($pickup_point_data === 'Bad request') {
-                throw new \Exception(__('Error while searching pickuppoints'));
+            if ($pickup_point_data === false) {
+                throw new \Exception(__('Error while searching pickup points'));
             }
 
             // This makes zero sense unless you read this issue:
             // https://github.com/Pakettikauppa/api-library/issues/11
             if (empty($pickup_point_data)) {
-                throw new \Exception(__('No pickuppoints found'));
+                throw new \Exception(__('No pickup points found'));
             }
 
             return $pickup_point_data;
@@ -588,15 +590,14 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 
         public function get_pickup_points_by_free_input($input, $service_provider = null) {
             $pickup_point_data = $this->api->getPickupPointsByText(trim($input), $service_provider);
-
-            if ($pickup_point_data === 'Bad request') {
-                throw new \Exception(__('Error while searching pickuppoints'));
+            if ($pickup_point_data === false) {
+                throw new \Exception(__('Error while searching pickup points'));
             }
 
             // This makes zero sense unless you read this issue:
             // https://github.com/Pakettikauppa/api-library/issues/11
             if (empty($pickup_point_data)) {
-                throw new \Exception(__('No pickuppoints found'));
+                throw new \Exception(__('No pickup points found'));
             }
 
             return $pickup_point_data;

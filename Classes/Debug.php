@@ -33,21 +33,12 @@ class Debug {
         ?>
         <div class="wrap">
             <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
-            <?php if ($this->is_test): ?>
-                <?php $token_data = get_option('posti_wh_api_auth'); ?>
-                <?php if (is_array($token_data)): ?>
-                    <div class="notice notice-info">
-                        <p style = "word-break: break-all;"><strong><?php _e('Current token:', 'posti-warehouse'); ?><br/> </strong> <?= $token_data['token']; ?></p>
-                        <p><strong><?php _e('Token expiration:', 'posti-warehouse'); ?> </strong> <?= date('Y-m-d H:i:s', $token_data['expires']); ?></p>
-                    </div>
-                <?php endif; ?>
-                <?php $test_token_data = get_option('posti_wh_api_auth_test'); ?>
-                <?php if (is_array($test_token_data)): ?>
-                    <div class="notice notice-info">
-                        <p style = "word-break: break-all;"><strong><?php _e('Current TEST token:', 'posti-warehouse'); ?><br/> </strong> <?= $test_token_data['token']; ?></p>
-                        <p><strong><?php _e('Token expiration:', 'posti-warehouse'); ?> </strong> <?= date('Y-m-d H:i:s', $test_token_data['expires']); ?></p>
-                    </div>
-                <?php endif; ?>
+            <?php $token_data = get_option('posti_wh_api_auth'); ?>
+            <?php if (is_array($token_data)): ?>
+                <div class="notice notice-info">
+                    <p style = "word-break: break-all;"><strong><?php _e('Current token:', 'posti-warehouse'); ?><br/> </strong> <?= $token_data['token']; ?></p>
+                    <p><strong><?php _e('Token expiration:', 'posti-warehouse'); ?> </strong> <?= date('Y-m-d H:i:s', $token_data['expires']); ?></p>
+                </div>
             <?php endif; ?>
             <?php
             $logger = new Logger();

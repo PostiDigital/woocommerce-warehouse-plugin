@@ -23,15 +23,15 @@ class Settings {
     }
     
     public static function is_debug($options) {
-        return Settings::is_true($options['posti_wh_field_debug']);
+        return Settings::is_option_true($options, 'posti_wh_field_debug');
     }
     
     public static function is_test($options) {
-        return Settings::is_true($options['posti_wh_field_test_mode']);
+        return Settings::is_option_true($options, 'posti_wh_field_test_mode');
     }
     
     public static function is_add_tracking($options) {
-        return Settings::is_true($options['posti_wh_field_addtracking']);
+        return Settings::is_option_true($options, 'posti_wh_field_addtracking');
     }
     
     public function posti_wh_settings_init() {
@@ -262,7 +262,7 @@ class Settings {
     public function posti_wh_field_checkbox_cb($args) {
         $options = $this->get_plugin_settings();
         $checked = "";
-        if ($options[$args['label_for']]) {
+        if (Settings::is_option_true($options, $args['label_for'])) {
             $checked = ' checked="checked" ';
         }
         ?>
@@ -394,6 +394,10 @@ class Settings {
         }
         
         return $new_options;
+    }
+    
+    private static function is_option_true($options, $value) {
+        return isset($options[$value]) && Settings::is_true($options[$value]);
     }
     
     private static function is_true($value) {
