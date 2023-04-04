@@ -6,14 +6,13 @@ use PostiWarehouse\Classes\Logger;
 
 class Debug {
     
+    private $settings;
     private $is_test = false;
     
-    public function __construct() {
+    public function __construct(Settings $settings) {
+        $this->settings = $settings;
+        $this->is_test = Settings::is_test($settings->get_plugin_settings());
         add_action('admin_menu', array($this, 'posti_wh_debug_page'));
-    }
-    
-    public function setTest($value){
-        $this->is_test = $value;
     }
     
     public function posti_wh_debug_page() {

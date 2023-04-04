@@ -34,6 +34,7 @@ if ( ! class_exists('\Pakettikauppa\Client') ) {
   require_once __DIR__ . '/vendor/autoload.php';
 }
 
+require_once __DIR__ . '/Classes/Settings.php';
 require_once __DIR__ . '/Classes/Order.php';
 require_once __DIR__ . '/Classes/Metabox.php';
 require_once __DIR__ . '/Classes/Api.php';

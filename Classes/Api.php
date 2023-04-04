@@ -2,8 +2,8 @@
 
 namespace PostiWarehouse\Classes;
 
-use Pakettikauppa\Client;
 use PostiWarehouse\Classes\Logger;
+//use PostiWarehouse\Classes\Settings;
 
 class Api {
 
@@ -13,25 +13,32 @@ class Api {
     private $test = false;
     private $business_id = false;
     private $logger;
+    private $options;
     private $last_status = false;
     private $token_option = 'posti_wh_api_auth';
 
-    public function __construct(Logger $logger, $business_id, $test = false) {
+    public function __construct(Logger $logger, $business_id, array &$options, $test = false) {
         $this->business_id = $business_id;
         if ($test) {
             $this->test = true;
             $this->token_option = 'posti_wh_api_auth_test';
         }
-
-        $options = get_option('woocommerce_posti_warehouse_settings');
-        if($this->test){
-            $this->username = $options['posti_wh_field_username_test'];
-            $this->password = $options['posti_wh_field_password_test'];
-        } else {
-            $this->username = $options['posti_wh_field_username'];
-            $this->password = $options['posti_wh_field_password'];
-        }
+        
         $this->logger = $logger;
+        //$this->settings = $settings;
+        $this->options = $options;
+        
+        //$options = $this->settings->get_plugin_settings();
+        
+        if ($options) {
+            if($this->test) {
+                $this->username = $options['posti_wh_field_username_test'];
+                $this->password = $options['posti_wh_field_password_test'];
+            } else {
+                $this->username = $options['posti_wh_field_username'];
+                $this->password = $options['posti_wh_field_password'];
+            }
+        }
     }
     
     public function getLastStatus() {
@@ -51,67 +58,24 @@ class Api {
 
     private function getAuthUrl() {
         if ($this->test) {
-            return "https://oauth2.barium.posti.com";
+            return "https://argon.ecom-api.posti.com";
         }
-        return "https://oauth2.posti.com";
+        return "https://ecom-api.posti.com";
     }
 
-    public function getToken($client = null) {
-   
-        if ($client == null){
-            $config = array('wh' => [
-                    'api_key' => $this->username,
-                    'secret' => $this->password,
-                    'use_posti_auth' => true,
-                    'posti_auth_url' => $this->getAuthUrl(),
-                    'base_uri' => $this->getApiUrl(),
-                ]
-            );
-
-            $client = new Client($config, 'wh');
-        }
-
-        $token_data = $client->getToken();
+    public function getToken() {
+        $token_data = $this->createToken($this->getAuthUrl() . '/auth/token', $this->username, $this->password);
         if (isset($token_data->access_token)) {
             update_option($this->token_option, array('token' => $token_data->access_token, 'expires' => time() + $token_data->expires_in - 100));
             $this->token = $token_data->access_token;
             $this->logger->log('info', "Refreshed access token");
             return $token_data->access_token;
         } else {
-            $config_data = (!empty($config)) ? json_encode($config) : '-';
-            $this->logger->log('error', "Failed to get token from api: " . $config_data . ', reponse ' . json_encode($token_data));
+            $this->logger->log('error', "Failed to get token for " . $this->username . ', repsonse ' . json_encode($token_data));
         }
         return false;
     }
     
-    public function getClient(){
-        $options = get_option('woocommerce_posti_warehouse_settings');
-        $config = array('wh' => [
-                'api_key' => $this->username,
-                'secret' => $this->password,
-                'use_posti_auth' => true,
-                //'posti_auth_url' => $this->getAuthUrl(),
-                //'base_uri' => $this->getApiUrl(),
-                'posti_auth_url' => 'https://oauth2.posti.com',
-                'base_uri' => 'https://nextshipping.posti.fi',
-            ]
-        );
-        $client = new Client($config, 'wh');
-        if (!$this->token) {
-            $token_data = get_option($this->token_option);            
-            if (!$token_data || isset($token_data['expires']) && $token_data['expires'] < time()) {
-                $this->getToken($client);
-            } elseif (isset($token_data['token'])) {
-                $this->token = $token_data['token'];
-            } else {
-                $this->logger->log('error', "Failed to get token");
-                return false;
-            }
-        }
-        $client->setAccessToken($this->token);
-        return $client;
-    }
-
     private function ApiCall($url, $data = '', $action = 'GET') {
         if (!$this->token) {
             $token_data = get_option($this->token_option);            
@@ -164,28 +128,6 @@ class Api {
         $this->logger->log("info", "$env HTTP $http_status : $action request to $url" . (isset($payload) ? " with payload\r\n $payload" : ''));
         
         return json_decode($result, true);
-    }
-
-    public function getUrlData($url) {
-        $curl = curl_init();
-        $header = array();
-        $env = $this->test ? "TEST ": "PROD ";
-        $this->logger->log("info", $env . "Request to: " . $url);
-
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
-        curl_setopt($curl, CURLOPT_URL, $url);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-        $result = curl_exec($curl);
-        $http_status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-
-        if (!$result) {
-
-            $this->logger->log("error", $http_status . ' - response from ' . $url . ': ' . $result);
-            return false;
-        }
-        $this->logger->log("info", $env . 'Response from ' . $url . ': ' . json_encode($result));
-
-        return $result;
     }
 
     public function getWarehouses() {
@@ -261,7 +203,60 @@ class Api {
             return [];
         }
         
-        $products = $this->ApiCall('/v3/orders?modifiedFromDate=' . urlencode($dttm_since) . '&size=' . $size . '&page=' . $page, '', 'GET');
+        $products = $this->ApiCall('/v3/orders'
+                . '?modifiedFromDate=' . urlencode($dttm_since)
+                . '&size=' . $size
+                . '&page=' . $page, '', 'GET');
         return $products;
+    }
+    
+    public function getPickupPoints($postcode = null, $street_address = null, $country = null, $service_provider = null) {
+        if (($postcode == null && $street_address == null) || (trim($postcode) == '' && trim($street_address) == '')) {
+            return array();
+        }
+
+        return $this->ApiCall('/v3/pickup-points'
+                . '?serviceProvider=' . urlencode($service_provider)
+                . '&postalCode=' . urlencode($postcode)
+                . '&streetAddress=' . urlencode($street_address)
+                . '&country=' . urlencode($country), '', 'GET');
+    }
+
+    public function getPickupPointsByText($query_text, $service_provider) {
+        if ($query_text == null || trim($query_text) == '') {
+            return array();
+        }
+
+        return $this->ApiCall('/v3/pickup-points'
+                . '?serviceProvider=' . urlencode($service_provider)
+                . '&search=' . urlencode($query_text), '', 'GET');
+    }
+    
+    private function createToken($url, $user, $secret) {
+        $headers = array();
+        $headers[] = 'Accept: application/json';
+        $headers[] = 'Authorization: Basic ' .base64_encode("$user:$secret");
+
+        $options = array(
+            CURLOPT_POST            => 0,
+            CURLOPT_HEADER          => 0,
+            CURLOPT_URL             => $url,
+            CURLOPT_FRESH_CONNECT   => 1,
+            CURLOPT_RETURNTRANSFER  => 1,
+            CURLOPT_FORBID_REUSE    => 1,
+            CURLOPT_USERAGENT       => $this->user_agent,
+            CURLOPT_TIMEOUT         => 30,
+            CURLOPT_HTTPHEADER      => $headers,
+
+        );
+
+        $ch = curl_init();
+        curl_setopt_array($ch, $options);
+
+        $response = curl_exec($ch);
+
+        curl_close($ch);
+
+        return json_decode($response);
     }
 }

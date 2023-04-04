@@ -20,13 +20,13 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
          */
         public $core = null;
         
-        public $client = null;
+        public $api = null;
         
         private $errors = array();
 
         public function __construct(Core $plugin) {
             $this->core = $plugin;
-            $this->client = $this->core->getApi()->getClient();
+            $this->api = $this->core->getApi();
         }
 
         public function load() {
@@ -572,10 +572,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
         }
 
         public function get_pickup_points($postcode, $street_address = null, $country = null, $service_provider = null) {
-            $pickup_point_limit = 5; // Default limit value for pickup point search
-
-            $pickup_point_data = $this->client->searchPickupPoints(trim($postcode), trim($street_address), trim($country), $service_provider, $pickup_point_limit);
-
+            $pickup_point_data = $this->api->getPickupPoints(trim($postcode), trim($street_address), trim($country), $service_provider);
             if ($pickup_point_data === 'Bad request') {
                 throw new \Exception(__('Error while searching pickuppoints'));
             }
@@ -590,9 +587,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
         }
 
         public function get_pickup_points_by_free_input($input, $service_provider = null) {
-            $pickup_point_limit = 5; // Default limit value for pickup point search
-
-            $pickup_point_data = $this->client->searchPickupPointsByText(trim($input), $service_provider, $pickup_point_limit);
+            $pickup_point_data = $this->api->getPickupPointsByText(trim($input), $service_provider);
 
             if ($pickup_point_data === 'Bad request') {
                 throw new \Exception(__('Error while searching pickuppoints'));

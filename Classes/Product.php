@@ -11,11 +11,13 @@ class Product {
 
     private $api;
     private $logger;
+    private $settings;
 
-    public function __construct(Api $api, Logger $logger) {
+    public function __construct(Api $api, Logger $logger, Settings $settings) {
 
         $this->api = $api;
         $this->logger = $logger;
+        $this->settings = $settings;
 
         add_action('admin_notices', array($this, 'posti_notices'));
 
@@ -174,7 +176,7 @@ class Product {
             $product_warehouse = get_post_meta($post->ID, '_posti_wh_warehouse', true);
             $type = $this->get_stock_type($warehouses, $product_warehouse);
             if (!$type) {
-                $options = get_option('woocommerce_posti_warehouse_settings');
+                $options = $this->settings->get_plugin_settings();
                 //$options = get_option('woocommerce_posti_shipping_method_settings');
                 if (isset($options['posti_wh_field_type'])) {
                     $type = $options['posti_wh_field_type'];
@@ -253,7 +255,7 @@ class Product {
     }
     
     public function handle_products($post_ids, $product_warehouse_override) {
-        $options = get_option('woocommerce_posti_warehouse_settings');
+        $options = $this->settings->get_plugin_settings();
         $business_id = $options['posti_wh_field_business_id'];
         if (!isset($business_id) || strlen($business_id) == 0) {
             $this->logger->log("error", "Cannot publish products: no Business id set");
@@ -507,7 +509,7 @@ class Product {
     }
 
     public function sync($datetime) {        
-        $options = get_option('woocommerce_posti_warehouse_settings');
+        $options = $this->settings->get_plugin_settings();
         $business_id = $options['posti_wh_field_business_id'];
         if (!isset($business_id) || strlen($business_id) <= 0) {
             $this->logger->log("error", "Cannot sync products: no Business id set");
@@ -705,7 +707,7 @@ class Product {
         return $product_warehouse;
     }
     
-    private function get_stock_type_by_warehouse($product_warehouse) {
+    public function get_stock_type_by_warehouse($product_warehouse) {
         $warehouses = $this->api->getWarehouses();
         return $this->get_stock_type($warehouses, $product_warehouse);
     }

@@ -13,11 +13,15 @@ class Order {
     private $addTracking = false;
     private $api;
     private $logger;
+    private $settings;
+    private $product;
     private $status_mapping;
 
-    public function __construct(Api $api, Logger $logger, $addTracking = false) {
+    public function __construct(Api $api, Logger $logger, Settings $settings, Product $product, $addTracking = false) {
         $this->api = $api;
         $this->logger = $logger;
+        $this->settings = $settings;
+        $this->product = $product;
         $this->addTracking = $addTracking;
         
         $statuses = array();
@@ -82,9 +86,9 @@ class Order {
         }
         $items = $order->get_items();
         foreach ($items as $item_id => $item) {
-            $type = get_post_meta($item['product_id'], '_posti_wh_stock_type', true);
             $product_warehouse = get_post_meta($item['product_id'], '_posti_wh_warehouse', true);
-            if (($type == "Posti" || $type == "Store" || $type == "Catalog") && $product_warehouse) {
+            $type = $this->product->get_stock_type_by_warehouse($product_warehouse);
+            if ($type == "Posti" || $type == "Store" || $type == "Catalog") {
                 return true;
             }
         }
@@ -108,7 +112,7 @@ class Order {
     }
     
     public function sync($datetime) {
-        $options = get_option('woocommerce_posti_warehouse_settings');
+        $options = $this->settings->get_plugin_settings();
         $business_id = $options['posti_wh_field_business_id'];
         if (!isset($business_id) || strlen($business_id) <= 0) {
             $this->logger->log("error", "Cannot sync orders: no Business id set");
@@ -132,7 +136,7 @@ class Order {
     }
     
     private function sync_page($page) {
-        if (!isset($page)) {
+        if (!isset($page) || $page === false) {
             return false;
         }
 
@@ -174,7 +178,7 @@ class Order {
             }
         }
         
-        $options = get_option('woocommerce_posti_warehouse_settings');
+        $options = $this->settings->get_plugin_settings();
         $autocomplete = $options['posti_wh_field_autocomplete'];
         foreach ($orders as $order) {
             $order_id = $order['externalId'];
@@ -358,6 +362,9 @@ class Order {
 
         $shipping_phone = $_order->get_shipping_phone();
         $shipping_email = get_post_meta($_order->get_id(), '_shipping_email', true);
+        $phone = !empty($shipping_phone) ? $shipping_phone : $_order->get_billing_phone();
+        $email = !empty($shipping_email) ? $shipping_email : $_order->get_billing_email();
+
         $order = array(
             "externalId" => $posti_order_id,
             "clientId" => (string) $business_id,
@@ -412,9 +419,10 @@ class Order {
                 "postalCode" => $_order->get_shipping_postcode(),
                 "postOffice" => $_order->get_shipping_city(),
                 "country" => $_order->get_shipping_country(),
-                "telephone" => (!empty($shipping_phone) ? $shipping_phone : $order->get_billing_phone()),
-                "email" => (!empty($shipping_email) ? $shipping_email : $order->get_billing_email())
+                "telephone" => $phone,
+                "email" => $email
             ],
+            "pickupPointId" => $pickup_point,
             "currency" => $_order->get_currency(),
             "serviceCode" => $service_code,
             "routingServiceCode" => $routing_service_code,
@@ -425,12 +433,6 @@ class Order {
             "rows" => $order_items
         );
 
-        if ($pickup_point) {
-            $address = $this->pickupPointData($pickup_point, $_order, $business_id);
-            if ($address) {
-                $order['deliveryAddress'] = $address;
-            }
-        }
         if ($additional_services) {
             $order['additionalServices'] = $additional_services;
         }
@@ -438,32 +440,10 @@ class Order {
         return $order;
     }
 
-    public function pickupPointData($id, $_order, $business_id) {
-        $data = $this->api->getUrlData('https://locationservice.posti.com/api/2/location/' . $id);
-        $points = json_decode($data, true);
-        if (is_array($points) && isset($points['locations'])) {
-            foreach ($points['locations'] as $point) {
-                if ($point['pupCode'] === $id) {
-                    return array(
-                        "externalId" => $business_id . "-" . $_order->get_customer_id(),
-                        "name" => $_order->get_shipping_first_name() . ' ' . $_order->get_shipping_last_name() . ' c/o ' . $point['publicName']['en'],
-                        "streetAddress" => $point['address']['en']['address'],
-                        "postalCode" => $point['postalCode'],
-                        "postOffice" => $point['address']['en']['postalCodeName'],
-                        "country" => $point['countryCode'],
-                        "telephone" => $_order->get_billing_phone(),
-                        "email" => $_order->get_billing_email()
-                    );
-                }
-            }
-        }
-        return false;
-    }
-
     public function posti_check_order($order_id, $old_status, $new_status) {
         $posti_order = false;
         if ($new_status == "processing") {
-            $options = get_option('woocommerce_posti_warehouse_settings');
+            $options = $this->settings->get_plugin_settings();
             if (isset($options['posti_wh_field_autoorder'])) {
                 //if autoorder on, check if order has posti products
                 $order = wc_get_order($order_id);

@@ -612,7 +612,7 @@ class Client
         $this->http_response_code   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $this->http_error           = curl_errno($ch);
         $response = curl_exec($ch);
-
+        
         return $response;
     }
 
