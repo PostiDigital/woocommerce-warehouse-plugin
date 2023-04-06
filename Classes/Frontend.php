@@ -466,6 +466,15 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
             } else {
                 $custom_address = false;
             }
+$post_params = [
+    'api_key'       => 'api_key',
+    'address'       => 'Itsenäisyydenkatu 2',
+    'postcode'      => '33100',
+    'timestamp'     => '1680702523'
+];
+ksort($post_params);
+error_log("params join: " . join('&', $post_params));
+error_log("params hash: " . hash_hmac('sha256', join('&', $post_params), 'secret'));
 
             if ($custom_address && $this->core->shipping_method_instance->get_option('show_pickup_point_override_query') === 'yes') {
                 $pickup_point_data = $this->get_pickup_points_by_free_input($custom_address, $shipping_method_provider);

@@ -10,15 +10,13 @@ class Api {
     private $password = null;
     private $token = null;
     private $test = false;
-    private $business_id = false;
     private $logger;
     private $options;
     private $last_status = false;
     private $token_option = 'posti_wh_api_auth';
     private $user_agent = 'woo-wh-client/2.0';
 
-    public function __construct(Logger $logger, $business_id, array &$options, $test = false) {
-        $this->business_id = $business_id;
+    public function __construct(Logger $logger, array &$options, $test = false) {
         $this->test = $test;
         $this->logger = $logger;
         $this->options = $options;
@@ -36,10 +34,6 @@ class Api {
     
     public function getLastStatus() {
         return $this->last_status;
-    }
-
-    public function getBusinessId() {
-        return $this->business_id;
     }
 
     public function getToken() {
@@ -68,7 +62,7 @@ class Api {
             }
         }
         
-        $env = $this->test ? "TEST ": "PROD ";
+        $env = $this->test ? "TEST ": "";
         $curl = curl_init();
         $header = array();
 
@@ -100,11 +94,11 @@ class Api {
         $this->last_status = $http_status;
 
         if ($http_status < 200 || $http_status >= 300) {
-            $this->logger->log("error", "$env HTTP $http_status : $action request to $url" . (isset($payload) ? " with payload:\r\n $payload" : '') . "\r\n\r\nand result:\r\n $result");
+            $this->logger->log("error", $env . "HTTP $http_status : $action request to $url" . (isset($payload) ? " with payload:\r\n $payload" : '') . "\r\n\r\nand result:\r\n $result");
             return false;
         }
 
-        $this->logger->log("info", "$env HTTP $http_status : $action request to $url" . (isset($payload) ? " with payload\r\n $payload" : ''));
+        $this->logger->log("info", $env . "HTTP $http_status : $action request to $url" . (isset($payload) ? " with payload\r\n $payload" : ''));
         
         return json_decode($result, true);
     }
@@ -189,25 +183,25 @@ class Api {
         return $products;
     }
     
-    public function getPickupPoints($postcode = null, $street_address = null, $country = null, $service_provider = null) {
+    public function getPickupPoints($postcode = null, $street_address = null, $country = null, $service_code = null) {
         if (($postcode == null && $street_address == null) || (trim($postcode) == '' && trim($street_address) == '')) {
             return array();
         }
 
         return $this->ApiCall('/ecommerce/v3/pickup-points'
-                . '?serviceProvider=' . urlencode($service_provider)
+                . '?serviceCode=' . urlencode($service_code)
                 . '&postalCode=' . urlencode($postcode)
                 . '&streetAddress=' . urlencode($street_address)
                 . '&country=' . urlencode($country), '', 'GET');
     }
 
-    public function getPickupPointsByText($query_text, $service_provider) {
+    public function getPickupPointsByText($query_text, $service_code) {
         if ($query_text == null || trim($query_text) == '') {
             return array();
         }
 
         return $this->ApiCall('/ecommerce/v3/pickup-points'
-                . '?serviceProvider=' . urlencode($service_provider)
+                . '?serviceCode=' . urlencode($service_code)
                 . '&search=' . urlencode($query_text), '', 'GET');
     }
 

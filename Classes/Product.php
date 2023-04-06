@@ -256,11 +256,7 @@ class Product {
     
     public function handle_products($post_ids, $product_warehouse_override) {
         $options = $this->settings->get_plugin_settings();
-        $business_id = $options['posti_wh_field_business_id'];
-        if (!isset($business_id) || strlen($business_id) == 0) {
-            $this->logger->log("error", "Cannot publish products: no Business id set");
-            return;
-        }
+        $business_id = isset($options['posti_wh_field_business_id']) ? $options['posti_wh_field_business_id'] : '';
 
         $products = array();
         $product_id_diffs = array();
@@ -269,6 +265,7 @@ class Product {
         foreach ($post_ids as $post_id) {
             $_product = wc_get_product($post_id);
             $product_warehouse = $this->get_update_warehouse_id($post_id, $product_warehouse_override, $product_whs_diffs);
+            
             $type = $this->get_stock_type($warehouses, $product_warehouse);
             if ($type == 'Catalog') {
                 update_post_meta($post_id, '_posti_last_sync', 0);
@@ -277,17 +274,18 @@ class Product {
             elseif (!empty($product_warehouse) && ($type == "Posti" || $type == "Store")) {
                 update_post_meta($post_id, '_posti_last_sync', 0);
 
+                $retailerId = $this->get_retailer_id($warehouses, $product_warehouse);
                 $product_distributor = get_post_meta($post_id, '_posti_wh_distribution', true);
                 $wholesale_price = (float) str_ireplace(',', '.', get_post_meta($post_id, '_wholesale_price', true));
 
                 $product_type = $_product->get_type();
                 if ($product_type == 'variable') {
-                    $this->collect_products_variations($post_id, $business_id,
+                    $this->collect_products_variations($post_id, $business_id, $retailerId,
                             $_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs);
                 }
                 else {
 
-                    $this->collect_products_simple($post_id, $business_id,
+                    $this->collect_products_simple($post_id, $business_id, $retailerId,
                             $_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs);
 
                 }
@@ -311,11 +309,11 @@ class Product {
             }
 
             $this->api->putInventory($products);
-            $this->sync_products($business_id, $product_ids);
+            $this->sync_products($product_ids);
         }
     }
     
-    private function collect_products_variations($post_id, $business_id,
+    private function collect_products_variations($post_id, $business_id, $retailerId,
             $_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diffs) {
 
         $variations = $_product->get_available_variations();
@@ -349,7 +347,6 @@ class Product {
 
             $product = array(
                 'externalId' => $variation_product_id,
-                "supplierId" => $business_id,
                 'descriptions' => array(
                     'en' => array(
                         'name' => $variable_name,
@@ -381,7 +378,7 @@ class Product {
 
             $balances = array(
                 array(
-                    'retailerId' => $business_id,
+                    'retailerId' => $retailerId,
                     'catalogExternalId' => $product_warehouse,
                     'wholesalePrice' => $wholesale_price ? $wholesale_price : (float) $variation['display_regular_price'],
                     'currency' => get_woocommerce_currency()
@@ -392,7 +389,7 @@ class Product {
         }
     }
     
-    private function collect_products_simple($post_id, $business_id,
+    private function collect_products_simple($post_id, $business_id, $retailerId,
             $_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diffs) {
 
         $ean = get_post_meta($post_id, '_ean', true);
@@ -408,7 +405,6 @@ class Product {
 
         $product = array(
             'externalId' => $product_id,
-            "supplierId" => $business_id,
             'descriptions' => array(
                 'en' => array(
                     'name' => $_product->get_name(),
@@ -439,7 +435,7 @@ class Product {
 
         $balances = array(
             array(
-                'retailerId' => $business_id,
+                'retailerId' => $retailerId,
                 'catalogExternalId' => $product_warehouse,
                 'wholesalePrice' => $wholesale_price,
                 'currency' => get_woocommerce_currency()
@@ -509,22 +505,15 @@ class Product {
     }
 
     public function sync($datetime) {        
-        $options = $this->settings->get_plugin_settings();
-        $business_id = $options['posti_wh_field_business_id'];
-        if (!isset($business_id) || strlen($business_id) <= 0) {
-            $this->logger->log("error", "Cannot sync products: no Business id set");
-            return false;
-        }
-
         $response = $this->api->getBalancesUpdatedSince($datetime, 50);
-        if (!$this->sync_page($business_id, $response)) {
+        if (!$this->sync_page($response)) {
             return false;
         }
 
         $pages = $response['page']['totalPages'];
         for ($page = 1; $page < $pages; $page++) {
             $page_response = $this->api->getBalancesUpdatedSince($datetime, 50, $page);
-            if (!$this->sync_page($business_id, $page_response)) {
+            if (!$this->sync_page($page_response)) {
                 break;
             }
         }
@@ -532,7 +521,7 @@ class Product {
         return true;
     }
     
-    private function sync_page($business_id, $page) {
+    private function sync_page($page) {
         if (!isset($page) || $page === false) {
             return false;
         }
@@ -550,12 +539,12 @@ class Product {
             }
         }
         $product_ids = array_unique($product_ids_tmp);
-        $this->sync_products($business_id, $product_ids);
+        $this->sync_products($product_ids);
 
         return true;
     }
     
-    private function sync_products($business_id, $product_ids) {
+    private function sync_products($product_ids) {
         if (count($product_ids) == 0) {
             return;
         }
@@ -681,8 +670,7 @@ class Product {
             array_push($product_id_diffs, array('id' => $post_id, 'to' => $product_id_latest));
         }
         elseif ($product_id !== $product_id_latest) {
-            $product_id_deprecated = $business_id . '-' . $product_id_latest;
-            if ($product_id !== $product_id_deprecated) {
+            if (!isset($business_id) || empty($business_id) || ($product_id !== $business_id . '-' . $product_id_latest)) {
                 array_push($product_id_diffs, array('id' => $post_id, 'from' => $product_id, 'to' => $product_id_latest));
                 $product_id = $product_id_latest; // SKU changed since last update
             }
@@ -724,5 +712,19 @@ class Product {
         }
 
         return $type;
+    }
+    
+    private function get_retailer_id($warehouses, $product_warehouse) {
+        $result = null;
+        if (!empty($product_warehouse)) {
+            foreach ($warehouses as $warehouse) {
+                if ($warehouse['externalId'] === $product_warehouse) {
+                    $result = $warehouse['retailerId'];
+                    break;
+                }
+            }
+        }
+
+        return $result;
     }
 }

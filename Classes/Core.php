@@ -18,7 +18,6 @@ class Core {
     private $metabox = null;
     private $order = null;
     private $product = null;
-    private $business_id = false;
     private $is_test = false;
     private $debug = false;
     private $add_tracking = false;
@@ -267,17 +266,12 @@ class Core {
             $this->cron_time = (int) $options['posti_wh_field_crontime'];
         }
 
-        if (isset($options['posti_wh_field_business_id'])) {
-            $this->business_id = $options['posti_wh_field_business_id'];
-        }
-        
         $this->logger = new Logger();
         $this->logger->setDebug($this->debug);
         
-        $this->api = new Api($this->logger, $this->business_id, $options, $this->is_test);
+        $this->api = new Api($this->logger, $options, $this->is_test);
         $this->product = new Product($this->api, $this->logger, $this->settings);
         $this->order = new Order($this->api, $this->logger, $this->settings, $this->product, $this->add_tracking);
-        //$this->shipping = new WarehouseShipping($api_choice, $this->logger, $this->settings);
         $this->metabox = new Metabox($this->order);
 
         if ($this->debug) {

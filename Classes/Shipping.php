@@ -26,32 +26,22 @@ function warehouse_shipping_method() {
             private $is_test = false;
             private $debug = false;
             private $api;
-            private $business_id = false;
             private $delivery_service = 'WAREHOUSE';
             private $logger;
             private $options;
 
-            /**
-             * Constructor for Pakettikauppa shipping class
-             *
-             * @access public
-             * @return void
-             */
             public function __construct() {
                 $this->options = get_option('posti_wh_options');
                 $this->is_test = Settings::is_test($this->options);
                 $this->debug = Settings::is_debug($this->options);
 
-                if (isset($this->options['posti_wh_field_business_id'])) {
-                    $this->business_id = $this->options['posti_wh_field_business_id'];
-                }
                 if (isset($this->options['posti_wh_field_service'])) {
                     $this->delivery_service = $this->options['posti_wh_field_service'];
                 }
                 $this->logger = new Logger();
                 $this->logger->setDebug($this->debug);
 
-                $this->api = new Api($this->logger, $this->business_id, $this->options, $this->is_test);
+                $this->api = new Api($this->logger, $this->options, $this->is_test);
 
                 $this->load();
             }
@@ -97,9 +87,9 @@ function warehouse_shipping_method() {
 
             public function generate_pickuppoints_html($key, $value) {
                 $field_key = $this->get_field_key($key);
-
                 if ($this->get_option($key) !== '') {
                     $values = $this->get_option($key);
+
                     if (is_string($values)) {
                         $values = json_decode($this->get_option($key), true);
                     }
@@ -291,7 +281,7 @@ function warehouse_shipping_method() {
                 }
 
                 foreach ($all_shipping_methods as $shipping_method) {
-                    $services[strval($shipping_method->code)] = sprintf('%1$s: %2$s', $shipping_method->provider, $shipping_method->description[$user_lang] ?? $shipping_method->description['en']);
+                    $services[strval($shipping_method->id)] = sprintf('%1$s: %2$s', $shipping_method->deliveryOperator, $shipping_method->description[$user_lang] ?? $shipping_method->description['en']);
                 }
 
                 ksort($services);
@@ -308,8 +298,8 @@ function warehouse_shipping_method() {
             private function get_pickup_point_methods() {
                 $methods = array(
                     '2103' => 'Posti',
-                    '90080' => 'Matkahuolto',
-                    '80010' => 'DB Schenker',
+                    'MH80' => 'Matkahuolto',
+                    'SBTLFIRREX' => 'DB Schenker',
                     '2711' => 'Posti International',
                 );
 
@@ -329,7 +319,7 @@ function warehouse_shipping_method() {
                         continue;
                     }
                     foreach ($shipping_method->additionalServices as $key => $service) {
-                        $additional_services[strval($shipping_method->code)][$key] = (object)$service;
+                        $additional_services[strval($shipping_method->id)][$key] = (object)$service;
                     }
                 }
 
@@ -376,7 +366,7 @@ function warehouse_shipping_method() {
                 }
 
                 foreach ($all_shipping_methods as $shipping_method) {
-                    if (strval($shipping_method->code) !== strval($service_id)) {
+                    if (strval($shipping_method->id) !== strval($service_id)) {
                         continue;
                     }
                     if (!isset($shipping_method->tags)) {

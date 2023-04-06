@@ -112,13 +112,6 @@ class Order {
     }
     
     public function sync($datetime) {
-        $options = $this->settings->get_plugin_settings();
-        $business_id = $options['posti_wh_field_business_id'];
-        if (!isset($business_id) || strlen($business_id) <= 0) {
-            $this->logger->log("error", "Cannot sync orders: no Business id set");
-            return false;
-        }
-
         $response = $this->api->getOrdersUpdatedSince($datetime, 30);
         if (!$this->sync_page($response)) {
             return false;
@@ -310,7 +303,7 @@ class Order {
         foreach ($order_services['additional_services'] as $_service => $_service_data) {
             $additional_services[] = ["serviceCode" => (string)$_service];
         }
-        $business_id = $this->api->getBusinessId();
+
         $order_items = array();
         $total_price = 0;
         $total_tax = 0;
@@ -319,9 +312,7 @@ class Order {
         $service_code = $order_services['service']; //"2103";
         $routing_service_code = "";
         $pickup_point = get_post_meta($_order->get_id(), '_warehouse_pickup_point_id', true); //_woo_posti_shipping_pickup_point_id
-        if ($pickup_point) {
-            $routing_service_code = "3201";
-        }
+
         //shipping service code 
         foreach ($_order->get_items('shipping') as $item_id => $shipping_item_obj) {
             $item_service_code = $shipping_item_obj->get_meta('service_code');
@@ -367,7 +358,6 @@ class Order {
 
         $order = array(
             "externalId" => $posti_order_id,
-            "clientId" => (string) $business_id,
             "orderDate" => date('Y-m-d\TH:i:s.vP', strtotime($_order->get_date_created()->__toString())),
             "metadata" => [
                 "documentType" => "SalesOrder"
@@ -393,7 +383,7 @@ class Order {
                 "email" => get_option("admin_email")
             ],
             "client" => [
-                "externalId" => $business_id . "-" . $_order->get_customer_id(),
+                "externalId" => strval($_order->get_customer_id()),
                 "name" => $_order->get_billing_first_name() . ' ' . $_order->get_billing_last_name(),
                 "streetAddress" => $_order->get_billing_address_1(),
                 "postalCode" => $_order->get_billing_postcode(),
@@ -403,7 +393,7 @@ class Order {
                 "email" => $_order->get_billing_email()
             ],
             "recipient" => [
-                "externalId" => $business_id . "-" . $_order->get_customer_id(),
+                "externalId" => strval($_order->get_customer_id()),
                 "name" => $_order->get_billing_first_name() . ' ' . $_order->get_billing_last_name(),
                 "streetAddress" => $_order->get_billing_address_1(),
                 "postalCode" => $_order->get_billing_postcode(),
@@ -413,7 +403,7 @@ class Order {
                 "email" => $_order->get_billing_email()
             ],
             "deliveryAddress" => [
-                "externalId" => $business_id . "-" . $_order->get_customer_id(),
+                "externalId" => strval($_order->get_customer_id()),
                 "name" => $_order->get_shipping_first_name() . ' ' . $_order->get_shipping_last_name(),
                 "streetAddress" => $_order->get_shipping_address_1(),
                 "postalCode" => $_order->get_shipping_postcode(),
@@ -425,11 +415,9 @@ class Order {
             "pickupPointId" => $pickup_point,
             "currency" => $_order->get_currency(),
             "serviceCode" => $service_code,
-            "routingServiceCode" => $routing_service_code,
             "totalPrice" => $total_price,
             "totalTax" => $total_tax,
             "totalWholeSalePrice" => $total_price + $total_tax,
-            "deliveryOperator" => "Posti",
             "rows" => $order_items
         );
 
