@@ -108,7 +108,31 @@ class Order {
         if (!is_object($order)) {
             $order = wc_get_order($order);
         }
-        return $this->api->addOrder($this->prepare_posti_order($order));
+        
+        $order_id = (string) $order->get_id();
+        $data = $this->prepare_posti_order($order_id, $order);
+        $result = $this->api->addOrder($data);
+        $status = $this->api->getLastStatus();
+
+        if ($status == 502 || $status == 503) {
+            for ($i = 0; $i < 3; $i++) {
+                sleep(1);
+                $result = $this->api->addOrder($data);
+                $status = $this->api->getLastStatus();
+                if ($status == 200) {
+                    break;
+                }
+            }
+        }
+
+        if ($status >= 200 && $status < 300) {
+            update_post_meta($order_id, '_posti_id', (string) $order->get_id());
+        }
+        else {
+            $order->update_status('failed', __('Failed to order', 'posti-warehouse'), true);
+        }
+        
+        return $result;
     }
     
     public function sync($datetime) {
@@ -294,7 +318,7 @@ class Order {
         return $reference;
     }
 
-    private function prepare_posti_order($_order) {
+    private function prepare_posti_order($posti_order_id, $_order) {
 
         $order_services = $this->get_additional_services($_order);
 
@@ -310,21 +334,20 @@ class Order {
         $items = $_order->get_items();
         $item_counter = 1;
         $service_code = $order_services['service']; //"2103";
-        $routing_service_code = "";
         $pickup_point = get_post_meta($_order->get_id(), '_warehouse_pickup_point_id', true); //_woo_posti_shipping_pickup_point_id
 
-        //shipping service code 
         foreach ($_order->get_items('shipping') as $item_id => $shipping_item_obj) {
             $item_service_code = $shipping_item_obj->get_meta('service_code');
             if ($item_service_code) {
                 $service_code = $item_service_code;
             }
         }
+        
+        $warehouses = $this->api->getWarehouses();
         foreach ($items as $item_id => $item) {
-            $type = get_post_meta($item['product_id'], '_posti_wh_stock_type', true);
             $product_warehouse = get_post_meta($item['product_id'], '_posti_wh_warehouse', true);
-            if (($type == "Posti" || $type == "Store" || $type == "Catalog") && $product_warehouse) {
-
+            $type = $this->product->get_stock_type($warehouses, $product_warehouse);
+            if ($type === "Posti" || $type === "Store" || $type === "Catalog") {
                 $total_price += $item->get_total();
                 $total_tax += $item->get_subtotal_tax();
                 if (isset($item['variation_id']) && $item['variation_id']) {
@@ -348,42 +371,35 @@ class Order {
             }
         }
         
-        $posti_order_id = (string) $_order->get_id();
-        update_post_meta($_order->get_id(), '_posti_id', $posti_order_id);
-
         $shipping_phone = $_order->get_shipping_phone();
         $shipping_email = get_post_meta($_order->get_id(), '_shipping_email', true);
         $phone = !empty($shipping_phone) ? $shipping_phone : $_order->get_billing_phone();
         $email = !empty($shipping_email) ? $shipping_email : $_order->get_billing_email();
 
         $order = array(
-            "externalId" => $posti_order_id,
+            "externalId" => (string) $posti_order_id,
             "orderDate" => date('Y-m-d\TH:i:s.vP', strtotime($_order->get_date_created()->__toString())),
             "metadata" => [
                 "documentType" => "SalesOrder"
             ],
             "vendor" => [
-                //"externalId" => "string",
                 "name" => get_option("blogname"),
                 "streetAddress" => get_option('woocommerce_store_address'),
                 "postalCode" => get_option('woocommerce_store_postcode'),
                 "postOffice" => get_option('woocommerce_store_city'),
                 "country" => get_option('woocommerce_default_country'),
-                //"telephone" => "string",
                 "email" => get_option("admin_email")
             ],
             "sender" => [
-                //"externalId" => "string",
                 "name" => get_option("blogname"),
                 "streetAddress" => get_option('woocommerce_store_address'),
                 "postalCode" => get_option('woocommerce_store_postcode'),
                 "postOffice" => get_option('woocommerce_store_city'),
                 "country" => get_option('woocommerce_default_country'),
-                //"telephone" => "string",
                 "email" => get_option("admin_email")
             ],
             "client" => [
-                "externalId" => strval($_order->get_customer_id()),
+                //"externalId" => strval($_order->get_customer_id()),
                 "name" => $_order->get_billing_first_name() . ' ' . $_order->get_billing_last_name(),
                 "streetAddress" => $_order->get_billing_address_1(),
                 "postalCode" => $_order->get_billing_postcode(),
@@ -393,7 +409,7 @@ class Order {
                 "email" => $_order->get_billing_email()
             ],
             "recipient" => [
-                "externalId" => strval($_order->get_customer_id()),
+                //"externalId" => strval($_order->get_customer_id()),
                 "name" => $_order->get_billing_first_name() . ' ' . $_order->get_billing_last_name(),
                 "streetAddress" => $_order->get_billing_address_1(),
                 "postalCode" => $_order->get_billing_postcode(),
@@ -403,7 +419,7 @@ class Order {
                 "email" => $_order->get_billing_email()
             ],
             "deliveryAddress" => [
-                "externalId" => strval($_order->get_customer_id()),
+                //"externalId" => strval($_order->get_customer_id()),
                 "name" => $_order->get_shipping_first_name() . ' ' . $_order->get_shipping_last_name(),
                 "streetAddress" => $_order->get_shipping_address_1(),
                 "postalCode" => $_order->get_shipping_postcode(),
@@ -430,31 +446,16 @@ class Order {
 
     public function posti_check_order($order_id, $old_status, $new_status) {
         $posti_order = false;
-        if ($new_status == "processing") {
+        if ($new_status === "processing") {
             $options = $this->settings->get_plugin_settings();
             if (isset($options['posti_wh_field_autoorder'])) {
-                //if autoorder on, check if order has posti products
                 $order = wc_get_order($order_id);
                 $is_posti_order = $this->hasPostiProducts($order);
-                if ($is_posti_order) {
-                    update_post_meta($order_id, '_posti_wh_order', '1');
+                $posti_order_id = get_post_meta($order_id, '_posti_id', true);
+                
+                if ($is_posti_order && empty($posti_order_id)) {
                     $this->addOrder($order);
-                    $status = $this->api->getLastStatus();
 
-                    //if status 500 try to create 3 times
-                    if ($status == '500') {
-                        for ($i = 0; $i < 3; $i++) {
-                            $this->addOrder($order);
-                            $status = $this->api->getLastStatus();
-                            if ($status == '200') {
-                                break;
-                            }
-                        }
-                    }
-                    //if sttaus 400 or 500 set order to failed
-                    if ($status == '400' || $status == '500') {
-                        $order->update_status('failed', __('Failed by Posti Glue', 'posti-warehouse'), true);
-                    }
                 } else {
                     $this->logger->log("info", "Order  " . $order_id . " is not posti");
                 }

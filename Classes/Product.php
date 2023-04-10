@@ -700,7 +700,7 @@ class Product {
         return $this->get_stock_type($warehouses, $product_warehouse);
     }
     
-    private function get_stock_type($warehouses, $product_warehouse) {
+    public function get_stock_type($warehouses, $product_warehouse) {
         $type = 'Not_in_stock';
         if (!empty($product_warehouse)) {
             foreach ($warehouses as $warehouse) {
