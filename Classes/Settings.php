@@ -109,20 +109,6 @@ class Settings {
         );
 
         add_settings_field(
-                'posti_wh_field_business_id',
-                __('Business ID', 'posti-warehouse'),
-                array($this, 'posti_wh_field_string_cb'),
-                'posti_wh',
-                'posti_wh_options',
-                [
-                    'label_for' => 'posti_wh_field_business_id',
-                    //'default' => 'A',
-                    'class' => 'posti_wh_row',
-                    'posti_wh_custom_data' => 'custom',
-                ]
-        );
-
-        add_settings_field(
                 'posti_wh_field_contract',
                 __('Contract number', 'posti-warehouse'),
                 array($this, 'posti_wh_field_string_cb'),

@@ -57,10 +57,12 @@ class Core {
     }
 
     public function install() {
+        Api::install();
         Logger::install();
     }
 
     public function uninstall() {
+        Api::uninstall();
         Logger::uninstall();
     }
 

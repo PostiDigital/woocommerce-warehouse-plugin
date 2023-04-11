@@ -32,6 +32,14 @@ class Api {
         }
     }
     
+    public static function install() {
+        delete_option('posti_wh_api_auth');
+    }
+    
+    public static function uninstall() {
+        delete_option('posti_wh_api_auth');
+    }
+    
     public function getLastStatus() {
         return $this->last_status;
     }
