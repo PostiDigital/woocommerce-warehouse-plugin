@@ -95,6 +95,7 @@ Select your existing product or create a new, and update the product information
 
 ## Version history
 
+- 1.0.8 Fix email and telephone when pickup point is used for delivery address.
 - 1.0.7 Prefer shipping email and telephone to billing information for delivery address.
 - 1.0.6 "PickUp Parcel" and "Home delivery SE/DK" introduced as new shipping options for Sweden and Denmark. If you are updating the old version of the Warehouse plug-in please ensure update mapping of shipping options in Posti warehouse settings. Some bug fixes included also.
 - 1.0.5 Bug fix: fixed error in error message that appeared when saving variabl product.

@@ -375,7 +375,6 @@ class Order {
         $shipping_email = get_post_meta($_order->get_id(), '_shipping_email', true);
         $phone = !empty($shipping_phone) ? $shipping_phone : $_order->get_billing_phone();
         $email = !empty($shipping_email) ? $shipping_email : $_order->get_billing_email();
-
         $order = array(
             "externalId" => (string) $posti_order_id,
             "orderDate" => date('Y-m-d\TH:i:s.vP', strtotime($_order->get_date_created()->__toString())),
