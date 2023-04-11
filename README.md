@@ -99,12 +99,13 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile addtional service is added to order/delivery. 
 
 ## Version history
+- 2.0.0:
+    - Expanded pickup points support.
+    - Deprecated business ID prefix in orders and products.
+    - Added separate plugin settings page.
+    - Added bulk products list action - Publish to warehouse / Remove from warehouse
+    - Updated orders and products sync process to use timestamp.
 
-- 2.0.0 Expanded pickup points support.
-        Deprecated business ID prefix in orders and products.
-        Added separate plugin settings page.
-        Added bulk products list action - Publish to warehouse / Remove from warehouse
-        Updated orders and products sync process to use timestamp.
 - 1.0.8 Fix email and telephone when pickup point is used for delivery address.
 - 1.0.7 Prefer shipping email and telephone to billing information for delivery address.
 - 1.0.6 "PickUp Parcel" and "Home delivery SE/DK" introduced as new shipping options for Sweden and Denmark. If you are updating the old version of the Warehouse plug-in please ensure update mapping of shipping options in Posti warehouse settings. Some bug fixes included also.
