@@ -103,6 +103,7 @@ Select your existing product or create a new, and update the product information
 - 2.0.0 Expanded pickup points support.
         Deprecated business ID prefix in orders and products.
         Added separate plugin settings page.
+        Added bulk products list action - Publish to warehouse / Remove from warehouse
         Updated orders and products sync process to use timestamp.
 - 1.0.8 Fix email and telephone when pickup point is used for delivery address.
 - 1.0.7 Prefer shipping email and telephone to billing information for delivery address.
