@@ -59,7 +59,7 @@ class Debug {
                             <tr class="<?= ($key % 2 == 0?'alternate':'');?>">
                                 <td class="column-columnname"><?= $log->created_at; ?></td>
                                 <td class="column-columnname"><?= $log->type; ?></td>
-                                <td class="column-columnname"><?= nl2br($log->message); ?></td>
+                                <td class="column-columnname"><?= nl2br(esc_html($log->message)); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

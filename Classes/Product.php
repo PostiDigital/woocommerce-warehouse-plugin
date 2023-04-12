@@ -65,14 +65,28 @@ class Product {
     }
 
     public function handle_bulk_actions_warehouse_products($redirect_to, $action, $post_ids) {
-        if ($action === '_posti_wh_bulk_actions_publish_products') {
-            $warehouse = $_REQUEST['_posti_wh_warehouse_bulk_publish'];
-            if (!empty($warehouse)) {
-                $this->handle_products($post_ids, $warehouse);
-            }
+        if (count($post_ids) == 0) {
+            return $redirect_to;
+        }
+        
+        if ($action === '_posti_wh_bulk_actions_publish_products'
+            || $action === '_posti_wh_bulk_actions_remove_products') {
 
-        } elseif ($action === '_posti_wh_bulk_actions_remove_products') {
-            $this->handle_products($post_ids, '--delete');
+            $cnt_fail = 0;
+            if ($action === '_posti_wh_bulk_actions_publish_products') {
+                $warehouse = $_REQUEST['_posti_wh_warehouse_bulk_publish'];
+                if (!empty($warehouse)) {
+                    $cnt_fail = $this->handle_products($post_ids, $warehouse);
+                }
+
+            } elseif ($action === '_posti_wh_bulk_actions_remove_products') {
+                $cnt_fail = $this->handle_products($post_ids, '--delete');
+                
+            }
+            
+            $redirect_to = add_query_arg(array(
+                'products_total' => count($post_ids),
+                'products_fail' => $cnt_fail), $redirect_to);
         }
 
         return $redirect_to;
@@ -261,15 +275,24 @@ class Product {
         $products = array();
         $product_id_diffs = array();
         $product_whs_diffs = array();
+        $product_ids_map = array();
         $warehouses = $this->api->getWarehouses();
+        $cnt_fail = 0;
         foreach ($post_ids as $post_id) {
-            $_product = wc_get_product($post_id);
             $product_warehouse = $this->get_update_warehouse_id($post_id, $product_warehouse_override, $product_whs_diffs);
+            $_product = wc_get_product($post_id);
+            if (!$this->can_publish_product($_product)) {
+                if (!empty($product_warehouse)) { // dont count: removing product from warehouse that is not there
+                    $cnt_fail++;
+                }
+
+                continue;
+            }
             
             $type = $this->get_stock_type($warehouses, $product_warehouse);
             if ($type == 'Catalog') {
                 update_post_meta($post_id, '_posti_last_sync', 0);
-                $product_id = $this->get_update_product_id($post_id, $business_id, $_product->get_sku(), $product_id_diffs);
+                $this->get_update_product_id($post_id, $business_id, $_product->get_sku(), $product_id_diffs);
             }
             elseif (!empty($product_warehouse) && ($type == "Posti" || $type == "Store")) {
                 update_post_meta($post_id, '_posti_last_sync', 0);
@@ -281,12 +304,12 @@ class Product {
                 $product_type = $_product->get_type();
                 if ($product_type == 'variable') {
                     $this->collect_products_variations($post_id, $business_id, $retailerId,
-                            $_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs);
+                            $_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs, $product_ids_map);
                 }
                 else {
 
                     $this->collect_products_simple($post_id, $business_id, $retailerId,
-                            $_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs);
+                            $_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs, $product_ids_map);
 
                 }
             }
@@ -294,10 +317,28 @@ class Product {
 
         if (count($product_whs_diffs) > 0 || count($product_id_diffs) > 0) {
             $products_obsolete = array();
-            $this->collect_products_for_removal($product_whs_diffs, $product_id_diffs, $products_obsolete);
+            $this->collect_products_for_removal($product_whs_diffs, $product_id_diffs, $products, $products_obsolete, $product_ids_map);
 
             if (count($products_obsolete) > 0) {
-                $this->api->deleteInventory($products_obsolete);
+                $errors = $this->api->deleteInventory($products_obsolete);
+                if ($errors !== false) {
+                    $cnt = count($products_obsolete);
+                    for ($i = 0; $i < $cnt; $i++) {
+                        if (!$this->contains_error($errors, $i)) {
+                            $product_obsolete = $products_obsolete[$i];
+                            $product_id_obsolete = $product_obsolete['product']['externalId'];
+                            $post_id_obsolete = $product_ids_map[$product_id_obsolete];
+
+                            $this->unlink_product_from_post($post_id_obsolete);
+                        }
+                    }
+                }
+            }
+            else {
+                // products never published to warehouse
+                foreach ($product_whs_diffs as $diff) {
+                    $this->unlink_product_from_post($diff['id']);
+                }
             }
         }
 
@@ -308,23 +349,82 @@ class Product {
                 array_push($product_ids, $product_id);
             }
 
-            $this->api->putInventory($products);
+            $errors = $this->api->putInventory($products);
+            if ($errors !== false) {
+                $cnt = count($products);
+                for ($i = 0; $i < $cnt; $i++) {
+                    if (!$this->contains_error($errors, $i)) {
+                        $product = $products[$i];
+                        $product_id = $product['product']['externalId'];
+                        $post_id = $product_ids_map[$product_id];
+                        
+                        $var_key = 'VAR-' . $product_id;
+                        $variation_post_id = isset($product_ids_map[$var_key]) ? $product_ids_map[$var_key] : null;
+
+                        $this->link_product_to_post($post_id, $variation_post_id, $product_id, $product_warehouse_override);
+                    }
+                }
+            }
+            
             $this->sync_products($product_ids);
+            
+            if ($errors === false) {
+                $cnt_fail = count($post_ids);
+            }
+            elseif (is_array($errors)) {
+                $cnt_fail += count($errors);
+            }
+        }
+        
+        return $cnt_fail;
+    }
+    
+    private function link_product_to_post($post_id, $variation_post_id, $product_id, $product_warehouse_override) {
+        update_post_meta($post_id, '_posti_wh_warehouse', $product_warehouse_override);
+        
+        $_post_id = !empty($variation_post_id) ? $variation_post_id : $post_id;
+        update_post_meta($_post_id, '_posti_id', $product_id);
+    }
+    
+    private function unlink_product_from_post($post_id) {
+        delete_post_meta($post_id, '_posti_id', '');
+        delete_post_meta($post_id, '_posti_wh_warehouse', '');
+        
+        $_product = wc_get_product($post_id);
+        if ($_product !== false && $_product->get_type() === 'variable') {
+            $variations = $_product->get_available_variations();
+            foreach ($variations as $variation) {
+                delete_post_meta($variation['variation_id'], '_posti_id', '');
+            }
         }
     }
     
+    private function can_publish_product($_product) {
+        $product_type = $_product->get_type();
+        if ($product_type == 'variable') {
+            $variations = $_product->get_available_variations();
+            foreach ($variations as $variation) {
+                if (!isset($variation['sku']) || empty($variation['sku'])) {
+                    return false;
+                }
+            }
+        }
+        else {
+            if (empty($_product->get_sku())) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
     private function collect_products_variations($post_id, $business_id, $retailerId,
-            $_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diffs) {
+            $_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diffs, &$product_ids_map) {
 
         $variations = $_product->get_available_variations();
         foreach ($variations as $variation) {
             $variation_post_id = $variation['variation_id'];
             $variation_product_id = $this->get_update_product_id($variation_post_id, $business_id, $variation['sku'], $product_id_diffs);
-            if (!isset($variation_product_id) || strlen($variation_product_id) == 0) {
-                $this->logger->log("error", "Cannot add product id " . $post_id . " variation ". $variation['variation_id'] ." no SKU set");
-                continue;
-            }
-            
             $variable_name = $_product->get_name();
             $ean = get_post_meta($variation_post_id, '_ean', true);
             $specifications = [];
@@ -385,12 +485,16 @@ class Product {
                 )
             );
 
+            $product_ids_map[$variation_product_id] = $post_id;
+            $product_ids_map['VAR-' . $variation_product_id] = $variation_post_id;
             array_push($products, array('product' => $product, 'balances' => $balances));
         }
+        
+        return true;
     }
     
     private function collect_products_simple($post_id, $business_id, $retailerId,
-            $_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diffs) {
+            $_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diffs, &$product_ids_map) {
 
         $ean = get_post_meta($post_id, '_ean', true);
         if (!$wholesale_price) {
@@ -398,11 +502,6 @@ class Product {
         }
 
         $product_id = $this->get_update_product_id($post_id, $business_id, $_product->get_sku(), $product_id_diffs);
-        if (!isset($product_id) || strlen($product_id) == 0) {
-            $this->logger->log("error", "Cannot add product id " . $post_id . " no SKU set");
-            return;
-        }
-
         $product = array(
             'externalId' => $product_id,
             'descriptions' => array(
@@ -442,40 +541,42 @@ class Product {
             )
         );
 
+        $product_ids_map[$product_id] = $post_id;
         array_push($products, array('product' => $product, 'balances' => $balances));
     }
     
-    private function collect_products_for_removal(&$product_whs_diffs, &$product_id_diffs, &$products_obsolete) {
+    private function collect_products_for_removal(&$product_whs_diffs, &$product_id_diffs, &$products, &$products_obsolete, &$product_ids_map) {
         foreach ($product_whs_diffs as $diff) {
             $warehouse_from = $diff['from'];
             if (!empty($warehouse_from)) {
                 $product_id = get_post_meta($diff['id'], '_posti_id', true);
                 if (!empty($product_id)) {
+                    $product_ids_map[$product_id] = $diff['id'];
+
                     $product = array('externalId' => $product_id);
                     array_push($products_obsolete, array('product' => $product));
                 }
                 else {
                     $_product = wc_get_product($diff['id']);
-                    if (isset($_product) && $_product->get_type() === 'variable') {
+                    if ($_product !== false && $_product->get_type() === 'variable') {
                         $variations = $_product->get_available_variations();
                         foreach ($variations as $variation) {
                             $variation_product_id = get_post_meta($variation['variation_id'], '_posti_id', true);
+                            $product_ids_map[$variation_product_id] = $diff['id'];
+
                             $product = array('externalId' => $variation_product_id);
                             array_push($products_obsolete, array('product' => $product));
                         }
                     }
                 }
             }
-
-            $warehouse_to = $diff['to'];
-            update_post_meta($diff['id'], '_posti_wh_warehouse', $warehouse_to);
         }
         
         foreach ($product_id_diffs as $diff) {
-            update_post_meta($diff['id'], '_posti_id', $diff['to']);
-
             $product_id = $diff['from'];
             if (!empty($product_id) && !$this->contains_product($products, $product_id)) {
+                $product_ids_map[$product_id] = $diff['id'];
+
                 $product = array('externalId' => $product_id);
                 array_push($products_obsolete, array('product' => $product));
             }
@@ -500,6 +601,15 @@ class Product {
                 $class = 'notice notice-error';
                 $message = __('Posti error: product sync not active. Please check product SKU, price or try resave.', 'posti-warehouse');
                 printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), esc_html($message));
+            }
+        }
+        
+  	if (isset($_REQUEST['products_total']) && isset($_REQUEST['products_fail'])) {
+            $cnt_total = $_REQUEST['products_total'];
+            $cnt_fail = $_REQUEST['products_fail'];
+            if ($cnt_fail > 0) {
+                $class = 'notice notice-error';
+                printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), "Action failed for $cnt_fail product(s)");
             }
         }
     }
@@ -534,7 +644,7 @@ class Product {
         $product_ids_tmp = array();
         foreach ($balances as $balance) {
             $product_id = $balance['productExternalId'];
-            if (isset($product_id) && strlen($product_id) > 0) {
+            if (isset($product_id) && !empty($product_id)) {
                 array_push($product_ids_tmp, $product_id);
             }
         }
@@ -567,7 +677,7 @@ class Product {
         $post_by_product_id = array();
         foreach ($posts as $post) {
             $product_id = get_post_meta($post->ID, '_posti_id', true);
-            if (isset($product_id) && strlen($product_id) > 0) {
+            if (isset($product_id) && !empty($product_id)) {
                 $post_by_product_id[$product_id] = $post->ID;
             }
         }
@@ -583,7 +693,7 @@ class Product {
                             $product = $product_with_balances['product'];
                             $product_id = $product['externalId'];
                             $id = $post_by_product_id[$product_id];
-                            if (isset($id) && strlen($id) > 0) {
+                            if (isset($id) && !empty($id)) {
                                 $this->sync_product($id, $product_id, $product_with_balances['balances']);
                             }
                         }
@@ -647,6 +757,16 @@ class Product {
         
         return false;
     }
+    
+    private function contains_error($errors, $idx) {
+        foreach ($errors as $error) {
+            if ($error['index'] === $idx) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
 
     private function has_warehouse() {
         $warehouses = $this->api->getWarehouses();
@@ -660,7 +780,7 @@ class Product {
     }
 
     private function get_update_product_id($post_id, $business_id, $product_id_latest, &$product_id_diffs) {
-        if (!isset($product_id_latest) || strlen($product_id_latest) == 0) {
+        if (!isset($product_id_latest) || empty($product_id_latest)) {
             return null;
         }
 

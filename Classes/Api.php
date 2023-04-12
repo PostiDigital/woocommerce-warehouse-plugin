@@ -105,9 +105,8 @@ class Api {
             $this->logger->log("error", $env . "HTTP $http_status : $action request to $url" . (isset($payload) ? " with payload:\r\n $payload" : '') . "\r\n\r\nand result:\r\n $result");
             return false;
         }
-
-        $this->logger->log("info", $env . "HTTP $http_status : $action request to $url" . (isset($payload) ? " with payload\r\n $payload" : ''));
         
+        $this->logger->log("info", $env . "HTTP $http_status : $action request to $url" . (isset($payload) ? " with payload\r\n $payload" : ''));
         return json_decode($result, true);
     }
 
