@@ -442,7 +442,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
                     'data' => array(
                       'type' => 'textarea',
                       'custom_attributes' => array(
-                        'onchange' => 'pakettikauppa_custom_pickup_point_change(this)',
+                        'onchange' => 'warehouse_custom_pickup_point_change(this)',
                       ),
                     ),
                     'value' => $session['custom_address'],
