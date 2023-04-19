@@ -29,7 +29,7 @@
     <th><?php echo $custom['title']; ?></th>
     <td data-title="<?php echo $custom['title']; ?>">
       <?php woocommerce_form_field($custom['field']['name'], $custom['field']['data'], $custom['field']['value']); ?>
-      <button type="button" onclick="pakettikauppa_custom_pickup_point_change(pakettikauppacustom_pickup_point)" class="btn" id="pakettikauppacustom_pickup_point_btn"><i class="fa fa-search"></i><?php esc_html_e('Search', 'woo-pakettikauppa'); ?></button>
+      <button type="button" onclick="warehouse_custom_pickup_point_change(pakettikauppacustom_pickup_point)" class="btn" id="pakettikauppacustom_pickup_point_btn"><i class="fa fa-search"></i><?php esc_html_e('Search', 'woo-pakettikauppa'); ?></button>
       <?php if ( ! empty($custom['desc']) ) : ?>
         <p><?php echo $custom['desc']; ?></p>
       <?php endif; ?>

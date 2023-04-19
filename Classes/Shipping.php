@@ -104,8 +104,6 @@ function warehouse_shipping_method() {
                     $all_shipping_methods = array();
                 }
 
-                $methods = $this->get_pickup_point_methods();
-
                 ob_start();
                 ?>
                 <script>
@@ -157,9 +155,6 @@ function warehouse_shipping_method() {
                                     if (!empty($values[$method_id]['service'])) {
                                         $selected_service = $values[$method_id]['service'];
                                     }
-                                    if (empty($selected_service) && !empty($methods)) {
-                                        $selected_service = '__PICKUPPOINTS__';
-                                    }
                                     ?>
                                     <table style="border-collapse: collapse;" border="0">
                                         <th><?php echo $shipping_method->title; ?></th>
@@ -178,22 +173,6 @@ function warehouse_shipping_method() {
                                             </select>
                                         </td>
                                         <td style="vertical-align: top;">
-                                            <div style='display: none;' id="pickuppoints-<?php echo $method_id; ?>">
-                                                <?php foreach ($methods as $method_code => $method_name) : ?>
-                                                    <input type="hidden"
-                                                           name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . $method_code . '][active]'; ?>"
-                                                           value="no">
-                                                    <p>
-                                                        <label>
-                                                            <input type="checkbox"
-                                                                   name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . $method_code . '][active]'; ?>"
-                                                                   value="yes" <?php echo (!empty($values[$method_id][$method_code]['active']) && $values[$method_id][$method_code]['active'] === 'yes') ? 'checked' : ''; ?>>
-                                                                   <?php echo $method_name; ?>
-                                                        </label>
-                                                    </p>
-                                                <?php endforeach; ?>
-                                            </div>
-
                                             <?php
                                             $all_additional_services = $this->get_additional_services();
                                             if (empty($all_additional_services)) {
@@ -293,17 +272,6 @@ function warehouse_shipping_method() {
                 $user_splited_locale = explode('_', get_user_locale($user));
 
                 return $user_splited_locale[0] ?? 'en';
-            }
-
-            private function get_pickup_point_methods() {
-                $methods = array(
-                    '2103' => 'Posti',
-                    'MH80' => 'Matkahuolto',
-                    'SBTLFIRREX' => 'DB Schenker',
-                    '2711' => 'Posti International',
-                );
-
-                return $methods;
             }
 
             public function get_additional_services() {

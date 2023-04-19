@@ -433,6 +433,24 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
                         'value' => null,
                     );
                 }
+
+                if ($selected_point === 'other' || $is_klarna || !$options_array) {
+                  $custom_field_title = $is_klarna ? 'Pickup address' : 'Custom pickup address';
+
+                  $custom_field = array(
+                    'name' => 'pakettikauppacustom_pickup_point',
+                    'data' => array(
+                      'type' => 'textarea',
+                      'custom_attributes' => array(
+                        'onchange' => 'pakettikauppa_custom_pickup_point_change(this)',
+                      ),
+                    ),
+                    'value' => $session['custom_address'],
+                  );
+
+                  $custom_field_desc = ($is_klarna) ? 'Search pickup points near you by typing your address above.': 'If none of your preferred pickup points are listed, fill in a custom address above and select another pickup point.';
+                }
+                
             }
             
             wc_get_template(
@@ -467,7 +485,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
                 $custom_address = false;
             }
 
-            if ($custom_address && $this->core->shipping_method_instance->get_option('show_pickup_point_override_query') === 'yes') {
+            if ($custom_address) {
                 $pickup_point_data = $this->get_pickup_points_by_free_input($custom_address, $shipping_method_provider);
             } else {
                 $pickup_point_data = $this->get_pickup_points($shipping_postcode, $shipping_address, $shipping_country, $shipping_method_provider);

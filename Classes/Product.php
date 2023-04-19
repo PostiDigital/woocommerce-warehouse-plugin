@@ -248,8 +248,6 @@ class Product {
     }
 
     public function posti_wh_product_tab_fields_save($post_id) {
-
-//        $this->save_form_field('_posti_wh_stock_type', $post_id);
         $this->save_form_field('_posti_wh_product', $post_id);
         $this->save_form_field('_posti_wh_distribution', $post_id);
         $this->save_form_field('_ean', $post_id);
@@ -265,7 +263,10 @@ class Product {
     
     public function after_product_save($post_id) {
         $warehouse = get_post_meta($post_id, '_posti_wh_warehouse_single', true);
-        $this->handle_products([$post_id], $warehouse);
+        $cnt_fail = $this->handle_products([$post_id], $warehouse);
+        if (isset($cnt_fail) && $cnt_fail > 0) {
+            update_post_meta($post_id, '_posti_last_sync', 0);
+        }
     }
     
     public function handle_products($post_ids, $product_warehouse_override) {
@@ -291,12 +292,9 @@ class Product {
             
             $type = $this->get_stock_type($warehouses, $product_warehouse);
             if ($type == 'Catalog') {
-                update_post_meta($post_id, '_posti_last_sync', 0);
                 $this->get_update_product_id($post_id, $business_id, $_product->get_sku(), $product_id_diffs);
             }
             elseif (!empty($product_warehouse) && ($type == "Posti" || $type == "Store")) {
-                update_post_meta($post_id, '_posti_last_sync', 0);
-
                 $retailerId = $this->get_retailer_id($warehouses, $product_warehouse);
                 $product_distributor = get_post_meta($post_id, '_posti_wh_distribution', true);
                 $wholesale_price = (float) str_ireplace(',', '.', get_post_meta($post_id, '_wholesale_price', true));
@@ -587,20 +585,13 @@ class Product {
         $screen = get_current_screen();
         if (( $screen->id == 'product' ) && ($screen->parent_base == 'edit')) {
             global $post;
-            $product_warehouse = get_post_meta($post->ID, '_posti_wh_warehouse', true);
-            $type = $this->get_stock_type_by_warehouse($product_warehouse);
-            if ($type == "Not_in_stock") {
-                return;
-            }
             $last_sync = get_post_meta($post->ID, '_posti_last_sync', true);
-            if ($type && !$product_warehouse) {
-                $class = 'notice notice-error';
-                $message = __('Posti error: Please select Posti warehouse.', 'posti-warehouse');
-                printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), esc_html($message));
-            } elseif ($type && (!$last_sync || $last_sync === 0)) {
+            if (isset($last_sync) && $last_sync == 0) {
                 $class = 'notice notice-error';
                 $message = __('Posti error: product sync not active. Please check product SKU, price or try resave.', 'posti-warehouse');
                 printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), esc_html($message));
+
+                delete_post_meta($post->ID, '_posti_last_sync', '');
             }
         }
         
