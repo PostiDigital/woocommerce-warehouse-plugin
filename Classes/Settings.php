@@ -309,7 +309,7 @@ class Settings {
     
     public function posti_wh_field_string_cb($args) {
         $options = Settings::get();
-        $value = $options[$args['label_for']];
+        $value = Settings::get_value($options, $args['label_for']);
         $type = 'text';
         if (isset($args['input_type'])) {
             $type = $args['input_type'];
@@ -390,7 +390,7 @@ class Settings {
         <?php
     }
     
-    private static function is_option_true($options, $value) {
+    private static function is_option_true(&$options, $value) {
         return isset($options[$value]) && Settings::is_true($options[$value]);
     }
     
