@@ -289,7 +289,7 @@ class Settings {
     }
 
     public function posti_wh_field_checkbox_cb($args) {
-        $options = $this->get_plugin_settings();
+        $options = Settings::get_plugin_settings();
         $checked = "";
         if (Settings::is_option_true($options, $args['label_for'])) {
             $checked = ' checked="checked" ';
@@ -300,7 +300,7 @@ class Settings {
     }
     
     public function posti_wh_field_string_cb($args) {
-        $options = $this->get_plugin_settings();
+        $options = Settings::get_plugin_settings();
         $value = $options[$args['label_for']];
         $type = 'text';
         if (isset($args['input_type'])) {
@@ -316,7 +316,7 @@ class Settings {
 
     public function posti_wh_field_type_cb($args) {
 
-        $options = $this->get_plugin_settings();
+        $options = Settings::get_plugin_settings();
         ?>
         <select id="<?php echo esc_attr($args['label_for']); ?>"
                 data-custom="<?php echo esc_attr($args['posti_wh_custom_data']); ?>"
@@ -335,7 +335,7 @@ class Settings {
 
     public function posti_wh_field_service_cb($args) {
 
-        $options = $this->get_plugin_settings();
+        $options = Settings::get_plugin_settings();
         ?>
         <select id="<?php echo esc_attr($args['label_for']); ?>"
                 data-custom="<?php echo esc_attr($args['posti_wh_custom_data']); ?>"
