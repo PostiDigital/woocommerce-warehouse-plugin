@@ -57,11 +57,13 @@ class Core {
     }
 
     public function install() {
+        Settings::install();
         Api::install();
         Logger::install();
     }
 
     public function uninstall() {
+        Settings::uninstall();
         Api::uninstall();
         Logger::uninstall();
     }
@@ -249,13 +251,12 @@ class Core {
     }
 
     private function get_option_datetime_sync($options, $option) {
-        $value = $options[$option];
-        if (!isset($value) || strlen($value) <= 0) {
-            $now = new \DateTime('now -7 day');
-            $value = $now->format(\DateTimeInterface::RFC3339_EXTENDED);
+        if (isset($options[$option]) && !empty($options[$option])) {
+            return $options[$option];
         }
-        
-        return $value;
+
+        $now = new \DateTime('now -7 day');
+        return $value = $now->format(\DateTimeInterface::RFC3339_EXTENDED);
     }
     
     private function load_options() {

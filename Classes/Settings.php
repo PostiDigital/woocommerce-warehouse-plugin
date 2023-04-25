@@ -17,9 +17,51 @@ class Settings {
     }
 
     public function get_plugin_settings() {
-        $this->migrate_settings();
+//        $this->migrate_settings();
         $options = get_option('posti_wh_options');
         return $options ? $options : array();
+    }
+    
+    public static function install() {
+        $old_options = get_option('woocommerce_posti_warehouse_settings');
+        if (empty($old_options)) {
+            return false;
+        }
+        
+        $new_options = array();
+        $fields = [
+            'posti_wh_field_username',
+            'posti_wh_field_password',
+            'posti_wh_field_username_test',
+            'posti_wh_field_password_test',
+            'posti_wh_field_service',
+            'posti_wh_field_business_id',
+            'posti_wh_field_contract',
+            'posti_wh_field_type',
+            'posti_wh_field_autoorder',
+            'posti_wh_field_autocomplete',
+            'posti_wh_field_addtracking',
+            'posti_wh_field_crontime',
+            'posti_wh_field_test_mode',
+            'posti_wh_field_debug',
+            'posti_wh_field_stock_sync_dttm',
+            'posti_wh_field_order_sync_dttm'
+        ];
+
+        foreach ($fields as $field) {
+            if (isset($old_options[$field]) && !empty($old_options[$field])) {
+                $new_options[$field] = $old_options[$field];
+                unset($old_options[$field]);
+            }
+        }
+
+        update_option('posti_wh_options', $new_options);
+        update_option('woocommerce_posti_warehouse_settings', $old_options);
+
+        return true;
+    }
+    
+    public static function uninstall() {
     }
     
     public static function is_debug($options) {
