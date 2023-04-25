@@ -215,11 +215,11 @@ class Order {
         }
 
         $status = $order['status']['value'];
-        $status_new = $this->status_mapping[$status];
-        if (!isset($status_new)) {
+        if (!isset($this->status_mapping[$status])) {
             return;
         }
-        
+        $status_new = $this->status_mapping[$status];
+
         $_order = wc_get_order($id);
         if ($_order === false) {
             return;
