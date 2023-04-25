@@ -18,14 +18,13 @@ class Api {
     public function __construct(Logger $logger, array &$options) {
         $this->logger = $logger;
         $this->test = Settings::is_test($options);
-        if ($options) {
-            if($this->test) {
-                $this->username = $options['posti_wh_field_username_test'];
-                $this->password = $options['posti_wh_field_password_test'];
-            } else {
-                $this->username = $options['posti_wh_field_username'];
-                $this->password = $options['posti_wh_field_password'];
-            }
+
+        if($this->test) {
+            $this->username = Settings::get_value($options, 'posti_wh_field_username_test');
+            $this->password = Settings::get_value($options, 'posti_wh_field_password_test');
+        } else {
+            $this->username = Settings::get_value($options, 'posti_wh_field_username');
+            $this->password = Settings::get_value($options, 'posti_wh_field_password');
         }
     }
     

@@ -188,10 +188,8 @@ class Product {
             $product_warehouse = get_post_meta($post->ID, '_posti_wh_warehouse', true);
             $type = $this->get_stock_type($warehouses, $product_warehouse);
             if (!$type) {
-                $options = Settings::get_plugin_settings();
-                if (isset($options['posti_wh_field_type'])) {
-                    $type = $options['posti_wh_field_type'];
-                }
+                $options = Settings::get();
+                $type = Settings::get_value($options, 'posti_wh_field_type');
             }
 
             $warehouses_options = array('' => 'Select warehouse');
@@ -267,8 +265,8 @@ class Product {
     }
     
     public function handle_products($post_ids, $product_warehouse_override) {
-        $options = Settings::get_plugin_settings();
-        $business_id = isset($options['posti_wh_field_business_id']) ? $options['posti_wh_field_business_id'] : '';
+        $options = Settings::get();
+        $business_id = Settings::get_value($options, 'posti_wh_field_business_id');
 
         $products = array();
         $product_id_diffs = array();

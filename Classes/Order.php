@@ -193,8 +193,8 @@ class Order {
             }
         }
         
-        $options = Settings::get_plugin_settings();
-        $autocomplete = $options['posti_wh_field_autocomplete'];
+        $options = Settings::get();
+        $autocomplete = Settings::get_value($options, 'posti_wh_field_autocomplete');
         foreach ($orders as $order) {
             $order_id = $order['externalId'];
             if (isset($post_by_order_id[$order_id]) && !empty($post_by_order_id[$order_id])) {
@@ -244,7 +244,7 @@ class Order {
     private function get_additional_services($order) {
         $additional_services = array();
         $shipping_service = '';
-        $settings = Settings::get_plugin_settings();
+        $settings = Settings::get();
         $shipping_methods = $order->get_shipping_methods();
         $chosen_shipping_method = array_pop($shipping_methods);
 
@@ -440,7 +440,7 @@ class Order {
 
     public function posti_check_order($order_id, $old_status, $new_status) {
         if ($new_status === "processing") {
-            $options = Settings::get_plugin_settings();
+            $options = Settings::get();
             if (isset($options['posti_wh_field_autoorder'])) {
                 $order = wc_get_order($order_id);
                 $is_posti_order = $this->hasPostiProducts($order);

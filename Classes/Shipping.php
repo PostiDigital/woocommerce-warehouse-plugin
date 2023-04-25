@@ -26,13 +26,11 @@ function warehouse_shipping_method() {
             private $options;
 
             public function __construct() {
-                $this->options = Settings::get_plugin_settings();
+                $this->options = Settings::get();
                 $this->is_test = Settings::is_test($this->options);
                 $this->debug = Settings::is_debug($this->options);
 
-                if (isset($this->options['posti_wh_field_service'])) {
-                    $this->delivery_service = $this->options['posti_wh_field_service'];
-                }
+                $this->delivery_service = Settings::get_value($this->options, 'posti_wh_field_service');
                 $this->logger = new Logger();
                 $this->logger->setDebug($this->debug);
 
@@ -66,11 +64,9 @@ function warehouse_shipping_method() {
             public function process_admin_options() {
                 parent::process_admin_options();
 
-                if (
-                    !empty($this->options['posti_wh_field_service'])
-                    && $this->delivery_service != $this->options['posti_wh_field_service']
-                ) {
-                    $this->delivery_service = $this->options['posti_wh_field_service'];
+                $service_code = Settings::get_value($this->options, 'posti_wh_field_service');
+                if (!empty($service_code) && $this->delivery_service != $service_code) {
+                    $this->delivery_service = $service_code;
                     delete_transient('posti_warehouse_shipping_methods');
                 }
             }

@@ -13,12 +13,20 @@ class Settings {
         add_action('admin_menu', array($this, 'posti_wh_options_page'));
     }
 
-    public static function get_plugin_settings() {
+    public static function get() {
         $options = get_option('posti_wh_options');
         return $options ? $options : array();
     }
     
-    public static function update_plugin_settings($options) {
+    public static function get_value(&$options, $key) {
+        if (isset($options) && !isset($options[$key])) {
+            return null;
+        }
+        
+        return $options[$key];
+    }
+    
+    public static function update($options) {
         update_option('posti_wh_options', $options);
     }
     
@@ -289,7 +297,7 @@ class Settings {
     }
 
     public function posti_wh_field_checkbox_cb($args) {
-        $options = Settings::get_plugin_settings();
+        $options = Settings::get();
         $checked = "";
         if (Settings::is_option_true($options, $args['label_for'])) {
             $checked = ' checked="checked" ';
@@ -300,7 +308,7 @@ class Settings {
     }
     
     public function posti_wh_field_string_cb($args) {
-        $options = Settings::get_plugin_settings();
+        $options = Settings::get();
         $value = $options[$args['label_for']];
         $type = 'text';
         if (isset($args['input_type'])) {
@@ -316,7 +324,7 @@ class Settings {
 
     public function posti_wh_field_type_cb($args) {
 
-        $options = Settings::get_plugin_settings();
+        $options = Settings::get();
         ?>
         <select id="<?php echo esc_attr($args['label_for']); ?>"
                 data-custom="<?php echo esc_attr($args['posti_wh_custom_data']); ?>"
@@ -335,7 +343,7 @@ class Settings {
 
     public function posti_wh_field_service_cb($args) {
 
-        $options = Settings::get_plugin_settings();
+        $options = Settings::get();
         ?>
         <select id="<?php echo esc_attr($args['label_for']); ?>"
                 data-custom="<?php echo esc_attr($args['posti_wh_custom_data']); ?>"

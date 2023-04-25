@@ -248,7 +248,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
             $shipping_method_providers = array();
             $shipment_meta_data = $shipping_rate->get_meta_data();
 
-            $settings = Settings::get_plugin_settings();
+            $settings = Settings::get();
             $pickup_points = json_decode($settings['pickup_points'], true);
 
             if (isset($shipment_meta_data['service_code'])) {

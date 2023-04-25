@@ -173,12 +173,12 @@ class Core {
      */
 
     public function posti_cronjob_callback() {
-        $options = Settings::get_plugin_settings();
+        $options = Settings::get();
         $nextStockSyncDttm = $this->posti_cronjob_sync_stock($options);
         $nextOrderSyncDttm = $this->posti_cronjob_sync_orders($options);
 
         if ($nextStockSyncDttm !== false || $nextOrderSyncDttm !== false) {
-            $new_options = Settings::get_plugin_settings();
+            $new_options = Settings::get();
             if ($nextStockSyncDttm !== false) {
                 $new_options['posti_wh_field_stock_sync_dttm'] = $nextStockSyncDttm;
             }
@@ -187,7 +187,7 @@ class Core {
                 $new_options['posti_wh_field_order_sync_dttm'] = $nextOrderSyncDttm;
             }
 
-            Settings::update_plugin_settings($new_options);
+            Settings::update($new_options);
         }
     }
 
@@ -249,16 +249,17 @@ class Core {
     }
 
     private function get_option_datetime_sync($options, $option) {
-        if (isset($options[$option]) && !empty($options[$option])) {
-            return $options[$option];
+        $value = Settings::get_value($options, $option);
+        if (!isset($value) || empty($value)) {
+            $now = new \DateTime('now -7 day');
+            $value = $now->format(\DateTimeInterface::RFC3339_EXTENDED);
         }
-
-        $now = new \DateTime('now -7 day');
-        return $now->format(\DateTimeInterface::RFC3339_EXTENDED);
+        
+        return $value;
     }
     
     private function load_options() {
-        $options = Settings::get_plugin_settings();
+        $options = Settings::get();
         $this->is_test = Settings::is_test($options);
         $this->debug = Settings::is_debug($options);
         $this->add_tracking = Settings::is_add_tracking($options);
