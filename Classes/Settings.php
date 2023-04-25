@@ -9,6 +9,7 @@ defined('ABSPATH') || exit;
 class Settings {
 
     public function __construct() {
+        register_setting('posti_wh', 'posti_wh_options');
         add_action('admin_init', array($this, 'posti_wh_settings_init'));
         add_action('admin_menu', array($this, 'posti_wh_options_page'));
     }
@@ -31,7 +32,6 @@ class Settings {
     }
     
     public static function install() {
-        register_setting('posti_wh', 'posti_wh_options');
         $old_options = get_option('woocommerce_posti_warehouse_settings');
         if (empty($old_options)) {
             return false;
