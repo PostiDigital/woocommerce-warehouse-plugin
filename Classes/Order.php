@@ -197,9 +197,8 @@ class Order {
         $autocomplete = $options['posti_wh_field_autocomplete'];
         foreach ($orders as $order) {
             $order_id = $order['externalId'];
-            $id = $post_by_order_id[$order_id];
-            if (isset($id) && strlen($id) > 0) {
-                $this->sync_order($id, $order, $autocomplete);
+            if (isset($post_by_order_id[$order_id]) && !empty($post_by_order_id[$order_id])) {
+                $this->sync_order($post_by_order_id[$order_id], $order, $autocomplete);
             }
         }
 

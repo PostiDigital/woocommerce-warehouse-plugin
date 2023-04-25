@@ -9,7 +9,6 @@ defined('ABSPATH') || exit;
 class Settings {
 
     public function __construct() {
-        register_setting('posti_wh', 'posti_wh_options');
         add_action('admin_init', array($this, 'posti_wh_settings_init'));
         add_action('admin_menu', array($this, 'posti_wh_options_page'));
     }
@@ -24,17 +23,13 @@ class Settings {
     }
     
     public static function install() {
-        $new_options = get_option('posti_wh_options');
-        if (!empty($new_options)) {
-            return false;
-        }
-        
+        register_setting('posti_wh', 'posti_wh_options');
         $old_options = get_option('woocommerce_posti_warehouse_settings');
         if (empty($old_options)) {
             return false;
         }
         
-        $new_options = array();
+        $new_options = get_option('posti_wh_options');
         $fields = [
             'posti_wh_field_username',
             'posti_wh_field_password',
@@ -51,18 +46,18 @@ class Settings {
             'posti_wh_field_test_mode',
             'posti_wh_field_debug',
             'posti_wh_field_stock_sync_dttm',
-            'posti_wh_field_order_sync_dttm'
+            'posti_wh_field_order_sync_dttm',
+            'pickup_points'
         ];
 
         foreach ($fields as $field) {
             if (isset($old_options[$field]) && !empty($old_options[$field])) {
-                $new_options[$field] = $old_options[$field];
-//                unset($old_options[$field]);
+                if (!isset($new_options[$field]) && isset($old_options[$field])) {
+                    $new_options[$field] = $old_options[$field];
+                }
             }
         }
-
         update_option('posti_wh_options', $new_options);
-//        update_option('woocommerce_posti_warehouse_settings', $old_options);
 
         return true;
     }

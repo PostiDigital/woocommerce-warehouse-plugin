@@ -274,7 +274,7 @@ class Core {
         $this->product = new Product($this->api, $this->logger);
         $this->order = new Order($this->api, $this->logger, $this->product, $this->add_tracking);
         $this->metabox = new Metabox($this->order);
-        $this->debug = new Debug();
+        $this->debug = new Debug($options);
         $this->frontend = new Frontend($this);
         $this->frontend->load();
     }

@@ -680,9 +680,8 @@ class Product {
                         foreach ($products_with_balances as $product_with_balances) {
                             $product = $product_with_balances['product'];
                             $product_id = $product['externalId'];
-                            $id = $post_by_product_id[$product_id];
-                            if (isset($id) && !empty($id)) {
-                                $this->sync_product($id, $product_id, $product_with_balances['balances']);
+                            if (isset($post_by_product_id[$product_id]) && !empty($post_by_product_id[$product_id])) {
+                                $this->sync_product($post_by_product_id[$product_id], $product_id, $product_with_balances['balances']);
                             }
                         }
                     }
