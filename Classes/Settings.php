@@ -26,7 +26,7 @@ class Settings {
         return $options[$key];
     }
     
-    public static function update($options) {
+    public static function update(&$options) {
         update_option('posti_wh_options', $options);
     }
     

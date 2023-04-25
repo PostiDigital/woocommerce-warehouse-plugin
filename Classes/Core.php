@@ -14,6 +14,7 @@ use PostiWarehouse\Classes\Frontend;
 
 class Core {
 
+    private $settings = null;
     private $api = null;
     private $metabox = null;
     private $order = null;
@@ -277,6 +278,7 @@ class Core {
         $this->metabox = new Metabox($this->order);
         $this->debug = new Debug($options);
         $this->frontend = new Frontend($this);
+        $this->settings = new Settings();
         $this->frontend->load();
     }
 }
