@@ -17,11 +17,6 @@ function warehouse_shipping_method() {
     if (!class_exists('WarehouseShipping')) {
         class WarehouseShipping extends \WC_Shipping_Method {
 
-            /**
-             * Required to access Pakettikauppa client
-             * @var Shipment $shipment
-             */
-            private $shipment = null;
             public $is_loaded = false;
             private $is_test = false;
             private $debug = false;
@@ -31,7 +26,7 @@ function warehouse_shipping_method() {
             private $options;
 
             public function __construct() {
-                $this->options = get_option('posti_wh_options');
+                $this->options = Settings::get_plugin_settings();
                 $this->is_test = Settings::is_test($this->options);
                 $this->debug = Settings::is_debug($this->options);
 
@@ -41,7 +36,7 @@ function warehouse_shipping_method() {
                 $this->logger = new Logger();
                 $this->logger->setDebug($this->debug);
 
-                $this->api = new Api($this->logger, $this->options, $this->is_test);
+                $this->api = new Api($this->logger, $this->options);
 
                 $this->load();
             }

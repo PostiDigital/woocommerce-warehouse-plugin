@@ -81,7 +81,7 @@ class Logger {
         try {
             $wpdb->query($wpdb->prepare($sql, array(date('Y-m-d H:i:s', time()-3600*24*3))));
             return true;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return false;
         }
     }

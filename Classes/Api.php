@@ -11,16 +11,13 @@ class Api {
     private $token = null;
     private $test = false;
     private $logger;
-    private $options;
     private $last_status = false;
     private $token_option = 'posti_wh_api_auth';
     private $user_agent = 'woo-wh-client/2.0';
 
-    public function __construct(Logger $logger, array &$options, $test = false) {
-        $this->test = $test;
+    public function __construct(Logger $logger, array &$options) {
         $this->logger = $logger;
-        $this->options = $options;
-        
+        $this->test = Settings::is_test($options);
         if ($options) {
             if($this->test) {
                 $this->username = $options['posti_wh_field_username_test'];

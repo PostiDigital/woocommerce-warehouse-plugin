@@ -10,19 +10,25 @@ class Settings {
 
     public function __construct() {
         register_setting('posti_wh', 'posti_wh_options');
-        //$this->load_options();
-
         add_action('admin_init', array($this, 'posti_wh_settings_init'));
         add_action('admin_menu', array($this, 'posti_wh_options_page'));
     }
 
-    public function get_plugin_settings() {
-//        $this->migrate_settings();
+    public static function get_plugin_settings() {
         $options = get_option('posti_wh_options');
         return $options ? $options : array();
     }
     
+    public static function update_plugin_settings($options) {
+        update_option('posti_wh_options', $options);
+    }
+    
     public static function install() {
+        $new_options = get_option('posti_wh_options');
+        if (!empty($new_options)) {
+            return false;
+        }
+        
         $old_options = get_option('woocommerce_posti_warehouse_settings');
         if (empty($old_options)) {
             return false;
@@ -51,12 +57,12 @@ class Settings {
         foreach ($fields as $field) {
             if (isset($old_options[$field]) && !empty($old_options[$field])) {
                 $new_options[$field] = $old_options[$field];
-                unset($old_options[$field]);
+//                unset($old_options[$field]);
             }
         }
 
         update_option('posti_wh_options', $new_options);
-        update_option('woocommerce_posti_warehouse_settings', $old_options);
+//        update_option('woocommerce_posti_warehouse_settings', $old_options);
 
         return true;
     }
@@ -379,49 +385,6 @@ class Settings {
             </form>
         </div>
         <?php
-    }
-    
-    private function migrate_settings() {
-        $options = get_option('posti_wh_options');
-        if (!empty($options)) {
-            return $options;
-        }
-
-        $old_options = get_option('woocommerce_posti_warehouse_settings');
-        $new_options = array();
-        if (!empty($old_options)) {
-            $fields = [
-                'posti_wh_field_username',
-                'posti_wh_field_password',
-                'posti_wh_field_username_test',
-                'posti_wh_field_password_test',
-                'posti_wh_field_service',
-                'posti_wh_field_business_id',
-                'posti_wh_field_contract',
-                'posti_wh_field_type',
-                'posti_wh_field_autoorder',
-                'posti_wh_field_autocomplete',
-                'posti_wh_field_addtracking',
-                'posti_wh_field_crontime',
-                'posti_wh_field_test_mode',
-                'posti_wh_field_debug',
-                'posti_wh_field_stock_sync_dttm',
-                'posti_wh_field_order_sync_dttm'
-            ];
-            
-            foreach ($fields as $field) {
-                $value = $old_options[$field];
-                if (!empty($value)) {
-                    $new_options[$field] = $value;
-                    unset($old_options[$field]);
-                }
-            }
-
-            update_option('posti_wh_options', $new_options);
-            update_option('woocommerce_posti_warehouse_settings', $old_options);
-        }
-        
-        return $new_options;
     }
     
     private static function is_option_true($options, $value) {

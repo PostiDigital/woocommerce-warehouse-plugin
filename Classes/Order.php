@@ -13,14 +13,12 @@ class Order {
     private $addTracking = false;
     private $api;
     private $logger;
-    private $settings;
     private $product;
     private $status_mapping;
 
-    public function __construct(Api $api, Logger $logger, Settings $settings, Product $product, $addTracking = false) {
+    public function __construct(Api $api, Logger $logger, Product $product, $addTracking = false) {
         $this->api = $api;
         $this->logger = $logger;
-        $this->settings = $settings;
         $this->product = $product;
         $this->addTracking = $addTracking;
         
@@ -195,7 +193,7 @@ class Order {
             }
         }
         
-        $options = $this->settings->get_plugin_settings();
+        $options = Settings::get_plugin_settings();
         $autocomplete = $options['posti_wh_field_autocomplete'];
         foreach ($orders as $order) {
             $order_id = $order['externalId'];
@@ -247,10 +245,8 @@ class Order {
     private function get_additional_services($order) {
         $additional_services = array();
         $shipping_service = '';
-        $settings = get_option('woocommerce_posti_warehouse_settings');
-
+        $settings = Settings::get_plugin_settings();
         $shipping_methods = $order->get_shipping_methods();
-
         $chosen_shipping_method = array_pop($shipping_methods);
 
         $add_cod_to_additional_services = 'cod' === $order->get_payment_method();
@@ -444,9 +440,8 @@ class Order {
     }
 
     public function posti_check_order($order_id, $old_status, $new_status) {
-        $posti_order = false;
         if ($new_status === "processing") {
-            $options = $this->settings->get_plugin_settings();
+            $options = Settings::get_plugin_settings();
             if (isset($options['posti_wh_field_autoorder'])) {
                 $order = wc_get_order($order_id);
                 $is_posti_order = $this->hasPostiProducts($order);

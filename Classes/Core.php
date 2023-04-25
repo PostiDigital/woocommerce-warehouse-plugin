@@ -23,7 +23,6 @@ class Core {
     private $add_tracking = false;
     private $cron_time = 600;
     private $logger;
-    private $settings;
     private $frontend = null;
     public $prefix = 'warehouse';
     public $version = '0.0.0';
@@ -31,8 +30,7 @@ class Core {
     public $templates;
 
     public function __construct() {
-        
-        $this->settings = new Settings();
+
         $this->templates_dir = plugin_dir_path(__POSTI_WH_FILE__) . 'templates/';
         $this->templates = array(
           'checkout_pickup' => 'checkout-pickup.php',
@@ -175,12 +173,12 @@ class Core {
      */
 
     public function posti_cronjob_callback() {
-        $options = $this->settings->get_plugin_settings();
+        $options = Settings::get_plugin_settings();
         $nextStockSyncDttm = $this->posti_cronjob_sync_stock($options);
         $nextOrderSyncDttm = $this->posti_cronjob_sync_orders($options);
 
         if ($nextStockSyncDttm !== false || $nextOrderSyncDttm !== false) {
-            $new_options = $this->settings->get_plugin_settings();
+            $new_options = Settings::get_plugin_settings();
             if ($nextStockSyncDttm !== false) {
                 $new_options['posti_wh_field_stock_sync_dttm'] = $nextStockSyncDttm;
             }
@@ -189,7 +187,7 @@ class Core {
                 $new_options['posti_wh_field_order_sync_dttm'] = $nextOrderSyncDttm;
             }
 
-            update_option('posti_wh_options', $new_options);
+            Settings::update_plugin_settings($new_options);
         }
     }
 
@@ -256,11 +254,11 @@ class Core {
         }
 
         $now = new \DateTime('now -7 day');
-        return $value = $now->format(\DateTimeInterface::RFC3339_EXTENDED);
+        return $now->format(\DateTimeInterface::RFC3339_EXTENDED);
     }
     
     private function load_options() {
-        $options = $this->settings->get_plugin_settings();
+        $options = Settings::get_plugin_settings();
         $this->is_test = Settings::is_test($options);
         $this->debug = Settings::is_debug($options);
         $this->add_tracking = Settings::is_add_tracking($options);
@@ -273,14 +271,10 @@ class Core {
         $this->logger->setDebug($this->debug);
         
         $this->api = new Api($this->logger, $options, $this->is_test);
-        $this->product = new Product($this->api, $this->logger, $this->settings);
-        $this->order = new Order($this->api, $this->logger, $this->settings, $this->product, $this->add_tracking);
+        $this->product = new Product($this->api, $this->logger);
+        $this->order = new Order($this->api, $this->logger, $this->product, $this->add_tracking);
         $this->metabox = new Metabox($this->order);
-
-        if ($this->debug) {
-            $debug = new Debug($this->settings);
-        }
-        
+        $this->debug = new Debug();
         $this->frontend = new Frontend($this);
         $this->frontend->load();
     }

@@ -11,13 +11,11 @@ class Product {
 
     private $api;
     private $logger;
-    private $settings;
 
-    public function __construct(Api $api, Logger $logger, Settings $settings) {
+    public function __construct(Api $api, Logger $logger) {
 
         $this->api = $api;
         $this->logger = $logger;
-        $this->settings = $settings;
 
         add_action('admin_notices', array($this, 'posti_notices'));
 
@@ -190,8 +188,7 @@ class Product {
             $product_warehouse = get_post_meta($post->ID, '_posti_wh_warehouse', true);
             $type = $this->get_stock_type($warehouses, $product_warehouse);
             if (!$type) {
-                $options = $this->settings->get_plugin_settings();
-                //$options = get_option('woocommerce_posti_shipping_method_settings');
+                $options = Settings::get_plugin_settings();
                 if (isset($options['posti_wh_field_type'])) {
                     $type = $options['posti_wh_field_type'];
                 }
@@ -270,7 +267,7 @@ class Product {
     }
     
     public function handle_products($post_ids, $product_warehouse_override) {
-        $options = $this->settings->get_plugin_settings();
+        $options = Settings::get_plugin_settings();
         $business_id = isset($options['posti_wh_field_business_id']) ? $options['posti_wh_field_business_id'] : '';
 
         $products = array();
