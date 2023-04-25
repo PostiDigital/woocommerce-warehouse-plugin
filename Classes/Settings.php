@@ -19,7 +19,7 @@ class Settings {
     }
     
     public static function get_value(&$options, $key) {
-        if (isset($options) && !isset($options[$key])) {
+        if (!isset($options) || !isset($options[$key])) {
             return null;
         }
         
