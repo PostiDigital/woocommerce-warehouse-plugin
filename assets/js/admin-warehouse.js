@@ -100,6 +100,27 @@ jQuery(function ($) {
             }); 
         });
     };
-
     attach_action_bulk_publish();
+
+    var attach_action_warehouse_products_migrate = function(){
+        $(document).ready(function() {
+            $("#posti_wh_migration_submit").on('click', function(e) {
+                var $this = $(this);
+                $this.prop("disabled", true);
+                var data = {
+                    action: 'warehouse_products_migrate',
+                    security: $('#posti_migration_metabox_nonce').val(),
+                };
+                $.post($('#posti_migration_url').val(), data, function (response) {
+                $this.hide();
+                $('#posti_wh_migration_required').hide();
+                $('#posti_wh_migration_completed').show();
+                }).fail(function () {
+					$this.prop("disabled", false);
+                }).always(function () {
+                });
+            }); 
+        });
+    };
+    attach_action_warehouse_products_migrate();
 });

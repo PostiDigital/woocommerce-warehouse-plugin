@@ -278,7 +278,7 @@ class Core {
         $this->metabox = new Metabox($this->order);
         $this->debug = new Debug($options);
         $this->frontend = new Frontend($this);
-        $this->settings = new Settings();
+        $this->settings = new Settings($this->api, $this->logger);
         $this->frontend->load();
     }
 }

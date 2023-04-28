@@ -13,7 +13,7 @@ class Api {
     private $logger;
     private $last_status = false;
     private $token_option = 'posti_wh_api_auth';
-    private $user_agent = 'woo-wh-client/2.0';
+    private $user_agent = 'woo-wh-client/2.0.0';
 
     public function __construct(Logger $logger, array &$options) {
         $this->logger = $logger;
@@ -206,6 +206,11 @@ class Api {
         return $this->ApiCall('/ecommerce/v3/pickup-points'
                 . '?serviceCode=' . urlencode($service_code)
                 . '&search=' . urlencode($query_text), '', 'GET');
+    }
+    
+    public function migrate() {
+        $status = $this->ApiCall('/ecommerce/v3/inventory/migrate', '', 'POST');
+        return $status;
     }
 
     private function getBaseUrl() {

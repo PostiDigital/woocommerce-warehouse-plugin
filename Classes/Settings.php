@@ -7,11 +7,17 @@ use PostiWarehouse\Classes\Dataset;
 defined('ABSPATH') || exit;
 
 class Settings {
-
-    public function __construct() {
+    
+    private $api;
+    private $logger;
+    
+    public function __construct(Api $api, Logger $logger) {
+        $this->api = $api;
+        $this->logger = $logger;
         register_setting('posti_wh', 'posti_wh_options');
         add_action('admin_init', array($this, 'posti_wh_settings_init'));
         add_action('admin_menu', array($this, 'posti_wh_options_page'));
+        add_action('wp_ajax_warehouse_products_migrate', array($this, 'warehouse_products_migrate'));
     }
 
     public static function get() {
@@ -89,7 +95,7 @@ class Settings {
 
         add_settings_section(
                 'posti_wh_options',
-                __('Posti Warehouse settings', 'posti-warehouse'),
+                '<span class="dashicons dashicons-admin-generic" style="4pt"></span>' . __('Posti Warehouse settings', 'posti-warehouse'),
                 array($this, 'posti_wh_section_developers_cb'),
                 'posti_wh'
         );
@@ -378,16 +384,91 @@ class Settings {
         settings_errors('posti_wh_messages');
         ?>
         <div class="wrap">
-            <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
             <form action="options.php" method="post">
         <?php
         settings_fields('posti_wh');
         do_settings_sections('posti_wh');
         submit_button('Save');
+        
+        $business_id = Settings::get_business_id();
+        if (isset($business_id) && !empty($business_id)) {
+            $token = $this->api->getToken();
+            if (!empty($token)) {
         ?>
+        <input id="posti_migration_metabox_nonce" name="posti_migration_metabox_nonce"
+            value="<?php echo wp_create_nonce(str_replace('wc_', '', 'posti-migration') . '-meta-box'); ?>"
+            type="hidden" />
+        <input id="posti_migration_url" name="posti_migration_url"
+            value="<?php echo admin_url('admin-ajax.php'); ?>"
+            type="hidden" />
+        <div class="wrap">
+        	<hr/>
+        	<table>
+        		<tr>
+        			<td><span class="dashicons dashicons-info-outline" style="padding-right: 2pt"></span></td>
+        			<td>
+        				<div id="posti_wh_migration_required">
+        					<b>Product data update is required!</b><br/>
+        					Click Update button to sync product identifiers between Woocommerce and Posti.
+        				</div>
+        				<div id="posti_wh_migration_completed" style="display: none">
+        					<b>Product data update is complete!</b>
+        				</div>
+        			</td>
+        		</tr>
+        	</table>
+        	<hr/>
+        	<div style="float: right; margin-top: 4pt">
+        		<input id="posti_wh_migration_submit" name="posti_wh_migration_submit" class="button button-primary" type="button" value="Update"/>
+        	</div>
+    		<div style="clear: both"></div>
+        </div>
+        
             </form>
         </div>
         <?php
+        }}
+    }
+    
+    public function warehouse_products_migrate() {
+        if ($this->api->migrate() === false) {
+            $this->logger->log("error", 'Unable to migrate products');
+            throw new \Exception('Unable to migrate products');
+        }
+        
+        $business_id = Settings::get_business_id();
+        $posts_query = array(
+            'post_type' => ['product', 'product_variation'],
+            'meta_query' => array(
+                'relation' => 'AND',
+                array(
+                    'key' => '_posti_id',
+                    'compare' => 'EXISTS'
+                )
+            )
+        );
+        
+        $posts = get_posts($posts_query);
+        if (count($posts) > 0) {
+            foreach ($posts as $post) {
+                $product_id = get_post_meta($post->ID, '_posti_id', true);
+                if (isset($product_id) && !empty($product_id)) {
+                    if (substr_compare($product_id, $business_id, 0, strlen($business_id)) === 0) {
+                        update_post_meta($post->ID, '_posti_id', substr($product_id, strlen($business_id) + 1));
+                    }
+                }
+            }
+        }
+        
+        $options = Settings::get();
+        if (isset($options['posti_wh_field_business_id'])) {
+            unset($options['posti_wh_field_business_id']);
+            Settings::update($options);
+        }
+        
+        $this->logger->log("info", "Products migrated");
+        echo json_encode(array('result' => true));
+        die();
     }
     
     private static function is_option_true(&$options, $value) {
@@ -403,5 +484,10 @@ class Settings {
             || $value === '1'
             || $value === 'yes'
             || $value === 'true';
+    }
+    
+    private static function get_business_id() {
+        $options = Settings::get();
+        return isset($options['posti_wh_field_business_id']) ? $options['posti_wh_field_business_id'] : null;
     }
 }

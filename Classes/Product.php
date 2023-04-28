@@ -265,9 +265,6 @@ class Product {
     }
     
     public function handle_products($post_ids, $product_warehouse_override) {
-        $options = Settings::get();
-        $business_id = Settings::get_value($options, 'posti_wh_field_business_id');
-
         $products = array();
         $product_id_diffs = array();
         $product_whs_diffs = array();
@@ -287,7 +284,7 @@ class Product {
             
             $type = $this->get_stock_type($warehouses, $product_warehouse);
             if ($type == 'Catalog') {
-                $this->get_update_product_id($post_id, $business_id, $_product->get_sku(), $product_id_diffs);
+                $this->get_update_product_id($post_id, $_product->get_sku(), $product_id_diffs);
             }
             elseif (!empty($product_warehouse) && ($type == "Posti" || $type == "Store")) {
                 $retailerId = $this->get_retailer_id($warehouses, $product_warehouse);
@@ -296,12 +293,12 @@ class Product {
 
                 $product_type = $_product->get_type();
                 if ($product_type == 'variable') {
-                    $this->collect_products_variations($post_id, $business_id, $retailerId,
+                    $this->collect_products_variations($post_id, $retailerId,
                             $_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs, $product_ids_map);
                 }
                 else {
 
-                    $this->collect_products_simple($post_id, $business_id, $retailerId,
+                    $this->collect_products_simple($post_id, $retailerId,
                             $_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs, $product_ids_map);
 
                 }
@@ -411,13 +408,13 @@ class Product {
         return true;
     }
     
-    private function collect_products_variations($post_id, $business_id, $retailerId,
+    private function collect_products_variations($post_id, $retailerId,
             $_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diffs, &$product_ids_map) {
 
         $variations = $_product->get_available_variations();
         foreach ($variations as $variation) {
             $variation_post_id = $variation['variation_id'];
-            $variation_product_id = $this->get_update_product_id($variation_post_id, $business_id, $variation['sku'], $product_id_diffs);
+            $variation_product_id = $this->get_update_product_id($variation_post_id, $variation['sku'], $product_id_diffs);
             $variable_name = $_product->get_name();
             $ean = get_post_meta($variation_post_id, '_ean', true);
             $specifications = [];
@@ -486,7 +483,7 @@ class Product {
         return true;
     }
     
-    private function collect_products_simple($post_id, $business_id, $retailerId,
+    private function collect_products_simple($post_id, $retailerId,
             $_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diffs, &$product_ids_map) {
 
         $ean = get_post_meta($post_id, '_ean', true);
@@ -494,7 +491,7 @@ class Product {
             $wholesale_price = (float) $_product->get_price();
         }
 
-        $product_id = $this->get_update_product_id($post_id, $business_id, $_product->get_sku(), $product_id_diffs);
+        $product_id = $this->get_update_product_id($post_id, $_product->get_sku(), $product_id_diffs);
         $product = array(
             'externalId' => $product_id,
             'descriptions' => array(
@@ -764,7 +761,7 @@ class Product {
         return false;
     }
 
-    private function get_update_product_id($post_id, $business_id, $product_id_latest, &$product_id_diffs) {
+    private function get_update_product_id($post_id, $product_id_latest, &$product_id_diffs) {
         if (!isset($product_id_latest) || empty($product_id_latest)) {
             return null;
         }
@@ -775,10 +772,8 @@ class Product {
             array_push($product_id_diffs, array('id' => $post_id, 'to' => $product_id_latest));
         }
         elseif ($product_id !== $product_id_latest) {
-            if (!isset($business_id) || empty($business_id) || ($product_id !== $business_id . '-' . $product_id_latest)) {
-                array_push($product_id_diffs, array('id' => $post_id, 'from' => $product_id, 'to' => $product_id_latest));
-                $product_id = $product_id_latest; // SKU changed since last update
-            }
+            array_push($product_id_diffs, array('id' => $post_id, 'from' => $product_id, 'to' => $product_id_latest));
+            $product_id = $product_id_latest; // SKU changed since last update
         }
 
         return $product_id;
