@@ -84,14 +84,13 @@ class Core {
         return $actions;
     }
 
-    public function after_settings_update($option, $old_value, $value) { 
+    public function after_settings_update($option, $old_value, $value) {
         if ($option == 'posti_wh_options') {
-            if (
-                $old_value['posti_wh_field_username'] != $value['posti_wh_field_username'] || 
-                $old_value['posti_wh_field_password'] != $value['posti_wh_field_password'] ||
-                $old_value['posti_wh_field_username_test'] != $value['posti_wh_field_username_test'] || 
-                $old_value['posti_wh_field_password_test'] != $value['posti_wh_field_password_test']) {
-
+            if (Settings::is_changed($old_value, $value, 'posti_wh_field_username')
+                || Settings::is_changed($old_value, $value, 'posti_wh_field_password')
+                || Settings::is_changed($old_value, $value, 'posti_wh_field_username_test')
+                || Settings::is_changed($old_value, $value, 'posti_wh_field_password_test')
+                || Settings::is_changed($old_value, $value, 'posti_wh_field_test_mode')) {
                 //login info changed, try to get token
                 delete_option('posti_wh_api_auth');
                 if (session_id() === '' || !isset($_SESSION)) {

@@ -87,8 +87,16 @@ class Settings {
         return Settings::is_option_true($options, 'posti_wh_field_test_mode');
     }
     
+    public static function is_test_mode() {
+        return Settings::is_option_true(Settings::get(), 'posti_wh_field_test_mode');
+    }
+    
     public static function is_add_tracking($options) {
         return Settings::is_option_true($options, 'posti_wh_field_addtracking');
+    }
+    
+    public static function is_changed(&$old_options, &$new_options, $option) {
+        return Settings::get_value($old_options, $option) != Settings::get_value($new_options, $option);
     }
     
     public function posti_wh_settings_init() {
@@ -411,6 +419,9 @@ class Settings {
         					<b>Product data update is required!</b><br/>
         					Click Update button to sync product identifiers between Woocommerce and Posti.
         				</div>
+        				<div id="posti_wh_migration_test_mode_notice" style="display: none">
+        					<b style="color: red">Test mode must be disabled!</b>
+        				</div>
         				<div id="posti_wh_migration_completed" style="display: none">
         					<b>Product data update is complete!</b>
         				</div>
@@ -431,6 +442,11 @@ class Settings {
     }
     
     public function warehouse_products_migrate() {
+        if (Settings::is_test_mode()) {
+            echo json_encode(array('testMode' => true));
+            die();
+        }
+        
         if ($this->api->migrate() === false) {
             $this->logger->log("error", 'Unable to migrate products');
             throw new \Exception('Unable to migrate products');
@@ -471,8 +487,8 @@ class Settings {
         die();
     }
     
-    private static function is_option_true(&$options, $value) {
-        return isset($options[$value]) && Settings::is_true($options[$value]);
+    private static function is_option_true(&$options, $key) {
+        return isset($options[$key]) && Settings::is_true($options[$key]);
     }
     
     private static function is_true($value) {

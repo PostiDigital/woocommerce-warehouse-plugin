@@ -107,16 +107,23 @@ jQuery(function ($) {
             $("#posti_wh_migration_submit").on('click', function(e) {
                 var $this = $(this);
                 $this.prop("disabled", true);
+                $('#posti_wh_migration_test_mode_notice').hide();
                 var data = {
                     action: 'warehouse_products_migrate',
                     security: $('#posti_migration_metabox_nonce').val(),
                 };
                 $.post($('#posti_migration_url').val(), data, function (response) {
-                $this.hide();
-                $('#posti_wh_migration_required').hide();
-                $('#posti_wh_migration_completed').show();
+                    var result = response ? JSON.parse(response) : null;
+                    if (result && result.testMode) {
+                        $('#posti_wh_migration_test_mode_notice').show();
+                    }
+                    else {
+                        $this.hide();
+                        $('#posti_wh_migration_required').hide();
+                        $('#posti_wh_migration_completed').show();
+                    }
                 }).fail(function () {
-					$this.prop("disabled", false);
+                    $this.prop("disabled", false);
                 }).always(function () {
                 });
             }); 
