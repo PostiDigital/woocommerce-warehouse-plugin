@@ -113,7 +113,7 @@ class Settings {
 
         add_settings_section(
                 'posti_wh_options',
-                '<span class="dashicons dashicons-admin-generic" style="4pt"></span>' . __('Posti Warehouse settings', 'posti-warehouse'),
+                '<span class="dashicons dashicons-admin-generic" style="padding-right: 2pt"></span>' . __('Posti Warehouse settings', 'posti-warehouse'),
                 array($this, 'posti_wh_section_developers_cb'),
                 'posti_wh'
         );
