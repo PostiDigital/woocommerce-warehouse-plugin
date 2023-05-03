@@ -36,6 +36,10 @@ class Api {
         delete_option('posti_wh_api_auth');
     }
     
+    public function getUserAgent() {
+        return $this->user_agent;
+    }
+    
     public function getLastStatus() {
         return $this->last_status;
     }

@@ -40,7 +40,9 @@ function warehouse_shipping_method() {
             }
 
             public function load() {
-                $this->id = 'posti_warehouse'; // ID for your shipping method. Should be unique.
+                $this->id = 'posti_warehouse';
+                $this->method_title = 'Posti warehouse';
+                $this->method_description = 'Posti warehouse';
                 $this->enabled = "yes";
                 $this->supports = array(
                     'settings',

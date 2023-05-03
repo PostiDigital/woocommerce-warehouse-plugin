@@ -374,7 +374,8 @@ class Order {
             "externalId" => (string) $posti_order_id,
             "orderDate" => date('Y-m-d\TH:i:s.vP', strtotime($_order->get_date_created()->__toString())),
             "metadata" => [
-                "documentType" => "SalesOrder"
+                "documentType" => "SalesOrder",
+                "client" => $this->api->getUserAgent()
             ],
             "vendor" => [
                 "name" => get_option("blogname"),

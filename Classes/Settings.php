@@ -25,6 +25,11 @@ class Settings {
         return $options ? $options : array();
     }
     
+    public static function get_shipping_settings() {
+        $options = get_option('woocommerce_posti_warehouse_settings');
+        return $options ? $options : array();
+    }
+    
     public static function get_value(&$options, $key) {
         if (!isset($options) || !isset($options[$key])) {
             return null;
@@ -32,6 +37,7 @@ class Settings {
         
         return $options[$key];
     }
+    
     
     public static function update(&$options) {
         update_option('posti_wh_options', $options);
@@ -60,8 +66,7 @@ class Settings {
             'posti_wh_field_test_mode',
             'posti_wh_field_debug',
             'posti_wh_field_stock_sync_dttm',
-            'posti_wh_field_order_sync_dttm',
-            'pickup_points'
+            'posti_wh_field_order_sync_dttm'
         ];
 
         foreach ($fields as $field) {
