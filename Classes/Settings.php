@@ -99,6 +99,11 @@ class Settings {
         return Settings::get_value($old_options, $option) != Settings::get_value($new_options, $option);
     }
     
+    public static function is_developer() {
+        return (isset($_GET) && isset($_GET['developer']))
+            || (isset($_POST) && isset($_POST['developer']));
+    }
+    
     public function posti_wh_settings_init() {
 
         add_settings_section(
@@ -159,6 +164,21 @@ class Settings {
                     'posti_wh_custom_data' => 'custom',
                 ]
         );
+        
+        if (Settings::is_developer()) {
+            add_settings_field(
+                'posti_wh_field_business_id',
+                __('Business ID', 'posti-warehouse'),
+                array($this, 'posti_wh_field_string_cb'),
+                'posti_wh',
+                'posti_wh_options',
+                [
+                    'label_for' => 'posti_wh_field_business_id',
+                    'class' => 'posti_wh_row',
+                    'posti_wh_custom_data' => 'custom',
+                ]
+            );
+        }
 
         add_settings_field(
                 'posti_wh_field_service',
@@ -442,9 +462,9 @@ class Settings {
     }
     
     public function warehouse_products_migrate() {
-        if (Settings::is_test_mode()) {
+        if (Settings::is_test_mode() && !Settings::is_developer()) {
             echo json_encode(array('testMode' => true));
-            die();
+            exit();
         }
         
         if ($this->api->migrate() === false) {
@@ -484,7 +504,7 @@ class Settings {
         
         $this->logger->log("info", "Products migrated");
         echo json_encode(array('result' => true));
-        die();
+        exit();
     }
     
     private static function is_option_true(&$options, $key) {

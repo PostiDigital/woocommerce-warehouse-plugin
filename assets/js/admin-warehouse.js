@@ -104,14 +104,19 @@ jQuery(function ($) {
 
     var attach_action_warehouse_products_migrate = function(){
         $(document).ready(function() {
-            $("#posti_wh_migration_submit").on('click', function(e) {
+            $('#posti_wh_migration_submit').on('click', function(e) {
                 var $this = $(this);
-                $this.prop("disabled", true);
+                $this.prop('disabled', true);
                 $('#posti_wh_migration_test_mode_notice').hide();
                 var data = {
                     action: 'warehouse_products_migrate',
                     security: $('#posti_migration_metabox_nonce').val(),
                 };
+                
+                var params = new URLSearchParams(window.location.search);
+                if (params.has('developer')) {
+					data['developer'] = 'true';
+                }
                 $.post($('#posti_migration_url').val(), data, function (response) {
                     var result = response ? JSON.parse(response) : null;
                     if (result && result.testMode) {
@@ -123,7 +128,7 @@ jQuery(function ($) {
                         $('#posti_wh_migration_completed').show();
                     }
                 }).fail(function () {
-                    $this.prop("disabled", false);
+                    $this.prop('disabled', false);
                 }).always(function () {
                 });
             }); 
