@@ -110,7 +110,8 @@ class Settings {
     }
     
     public function posti_wh_settings_init() {
-
+        $is_developer = Settings::is_developer();
+        $developer_fields_class = $is_developer ? 'posti_wh_row' : 'hidden';
         add_settings_section(
                 'posti_wh_options',
                 '<span class="dashicons dashicons-admin-generic" style="padding-right: 2pt"></span>' . __('Posti Warehouse settings', 'posti-warehouse'),
@@ -169,21 +170,19 @@ class Settings {
                     'posti_wh_custom_data' => 'custom',
                 ]
         );
-        
-        if (Settings::is_developer()) {
-            add_settings_field(
-                'posti_wh_field_business_id',
-                __('Business ID', 'posti-warehouse'),
-                array($this, 'posti_wh_field_string_cb'),
-                'posti_wh',
-                'posti_wh_options',
-                [
-                    'label_for' => 'posti_wh_field_business_id',
-                    'class' => 'posti_wh_row',
-                    'posti_wh_custom_data' => 'custom',
-                ]
-            );
-        }
+
+        add_settings_field(
+            'posti_wh_field_business_id',
+            __('Business ID', 'posti-warehouse'),
+            array($this, 'posti_wh_field_string_cb'),
+            'posti_wh',
+            'posti_wh_options',
+            [
+                'label_for' => 'posti_wh_field_business_id',
+                'class' => $developer_fields_class,
+                'posti_wh_custom_data' => 'custom',
+            ]
+        );
 
         add_settings_field(
                 'posti_wh_field_service',
@@ -271,7 +270,7 @@ class Settings {
                 'posti_wh_options',
                 [
                     'label_for' => 'posti_wh_field_crontime',
-                    'class' => 'posti_wh_row',
+                    'class' => $developer_fields_class,
                     'posti_wh_custom_data' => 'custom',
                     'input_type' => 'number',
                     'default' => '600'
@@ -312,7 +311,7 @@ class Settings {
                 'posti_wh_options',
                 [
                     'label_for' => 'posti_wh_field_stock_sync_dttm',
-                    'class' => 'posti_wh_row',
+                    'class' => $developer_fields_class,
                     'posti_wh_custom_data' => 'custom',
                 ]
         );
@@ -325,7 +324,7 @@ class Settings {
                 'posti_wh_options',
                 [
                     'label_for' => 'posti_wh_field_order_sync_dttm',
-                    'class' => 'posti_wh_row',
+                    'class' => $developer_fields_class,
                     'posti_wh_custom_data' => 'custom',
                 ]
         );
