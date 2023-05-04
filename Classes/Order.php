@@ -106,9 +106,15 @@ class Order {
         if (!is_object($order)) {
             $order = wc_get_order($order);
         }
-        
+
+        $order_services = $this->get_additional_services($order);
+        if (!isset($order_services['service']) || empty($order_services['service'])) {
+            $order->update_status('on-hold', __('Failed to order: Shipping method not configured.', 'posti-warehouse'), true);
+            return [ 'error' => 'ERROR: Shipping method not configured.' ];
+        }
+
         $order_id = (string) $order->get_id();
-        $data = $this->prepare_posti_order($order_id, $order);
+        $data = $this->prepare_posti_order($order_id, $order, $order_services);
         $result = $this->api->addOrder($data);
         $status = $this->api->getLastStatus();
 
@@ -127,10 +133,10 @@ class Order {
             update_post_meta($order_id, '_posti_id', (string) $order->get_id());
         }
         else {
-            $order->update_status('failed', __('Failed to order', 'posti-warehouse'), true);
+            $order->update_status('failed', __('Failed to order.', 'posti-warehouse'), true);
         }
-        
-        return $result;
+
+        return $result === false ? [ 'error' => __('ERROR: Unable to place order.','posti-warehouse') ] : [];
     }
     
     public function sync($datetime) {
@@ -206,8 +212,8 @@ class Order {
     }
 
     public function sync_order($id, $order, $autocomplete) {
-        $tracking = $order['trackingCodes'];
-        if ($tracking) {
+        $tracking = isset($order['trackingCodes']) ? $order['trackingCodes'] : '';
+        if (!empty($tracking)) {
             if (is_array($tracking)) {
                 $tracking = implode(', ', $tracking);
             }
@@ -241,13 +247,12 @@ class Order {
         }
     }
 
-    private function get_additional_services($order) {
+    private function get_additional_services(&$order) {
         $additional_services = array();
         $shipping_service = '';
-        $settings = Settings::get();
+        $settings = Settings::get_shipping_settings();
         $shipping_methods = $order->get_shipping_methods();
         $chosen_shipping_method = array_pop($shipping_methods);
-
         $add_cod_to_additional_services = 'cod' === $order->get_payment_method();
 
         if (!empty($chosen_shipping_method)) {
@@ -258,19 +263,22 @@ class Order {
             }
 
             $instance_id = $chosen_shipping_method->get_instance_id();
+            $pickup_points = isset($settings['pickup_points']) ? json_decode($settings['pickup_points'], true) : array();
+            if (isset($pickup_points[$instance_id])
+                && isset($pickup_points[$instance_id]['service'])
+                && !empty($pickup_points[$instance_id]['service'])
+                && $pickup_points[$instance_id]['service'] !== '__NULL__') {
 
-            $pickup_points = json_decode($settings['pickup_points'], true);
-            //var_dump($pickup_points);
-            if (!empty($pickup_points[$instance_id]['service'])) {
                 $service_id = $pickup_points[$instance_id]['service'];
                 $shipping_service = $service_id;
                 $services = array();
 
-                if (!empty($pickup_points[$instance_id][$service_id]) && isset($pickup_points[$instance_id][$service_id]['additional_services'])) {
-                    $services = $pickup_points[$instance_id][$service_id]['additional_services'];
-                }
+                if (isset($pickup_points[$instance_id][$service_id])
+                    && !empty($pickup_points[$instance_id][$service_id])
+                    && isset($pickup_points[$instance_id][$service_id]['additional_services'])
+                    && !empty($pickup_points[$instance_id][$service_id]['additional_services'])) {
 
-                if (!empty($services)) {
+                    $services = $pickup_points[$instance_id][$service_id]['additional_services'];
                     foreach ($services as $service_code => $service) {
                         if ($service === 'yes' && $service_code !== '3101') {
                             $additional_services[$service_code] = null;
@@ -313,12 +321,8 @@ class Order {
         return $reference;
     }
 
-    private function prepare_posti_order($posti_order_id, $_order) {
-
-        $order_services = $this->get_additional_services($_order);
-
+    private function prepare_posti_order($posti_order_id, &$_order, &$order_services) {
         $additional_services = [];
-
         foreach ($order_services['additional_services'] as $_service => $_service_data) {
             $additional_services[] = ["serviceCode" => (string)$_service];
         }
@@ -328,7 +332,7 @@ class Order {
         $total_tax = 0;
         $items = $_order->get_items();
         $item_counter = 1;
-        $service_code = $order_services['service']; //"2103";
+        $service_code = $order_services['service'];
         $pickup_point = get_post_meta($_order->get_id(), '_warehouse_pickup_point_id', true); //_woo_posti_shipping_pickup_point_id
 
         foreach ($_order->get_items('shipping') as $item_id => $shipping_item_obj) {
@@ -394,7 +398,6 @@ class Order {
                 "email" => get_option("admin_email")
             ],
             "client" => [
-                //"externalId" => strval($_order->get_customer_id()),
                 "name" => $_order->get_billing_first_name() . ' ' . $_order->get_billing_last_name(),
                 "streetAddress" => $_order->get_billing_address_1(),
                 "postalCode" => $_order->get_billing_postcode(),
@@ -404,7 +407,6 @@ class Order {
                 "email" => $_order->get_billing_email()
             ],
             "recipient" => [
-                //"externalId" => strval($_order->get_customer_id()),
                 "name" => $_order->get_billing_first_name() . ' ' . $_order->get_billing_last_name(),
                 "streetAddress" => $_order->get_billing_address_1(),
                 "postalCode" => $_order->get_billing_postcode(),
@@ -414,7 +416,6 @@ class Order {
                 "email" => $_order->get_billing_email()
             ],
             "deliveryAddress" => [
-                //"externalId" => strval($_order->get_customer_id()),
                 "name" => $_order->get_shipping_first_name() . ' ' . $_order->get_shipping_last_name(),
                 "streetAddress" => $_order->get_shipping_address_1(),
                 "postalCode" => $_order->get_shipping_postcode(),
@@ -425,7 +426,7 @@ class Order {
             ],
             "pickupPointId" => $pickup_point,
             "currency" => $_order->get_currency(),
-            "serviceCode" => $service_code,
+            "serviceCode" => (string) $service_code,
             "totalPrice" => $total_price,
             "totalTax" => $total_tax,
             "totalWholeSalePrice" => $total_price + $total_tax,
