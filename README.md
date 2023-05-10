@@ -23,7 +23,7 @@ More information about Posti dropshipping service is available at [Posti.fi / Gl
 
 ## Installation
 
-This plug-in has been tested with WooCommerce version 6.7.0/WordPress version 6.1.1. You should always test the plug-in in your environment to ensure compatibility also with other plug-ins.
+This plug-in has been tested with WooCommerce version 6.7.0/WordPress version 6.1.1 and PHP 7 (this plugin does not work with PHP 8). You should always test the plug-in in your environment to ensure compatibility also with other plug-ins.
 
 1. Download the plug-in software as ZIP file from this Github.
 1. Remove previous version of the plug-in if you are updating the plugin.
