@@ -98,7 +98,7 @@ class Product {
                 array(
                     'id' => '_ean',
                     'label' => __('EAN', 'posti-warehouse'),
-                    'placeholder' => '01234567891231',
+                    'placeholder' => '',
                     'desc_tip' => 'true',
                     'description' => __('Enter EAN number', 'posti-warehouse')
                 )
@@ -132,7 +132,7 @@ class Product {
                 array(
                     'id' => '_ean[' . $variation->ID . ']',
                     'label' => __('EAN', 'posti-warehouse'),
-                    'placeholder' => '01234567891231',
+                    'placeholder' => '',
                     'desc_tip' => 'true',
                     'description' => __('Enter EAN number', 'posti-warehouse'),
                     'value' => get_post_meta($variation->ID, '_ean', true)
@@ -693,7 +693,8 @@ class Product {
             return;
         }
 
-        $product_warehouse = get_post_meta($id, '_posti_wh_warehouse', true);
+        $main_id = $_product->get_type() == 'variation' ? $_product->get_parent_id() : $id;
+        $product_warehouse = get_post_meta($main_id, '_posti_wh_warehouse', true);
         if (!empty($product_warehouse)) {
             $totalStock = 0;
             if (isset($balances) && is_array($balances)) {
@@ -711,16 +712,8 @@ class Product {
                 $this->logger->log("info", "Set product $id ($product_id) stock: $total_stock_old -> $totalStock");
             }
         }
-        
-        //if variation, update main product sync time
-        $post_id = $id;
-        if ($_product->get_type() == 'variation') {
-            $post_id = $_product->get_parent_id();
-        }
 
-        if (isset($post_id)) {
-            update_post_meta($post_id, '_posti_last_sync', time());
-        }
+        update_post_meta($main_id, '_posti_last_sync', time());
     }
 
     private function save_form_field($name, $post_id) {
