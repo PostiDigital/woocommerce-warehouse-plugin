@@ -47,12 +47,18 @@ msgstr ""
 msgid "Debug"
 msgstr ""
 
+msgid "Datetime of last stock update"
+msgstr ""
+
+msgid "Datetime of last order update"
+msgstr ""
+
 #: Classes/Core.php:165
 msgid "Default stock type"
 msgstr ""
 
 #: Classes/Core.php:217
-msgid "Delay between stock and order checks in seconds"
+msgid "Stock and order update interval (in seconds)"
 msgstr ""
 
 #: Classes/Product.php:169
@@ -192,3 +198,4 @@ msgstr ""
 #: Classes/Product.php:63
 msgid "Wholesale price"
 msgstr ""
+

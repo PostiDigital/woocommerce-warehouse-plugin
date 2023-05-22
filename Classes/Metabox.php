@@ -58,17 +58,16 @@ class Metabox {
         if (!is_numeric($_POST['post_id'])) {
             wp_die('', '', 501);
         }
-        if ($_POST['order_action'] == 'place_order') {
-            $status = $this->postiOrder->addOrder($_POST['post_id']);
-            //var_dump($status);
-            if ($status) {
-                $post = get_post($_POST['post_id']);
-                $this->add_order_meta_box_html($post);
-                wp_die('', '', 200);
-            }
-        }
-        $this->error = __('Unexpected error. Please try again','posti-warehouse');
+        
         $post = get_post($_POST['post_id']);
+        if ($_POST['order_action'] == 'place_order') {
+            $result = $this->postiOrder->addOrder($_POST['post_id']); 
+            $this->error = isset($result['error']) ? $result['error'] : '';
+            $this->add_order_meta_box_html($post);
+            wp_die('', '', 200);
+        }
+
+        $this->error = __('Unexpected error. Please try again','posti-warehouse');
         $this->add_order_meta_box_html($post);
         wp_die('', '', 200);
     }

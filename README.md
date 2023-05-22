@@ -2,7 +2,7 @@
 
 ## General 
 
-Posti warehouse plug-in provides integration to Glue platform to enable **warehouse** and **dropshipping** service offered by Posti. Your company need service agreement with Posti to use the services. 
+Posti warehouse plug-in provides integration to Glue platform to enable **warehouse** and **dropshipping** services offered by Posti. Your company need service agreement with Posti to use the services. 
 
 If you have questions about the Posti warehouse service or dropshipping service, please contact kari.nykanen@posti.com. 
 
@@ -23,7 +23,7 @@ More information about Posti dropshipping service is available at [Posti.fi / Gl
 
 ## Installation
 
-This plug-in has been tested with WooCommerce version 6.7.0/WordPress version 6.1.1. You should always test the plug-in in your environment to ensure compatibility also with other plug-ins.
+This plug-in has been tested with WooCommerce version 7.7.0/WordPress version 6.2.2/PHP 7&8. You should always test the plug-in in your environment to ensure compatibility with other plug-ins also.
 
 1. Download the plug-in software as ZIP file from this Github.
 1. Remove previous version of the plug-in if you are updating the plugin.
@@ -44,16 +44,15 @@ Fill the Store address. It is used as sender’s address for parcel deliveries.
 
 Create a new shipping zone, for example “Suomi” and add shipping methods (for example, “Nouto Postista”, “Postin kotiintoimitus”, and “Express paketti perille”). These are just names that are shown to end-customer – actual delivery methods are mapped in the following Posti warehouse settings. 
 
-**WooCommerce > Settings > Shipping > Posti warehouse**
+**Plugins > Posti Warehouse > Settings**
 
 Add information to configure the warehouse settings:
 
-- **Username** – this is API key for the production environment of the Glue, which is provided by Posti. 
-- **Password** – this is API password for the production environment of the Glue, which is provided by Posti.
+- **Username** – this is API key (account name) for the production environment of the Glue, which is provided by Posti. 
+- **Password** – this is API password (secret) for the production environment of the Glue, which is provided by Posti.
 - **TEST Username** -  this is API key for the test environment of the Glue, which is provided by Posti. 
 - **TEST Pasword**  – this is API password for the test environment of the Glue, which is provided by Posti.
 - **Delivery service - Select either Posti Warehouse or Dropshipping, this determines which delivery methods are available when you map shipping options..
-- **Business ID** – this is business ID (‘Y-tunnus’ in Finnish) of your	 company. Companies with Finnish business ID should write it with dash (e.g. 01234567-8).
 - **Contract number** – your contract number for Posti parcel services (6-digit long number which starts with number 6 )
 - **Default stock type** - select service you are mainly using (warehouse or dropshipping). You can change the value when you add new products.
   - **Posti Warehouse** - product is stocked by Posti warehouse
@@ -62,10 +61,12 @@ Add information to configure the warehouse settings:
   - **Not in stock** - product is stocked by yourself. Use some other plugin or service for address label printing to fulfill orders. 
 - **Auto ordering** – if selected then new order is automatically sent to warehouse, which speed up the order processing. 
 - **Add tracking to email** – tracking ID of the delivery is added to the delivery confirmation.
-- **Delay between stock and order checks in seconds** – Recommended value is “7200” (2 hours). WooCommerce is polling stock and quantities and order statuses and this defines polling frequency.
-- **Test mode** – if selected then TEST username and password is used to interface test environment of the Glue.
+- **Test mode** – if selected then TEST username and TEST password is used to interface test environment of the Glue.
 - **Debug** – if selected then event log is available at “Settings” > “Posti Warehouse debug”. 
-- **Pickup** – map shipping methods to actual Posti’s delivery products. 
+
+**WooCommerce > Settings > Shipping > Posti warehouse**
+
+Map shipping methods to actual Posti’s delivery products. Please note that delivery services may include services that are not available in the service you signed with Posti.
 
 **Woocommerce > Products**
 
@@ -94,6 +95,13 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile addtional service is added to order/delivery. 
 
 ## Version history
+- 2.0.0:
+    - Expanded pickup points support.
+    - Deprecated business ID prefix in orders and products.
+    - Added separate plugin settings page.
+    - Added bulk products list action - Publish to warehouse / Remove from warehouse
+    - Updated orders and products sync process to use timestamp.
+    - Authentication APIs have been changed.
 
 - 1.0.8 Fix email and telephone when pickup point is used for delivery address.
 - 1.0.7 Prefer shipping email and telephone to billing information for delivery address.

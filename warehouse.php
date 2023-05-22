@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Plugin Name: Posti Warehouse Plugin
- * Version: 1.0.8
- * Description: Warehouse plugin for WooCommerce.
+ * Plugin Name: Posti Warehouse
+ * Version: 2.0.0
+ * Description: Provides integration to Posti warehouse and dropshipping services.
  * Author: Posti
  * Author URI: https://www.posti.fi/
  * Text Domain: posti-warehouse
@@ -25,15 +25,7 @@ if ( ! defined('ABSPATH') ) {
 
 define( '__POSTI_WH_FILE__', __FILE__ );
 
-/**
- * Autoloader loads nothing but Pakettikauppa libraries. The classname of the generated autoloader is not unique,
- * posti_shipping forks use the same autoloader which results in a fatal error if the main plugin and a posti_shipping plugin
- * co-exist.
- */
-if ( ! class_exists('\Pakettikauppa\Client') ) {
-  require_once __DIR__ . '/vendor/autoload.php';
-}
-
+require_once __DIR__ . '/Classes/Settings.php';
 require_once __DIR__ . '/Classes/Order.php';
 require_once __DIR__ . '/Classes/Metabox.php';
 require_once __DIR__ . '/Classes/Api.php';

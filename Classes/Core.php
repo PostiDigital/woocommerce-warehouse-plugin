@@ -5,27 +5,25 @@ namespace PostiWarehouse\Classes;
 defined('ABSPATH') || exit;
 
 use PostiWarehouse\Classes\Api;
+use PostiWarehouse\Classes\Settings;
 use PostiWarehouse\Classes\Order;
 use PostiWarehouse\Classes\Product;
 use PostiWarehouse\Classes\Metabox;
 use PostiWarehouse\Classes\Logger;
-use PostiWarehouse\Classes\Dataset;
 use PostiWarehouse\Classes\Frontend;
 
 class Core {
 
+    private $settings = null;
     private $api = null;
-    private $test_api = null;
     private $metabox = null;
     private $order = null;
     private $product = null;
-    private $business_id = false;
     private $is_test = false;
     private $debug = false;
     private $add_tracking = false;
-    private $cron_time = 7200;
+    private $cron_time = 600;
     private $logger;
-    private $options_checked = false;
     private $frontend = null;
     public $prefix = 'warehouse';
     public $version = '0.0.0';
@@ -33,73 +31,24 @@ class Core {
     public $templates;
 
     public function __construct() {
-        
+
         $this->templates_dir = plugin_dir_path(__POSTI_WH_FILE__) . 'templates/';
         $this->templates = array(
           'checkout_pickup' => 'checkout-pickup.php',
           'account_order' => 'myaccount-order.php',
         );
-      
-
+        
         $this->load_options();
-
-                
-        //add_action('admin_init', array($this, 'posti_wh_settings_init'));
-
-        //add_action('admin_menu', array($this, 'posti_wh_options_page'));
-
         add_action('admin_enqueue_scripts', array($this, 'posti_wh_admin_styles'));
-
         $this->WC_hooks();
 
         register_activation_hook(__POSTI_WH_FILE__, array($this, 'install'));
         register_deactivation_hook(__POSTI_WH_FILE__, array($this, 'uninstall'));
 
-        //after update options check login info
         add_action('updated_option', array($this, 'after_settings_update'), 10, 3);
         add_action('admin_notices', array($this, 'render_messages'));
-    }
-    
-    private function load_options(){
-        $options = get_option('woocommerce_posti_warehouse_settings');
-        
-        if (isset($options['posti_wh_field_test_mode']) && $options['posti_wh_field_test_mode'] == "yes") {
-            $this->is_test = true;
-        }
 
-        if (isset($options['posti_wh_field_debug']) && $options['posti_wh_field_debug'] == "yes") {
-            $this->debug = true;
-        }
-
-        if (isset($options['posti_wh_field_addtracking']) && $options['posti_wh_field_addtracking'] == "yes") {
-            $this->add_tracking = true;
-        }
-
-        if (isset($options['posti_wh_field_crontime']) && $options['posti_wh_field_crontime']) {
-            $this->cron_time = (int) $options['posti_wh_field_crontime'];
-        }
-
-        if (isset($options['posti_wh_field_business_id'])) {
-            $this->business_id = $options['posti_wh_field_business_id'];
-        }
-        
-        $this->logger = new Logger();
-        $this->logger->setDebug($this->debug);
-
-        $this->api = new Api($this->logger, $this->business_id, false);
-        $this->test_api = new Api($this->logger, $this->business_id, true);
-        
-        $this->order = new Order($this->is_test ? $this->test_api : $this->api, $this->logger, $this->add_tracking);
-        $this->product = new Product($this->is_test ? $this->test_api : $this->api, $this->logger);
-        $this->metabox = new Metabox($this->order);
-
-        if ($this->debug) {
-            $debug = new Debug();
-            $debug->setTest($this->is_test);
-        }
-        
-        $this->frontend = new Frontend($this);
-        $this->frontend->load();
+        add_filter('plugin_action_links', array($this, 'attach_plugin_links'), 10, 2);
     }
     
     public function getApi() {
@@ -107,10 +56,14 @@ class Core {
     }
 
     public function install() {
+        Settings::install();
+        Api::install();
         Logger::install();
     }
 
     public function uninstall() {
+        Settings::uninstall();
+        Api::uninstall();
         Logger::uninstall();
     }
 
@@ -121,30 +74,30 @@ class Core {
                 dirname(__FILE__) . '/languages/'
         );
     }
+    
+    public function attach_plugin_links($actions, $file) {
+        if (strpos($file, 'woocommerce-warehouse-plugin') !== false) {
+            $settings_link = sprintf('<a href="%s">%s</a>', admin_url('options-general.php?page=posti_wh'), 'Settings');
+            array_unshift($actions, $settings_link);
+        }
 
-    public function after_settings_update($option, $old_value, $value) { 
-        if ($option == 'woocommerce_posti_warehouse_settings') {
-            if (
-                    $old_value['posti_wh_field_username'] != $value['posti_wh_field_username'] || 
-                    $old_value['posti_wh_field_password'] != $value['posti_wh_field_password']
-            ) {
+        return $actions;
+    }
+
+    public function after_settings_update($option, $old_value, $value) {
+        if ($option == 'posti_wh_options') {
+            if (Settings::is_changed($old_value, $value, 'posti_wh_field_username')
+                || Settings::is_changed($old_value, $value, 'posti_wh_field_password')
+                || Settings::is_changed($old_value, $value, 'posti_wh_field_username_test')
+                || Settings::is_changed($old_value, $value, 'posti_wh_field_password_test')
+                || Settings::is_changed($old_value, $value, 'posti_wh_field_test_mode')) {
                 //login info changed, try to get token
                 delete_option('posti_wh_api_auth');
                 if (session_id() === '' || !isset($_SESSION)) {
                     session_start();
                 }
+                
                 $_SESSION['posti_warehouse_check_token'] = true;
-            }
-            if (
-                    $old_value['posti_wh_field_username_test'] != $value['posti_wh_field_username_test'] || 
-                    $old_value['posti_wh_field_password_test'] != $value['posti_wh_field_password_test']
-            ) {
-                //login info changed, try to get token
-                delete_option('posti_wh_api_auth_test');
-                if (session_id() === '' || !isset($_SESSION)) {
-                    session_start();
-                }
-                $_SESSION['posti_warehouse_check_test_token'] = true;
             }
         }
     }
@@ -156,7 +109,7 @@ class Core {
         }
         
         if (isset($_SESSION['posti_warehouse_check_token'])) {
-            //reload options, because their are saved after load
+            // reload updated options
             $this->load_options();
             $token = $this->api->getToken();
             if ($token) {
@@ -164,34 +117,23 @@ class Core {
             } else {
                 $this->token_error();
             }
+
             unset($_SESSION['posti_warehouse_check_token']);
-        }
-        
-        if (isset($_SESSION['posti_warehouse_check_test_token'])) {
-            //reload options, because their are saved after load
-            $this->load_options();
-            $token = $this->test_api->getToken();
-            if ($token) {
-                $this->token_success(true);
-            } else {
-                $this->token_error(true);
-            }
-            unset($_SESSION['posti_warehouse_check_test_token']);
         }
     }
 
-    public function token_error($test = false) {
+    public function token_error() {
         ?>
         <div class="error notice">
-            <p><?php echo $test?'TEST ':'';?><?php _e('Wrong credentials - access token not received!', 'posti-warehouse'); ?></p>
+            <p><?php _e('Wrong credentials - access token not received!', 'posti-warehouse'); ?></p>
         </div>
         <?php
     }
 
-    public function token_success($test = false) {
+    public function token_success() {
         ?>
         <div class="updated notice">
-            <p><?php echo $test?'TEST ':'';?><?php _e('Credentials matched - access token received!', 'posti-warehouse'); ?></p>
+            <p><?php _e('Credentials matched - access token received!', 'posti-warehouse'); ?></p>
         </div>
         <?php
     }
@@ -203,245 +145,6 @@ class Core {
     
         wp_enqueue_style('posti_wh_admin_style', plugins_url('assets/css/admin-warehouse-settings.css', dirname(__FILE__)), [], '1.0');
         wp_enqueue_script('posti_wh_admin_script', plugins_url('assets/js/admin-warehouse.js', dirname(__FILE__)), 'jquery', '1.2');
-    }
-
-    public function posti_wh_settings_init() {
-
-        register_setting('posti_wh', 'posti_wh_options');
-
-        add_settings_section(
-                'posti_wh_settings_section',
-                __('Posti Warehouse settings', 'posti-warehouse'),
-                array($this, 'posti_wh_section_developers_cb'),
-                'posti_wh'
-        );
-
-        add_settings_field(
-                'posti_wh_field_username',
-                __('Username', 'posti-warehouse'),
-                array($this, 'posti_wh_field_string_cb'),
-                'posti_wh',
-                'posti_wh_settings_section',
-                [
-                    'label_for' => 'posti_wh_field_username',
-                    'class' => 'posti_wh_row',
-                    'posti_wh_custom_data' => 'custom',
-                ]
-        );
-
-        add_settings_field(
-                'posti_wh_field_password',
-                __('Password', 'posti-warehouse'),
-                array($this, 'posti_wh_field_string_cb'),
-                'posti_wh',
-                'posti_wh_settings_section',
-                [
-                    'label_for' => 'posti_wh_field_password',
-                    'class' => 'posti_wh_row',
-                    'posti_wh_custom_data' => 'custom',
-                ]
-        );
-
-        add_settings_field(
-                'posti_wh_field_business_id',
-                __('Business ID', 'posti-warehouse'),
-                array($this, 'posti_wh_field_string_cb'),
-                'posti_wh',
-                'posti_wh_settings_section',
-                [
-                    'label_for' => 'posti_wh_field_business_id',
-                    //'default' => 'A',
-                    'class' => 'posti_wh_row',
-                    'posti_wh_custom_data' => 'custom',
-                ]
-        );
-
-        add_settings_field(
-                'posti_wh_field_contract',
-                __('Contract number', 'posti-warehouse'),
-                array($this, 'posti_wh_field_string_cb'),
-                'posti_wh',
-                'posti_wh_settings_section',
-                [
-                    'label_for' => 'posti_wh_field_contract',
-                    'class' => 'posti_wh_row',
-                    'posti_wh_custom_data' => 'custom',
-                ]
-        );
-
-
-
-        add_settings_field(
-                'posti_wh_field_type',
-                __('Default stock type', 'posti-warehouse'),
-                array($this, 'posti_wh_field_type_cb'),
-                'posti_wh',
-                'posti_wh_settings_section',
-                [
-                    'label_for' => 'posti_wh_field_type',
-                    'class' => 'posti_wh_row',
-                    'posti_wh_custom_data' => 'custom',
-                ]
-        );
-
-        add_settings_field(
-                'posti_wh_field_autoorder',
-                __('Auto ordering', 'posti-warehouse'),
-                array($this, 'posti_wh_field_checkbox_cb'),
-                'posti_wh',
-                'posti_wh_settings_section',
-                [
-                    'label_for' => 'posti_wh_field_autoorder',
-                    'class' => 'posti_wh_row',
-                    'posti_wh_custom_data' => 'custom',
-                ]
-        );
-
-        add_settings_field(
-                'posti_wh_field_autocomplete',
-                __('Auto mark orders as "Completed"', 'posti-warehouse'),
-                array($this, 'posti_wh_field_checkbox_cb'),
-                'posti_wh',
-                'posti_wh_settings_section',
-                [
-                    'label_for' => 'posti_wh_field_autocomplete',
-                    'class' => 'posti_wh_row',
-                    'posti_wh_custom_data' => 'custom',
-                ]
-        );
-
-        add_settings_field(
-                'posti_wh_field_addtracking',
-                __('Add tracking to email', 'posti-warehouse'),
-                array($this, 'posti_wh_field_checkbox_cb'),
-                'posti_wh',
-                'posti_wh_settings_section',
-                [
-                    'label_for' => 'posti_wh_field_addtracking',
-                    'class' => 'posti_wh_row',
-                    'posti_wh_custom_data' => 'custom',
-                ]
-        );
-
-        add_settings_field(
-                'posti_wh_field_crontime',
-                __('Delay between stock and order checks in seconds', 'posti-warehouse'),
-                array($this, 'posti_wh_field_string_cb'),
-                'posti_wh',
-                'posti_wh_settings_section',
-                [
-                    'label_for' => 'posti_wh_field_crontime',
-                    'class' => 'posti_wh_row',
-                    'posti_wh_custom_data' => 'custom',
-                    'input_type' => 'number',
-                    'default' => '7200'
-                ]
-        );
-
-        add_settings_field(
-                'posti_wh_field_test_mode',
-                __('Test mode', 'posti-warehouse'),
-                array($this, 'posti_wh_field_checkbox_cb'),
-                'posti_wh',
-                'posti_wh_settings_section',
-                [
-                    'label_for' => 'posti_wh_field_test_mode',
-                    'class' => 'posti_wh_row',
-                    'posti_wh_custom_data' => 'custom',
-                ]
-        );
-
-        add_settings_field(
-                'posti_wh_field_debug',
-                __('Debug', 'posti-warehouse'),
-                array($this, 'posti_wh_field_checkbox_cb'),
-                'posti_wh',
-                'posti_wh_settings_section',
-                [
-                    'label_for' => 'posti_wh_field_debug',
-                    'class' => 'posti_wh_row',
-                    'posti_wh_custom_data' => 'custom',
-                ]
-        );
-    }
-
-    public function posti_wh_section_developers_cb($args) {
-        
-    }
-
-    public function posti_wh_field_checkbox_cb($args) {
-        $options = get_option('woocommerce_posti_warehouse_settings');
-        $checked = "";
-        if ($options[$args['label_for']]) {
-            $checked = ' checked="checked" ';
-        }
-        ?>
-        <input <?php echo $checked; ?> id = "<?php echo esc_attr($args['label_for']); ?>" name='posti_wh_options[<?php echo esc_attr($args['label_for']); ?>]' type='checkbox' value = "1"/>
-        <?php
-    }
-
-    public function posti_wh_field_string_cb($args) {
-        $options = get_option('woocommerce_posti_warehouse_settings');
-        $value = $options[$args['label_for']];
-        $type = 'text';
-        if (isset($args['input_type'])) {
-            $type = $args['input_type'];
-        }
-        if (!$value && isset($args['default'])) {
-            $value = $args['default'];
-        }
-        ?>
-        <input id="<?php echo esc_attr($args['label_for']); ?>" name="posti_wh_options[<?php echo esc_attr($args['label_for']); ?>]" size='20' type='<?= $type; ?>' value="<?php echo $value; ?>" />
-        <?php
-    }
-
-    public function posti_wh_field_type_cb($args) {
-
-        $options = get_option('woocommerce_posti_warehouse_settings');
-        ?>
-        <select id="<?php echo esc_attr($args['label_for']); ?>"
-                data-custom="<?php echo esc_attr($args['posti_wh_custom_data']); ?>"
-                name="posti_wh_options[<?php echo esc_attr($args['label_for']); ?>]"
-                >
-        <?php foreach (Dataset::getSToreTypes() as $val => $type): ?>
-                <option value="<?php echo $val; ?>" <?php echo isset($options[$args['label_for']]) ? ( selected($options[$args['label_for']], $val, false) ) : ( '' ); ?>>
-                        <?php
-                        echo $type;
-                        ?>
-                </option>
-                <?php endforeach; ?>
-        </select>
-            <?php
-        }
-
-        public function posti_wh_options_page() {
-            add_submenu_page(
-                    'options-general.php',
-                    'Posti Warehouse Settings',
-                    'Posti Warehouse Settings',
-                    'manage_options',
-                    'posti_wh',
-                    array($this, 'posti_wh_options_page_html')
-            );
-        }
-
-        public function posti_wh_options_page_html() {
-            if (!current_user_can('manage_options')) {
-                return;
-            }
-            settings_errors('posti_wh_messages');
-            ?>
-        <div class="wrap">
-            <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
-            <form action="options.php" method="post">
-        <?php
-        settings_fields('posti_wh');
-        do_settings_sections('posti_wh');
-        submit_button('Save');
-        ?>
-            </form>
-        </div>
-        <?php
     }
 
     public function WC_hooks() {
@@ -470,46 +173,63 @@ class Core {
      */
 
     public function posti_cronjob_callback() {
-        $args = array(
-            'post_type' => ['product', 'product_variation'],
-            'meta_query' => array(
-                'relation' => 'AND',
-                array(
-                    'key' => '_posti_wh_stock_type',
-                    'value' => array('Store', 'Posti', 'Catalog'),
-                    'compare' => 'IN'
-                ),
-                array(
-                    'key' => '_posti_last_sync',
-                    'value' => (time() - 60),
-                    'compare' => '<'
-                ),
-            ),
-        );
-        $products = get_posts($args);
-        $this->logger->log("info", "Found  " . count($products) . " products to sync");
-        if (is_array($products)) {
-            $product_ids = [];
-            foreach ($products as $product) {
-                $product_ids[] = $product->ID;
-            }
-            if (count($product_ids)) {
-                $this->product->syncProducts($product_ids);
-            }
-        }
+        $options = Settings::get();
+        $nextStockSyncDttm = $this->posti_cronjob_sync_stock($options);
+        $nextOrderSyncDttm = $this->posti_cronjob_sync_orders($options);
 
-        $this->order->updatePostiOrders();
+        if ($nextStockSyncDttm !== false || $nextOrderSyncDttm !== false) {
+            $new_options = Settings::get();
+            if ($nextStockSyncDttm !== false) {
+                $new_options['posti_wh_field_stock_sync_dttm'] = $nextStockSyncDttm;
+            }
+            
+            if ($nextOrderSyncDttm !== false) {
+                $new_options['posti_wh_field_order_sync_dttm'] = $nextOrderSyncDttm;
+            }
+
+            Settings::update($new_options);
+        }
     }
 
+    public function posti_cronjob_sync_stock($options) {
+        try {
+            $sync_dttm = $this->get_option_datetime_sync($options, 'posti_wh_field_stock_sync_dttm');
+            $next_sync_dttm = (new \DateTime())->format(\DateTimeInterface::RFC3339_EXTENDED);
+            $synced = $this->product->sync($sync_dttm);
+
+            return $synced ? $next_sync_dttm : false;
+
+        } catch (\Exception $e) {
+            $this->logger->log("error", $e->getMessage());
+        }
+        
+        return false;
+    }
+    
+    public function posti_cronjob_sync_orders($options) {
+        try {
+            $sync_dttm = $this->get_option_datetime_sync($options, 'posti_wh_field_order_sync_dttm');
+            $next_sync_dttm = (new \DateTime())->format(\DateTimeInterface::RFC3339_EXTENDED);
+            $synced = $this->order->sync($sync_dttm);
+
+            return $synced ? $next_sync_dttm : false;
+
+        } catch (\Exception $e) {
+            $this->logger->log("error", $e->getMessage());
+        }
+        
+        return false;
+    }
+    
     public function hide_other_shipping_if_posti_products($rates) {
         global $woocommerce;
         $hide_other = false;
         $items = $woocommerce->cart->get_cart();
 
         foreach ($items as $item => $values) {
-            $type = get_post_meta($values['data']->get_id(), '_posti_wh_stock_type', true);
             $product_warehouse = get_post_meta($values['data']->get_id(), '_posti_wh_warehouse', true);
-            if (($type == "Posti" ) && $product_warehouse) { //|| $type == "Store"
+            $type = $this->product->get_stock_type_by_warehouse($product_warehouse);
+            if (($type == "Posti" ) && $product_warehouse) {
                 $hide_other = true;
                 break;
             }
@@ -528,4 +248,36 @@ class Core {
         return $rates;
     }
 
+    private function get_option_datetime_sync($options, $option) {
+        $value = Settings::get_value($options, $option);
+        if (!isset($value) || empty($value)) {
+            $now = new \DateTime('now -7 day');
+            $value = $now->format(\DateTimeInterface::RFC3339_EXTENDED);
+        }
+        
+        return $value;
+    }
+    
+    private function load_options() {
+        $options = Settings::get();
+        $this->is_test = Settings::is_test($options);
+        $this->debug = Settings::is_debug($options);
+        $this->add_tracking = Settings::is_add_tracking($options);
+
+        if (isset($options['posti_wh_field_crontime']) && $options['posti_wh_field_crontime']) {
+            $this->cron_time = (int) $options['posti_wh_field_crontime'];
+        }
+
+        $this->logger = new Logger();
+        $this->logger->setDebug($this->debug);
+        
+        $this->api = new Api($this->logger, $options, $this->is_test);
+        $this->product = new Product($this->api, $this->logger);
+        $this->order = new Order($this->api, $this->logger, $this->product, $this->add_tracking);
+        $this->metabox = new Metabox($this->order);
+        $this->debug = new Debug($options);
+        $this->frontend = new Frontend($this);
+        $this->settings = new Settings($this->api, $this->logger);
+        $this->frontend->load();
+    }
 }

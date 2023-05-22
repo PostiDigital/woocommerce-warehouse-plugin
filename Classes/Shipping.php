@@ -4,9 +4,10 @@ namespace PostiWarehouse\Classes;
 
 // Prevent direct access to the script
 use WC_Countries;
+//use WC_Shipping_Method;
 use PostiWarehouse\Classes\Api;
 use PostiWarehouse\Classes\Logger;
-use PostiWarehouse\Classes\Dataset;
+use PostiWarehouse\Classes\Settings;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -14,66 +15,40 @@ if (!defined('ABSPATH')) {
 
 function warehouse_shipping_method() {
     if (!class_exists('WarehouseShipping')) {
-
         class WarehouseShipping extends \WC_Shipping_Method {
 
-            /**
-             * Required to access Pakettikauppa client
-             * @var Shipment $shipment
-             */
-            private $shipment = null;
             public $is_loaded = false;
             private $is_test = false;
             private $debug = false;
             private $api;
-            private $client;
-            private $business_id = false;
             private $delivery_service = 'WAREHOUSE';
             private $logger;
+            private $options;
 
-            /**
-             * Constructor for Pakettikauppa shipping class
-             *
-             * @access public
-             * @return void
-             */
             public function __construct() {
-                $options = get_option('woocommerce_posti_warehouse_settings');
-                if (isset($options['posti_wh_field_test_mode']) && $options['posti_wh_field_test_mode'] == "yes") {
-                    $this->is_test = true;
-                }
+                $this->options = Settings::get();
+                $this->is_test = Settings::is_test($this->options);
+                $this->debug = Settings::is_debug($this->options);
 
-                if (isset($options['posti_wh_field_debug']) && $options['posti_wh_field_debug'] == "yes") {
-                    $this->debug = true;
-                }
-
-                if (isset($options['posti_wh_field_business_id'])) {
-                    $this->business_id = $options['posti_wh_field_business_id'];
-                }
-                if (isset($options['posti_wh_field_service'])) {
-                    $this->delivery_service = $options['posti_wh_field_service'];
-                }
+                $this->delivery_service = Settings::get_value($this->options, 'posti_wh_field_service');
                 $this->logger = new Logger();
                 $this->logger->setDebug($this->debug);
 
-                $this->api = new Api($this->logger, $this->business_id, $this->is_test);
-                $this->client = $this->api->getClient();
+                $this->api = new Api($this->logger, $this->options);
 
                 $this->load();
             }
 
             public function load() {
-
-                $this->id = 'posti_warehouse'; // ID for your shipping method. Should be unique.
+                $this->id = 'posti_warehouse';
                 $this->method_title = 'Posti warehouse';
-                $this->method_description = 'Posti warehouse'; // Description shown in admin
+                $this->method_description = 'Posti warehouse';
                 $this->enabled = "yes";
                 $this->supports = array(
                     'settings',
                 );
 
                 $this->init();
-
 
                 // Save settings in admin if you have any defined
                 add_action('woocommerce_update_options_shipping_' . $this->id, array($this, 'process_admin_options'));
@@ -83,42 +58,17 @@ function warehouse_shipping_method() {
              * Initialize Pakettikauppa shipping
              */
             public function init() {
-                $this->copy_old_settings();
-                $this->form_fields = $this->my_global_form_fields();
+                $this->form_fields = $this->get_global_form_fields();
                 $this->title = "Warehouse shipping";
                 $this->init_settings();
-            }
-            
-            /**
-             * Copy setting from old settings page
-             */
-            private function copy_old_settings(){
-                $bool_fields = array_flip([
-                    'posti_wh_field_autoorder', 
-                    'posti_wh_field_autocomplete', 
-                    'posti_wh_field_addtracking', 
-                    'posti_wh_field_test_mode', 
-                    'posti_wh_field_debug'
-                    ]);
-                $old_options = get_option('posti_wh_options');
-                if (!empty($old_options)){
-                    $new_options = get_option('woocommerce_posti_warehouse_settings');
-                    foreach ($old_options as $key=>$value){
-                        $new_options[$key] = (isset($bool_fields[$key])?($value=='1'?'yes':'no'):$value); 
-                    }
-                    update_option('woocommerce_posti_warehouse_settings', $new_options);
-                    delete_option('posti_wh_options');
-                }
             }
 
             public function process_admin_options() {
                 parent::process_admin_options();
 
-                if (
-                    !empty($this->settings['posti_wh_field_service'])
-                    && $this->delivery_service != $this->settings['posti_wh_field_service']
-                ) {
-                    $this->delivery_service = $this->settings['posti_wh_field_service'];
+                $service_code = Settings::get_value($this->options, 'posti_wh_field_service');
+                if (!empty($service_code) && $this->delivery_service != $service_code) {
+                    $this->delivery_service = $service_code;
                     delete_transient('posti_warehouse_shipping_methods');
                 }
             }
@@ -130,9 +80,9 @@ function warehouse_shipping_method() {
 
             public function generate_pickuppoints_html($key, $value) {
                 $field_key = $this->get_field_key($key);
-
                 if ($this->get_option($key) !== '') {
                     $values = $this->get_option($key);
+
                     if (is_string($values)) {
                         $values = json_decode($this->get_option($key), true);
                     }
@@ -146,8 +96,6 @@ function warehouse_shipping_method() {
                 if (empty($all_shipping_methods)) {
                     $all_shipping_methods = array();
                 }
-
-                $methods = $this->get_pickup_point_methods();
 
                 ob_start();
                 ?>
@@ -181,10 +129,8 @@ function warehouse_shipping_method() {
                     }
                 </script>
                 <tr>
-                    <th colspan="2" class="titledesc mode_react" scope="row"><?php echo esc_html($value['title']); ?></th>
-                </tr>
-                <tr>
                     <td colspan="2" class="mode_react">
+                        <h1><?php echo esc_html($value['title']); ?></h1>
                         <?php foreach (\WC_Shipping_Zones::get_zones('admin') as $zone_raw) : ?>
                             <hr>
                             <?php $zone = new \WC_Shipping_Zone($zone_raw['zone_id']); ?>
@@ -201,9 +147,6 @@ function warehouse_shipping_method() {
                                     $selected_service = null;
                                     if (!empty($values[$method_id]['service'])) {
                                         $selected_service = $values[$method_id]['service'];
-                                    }
-                                    if (empty($selected_service) && !empty($methods)) {
-                                        $selected_service = '__PICKUPPOINTS__';
                                     }
                                     ?>
                                     <table style="border-collapse: collapse;" border="0">
@@ -223,22 +166,6 @@ function warehouse_shipping_method() {
                                             </select>
                                         </td>
                                         <td style="vertical-align: top;">
-                                            <div style='display: none;' id="pickuppoints-<?php echo $method_id; ?>">
-                                                <?php foreach ($methods as $method_code => $method_name) : ?>
-                                                    <input type="hidden"
-                                                           name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . $method_code . '][active]'; ?>"
-                                                           value="no">
-                                                    <p>
-                                                        <label>
-                                                            <input type="checkbox"
-                                                                   name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . $method_code . '][active]'; ?>"
-                                                                   value="yes" <?php echo (!empty($values[$method_id][$method_code]['active']) && $values[$method_id][$method_code]['active'] === 'yes') ? 'checked' : ''; ?>>
-                                                                   <?php echo $method_name; ?>
-                                                        </label>
-                                                    </p>
-                                                <?php endforeach; ?>
-                                            </div>
-
                                             <?php
                                             $all_additional_services = $this->get_additional_services();
                                             if (empty($all_additional_services)) {
@@ -297,110 +224,8 @@ function warehouse_shipping_method() {
                 return $html;
             }
 
-            private function my_global_form_fields() {
-
+            private function get_global_form_fields() {
                 return array(
-                    'posti_wh_field_username' => array(
-                        'title' => "Username",
-                        'description' => "API username",
-                        'type' => 'text',
-                        'default' => '',
-                        'desc_tip' => true,
-                    ),
-                    'posti_wh_field_password' => array(
-                        'title' => "Password",
-                        'description' => "API password",
-                        'type' => 'text',
-                        'default' => '',
-                        'desc_tip' => true,
-                    ),
-                    'posti_wh_field_username_test' => array(
-                        'title' => "TEST Username",
-                        'description' => "TEST API username",
-                        'type' => 'text',
-                        'default' => '',
-                        'desc_tip' => true,
-                    ),
-                    'posti_wh_field_password_test' => array(
-                        'title' => "TEST Password",
-                        'description' => "TEST API password",
-                        'type' => 'text',
-                        'default' => '',
-                        'desc_tip' => true,
-                    ),
-                    'posti_wh_field_service' => array(
-                        'title' => __('Delivery service', 'posti-warehouse'),
-                        'desc' => "",
-                        'type' => 'select',
-                        'default' => '',
-                        'desc_tip' => false,
-                        'options' => Dataset::getDeliveryTypes()
-                    ),
-                    'posti_wh_field_business_id' => array(
-                        'title' => __('Business ID', 'posti-warehouse'),
-                        'desc' => "",
-                        'type' => 'text',
-                        'default' => '',
-                        'desc_tip' => false,
-                    ),
-                    'posti_wh_field_contract' => array(
-                        'title' => __('Contract number', 'posti-warehouse'),
-                        'desc' => "",
-                        'type' => 'text',
-                        'default' => '',
-                        'desc_tip' => false,
-                    ),
-                    'posti_wh_field_type' => array(
-                        'title' => __('Default stock type', 'posti-warehouse'),
-                        'desc' => "",
-                        'type' => 'select',
-                        'default' => '',
-                        'desc_tip' => false,
-                        'options' => Dataset::getSToreTypes()
-                    ),
-                    'posti_wh_field_autoorder' => array(
-                        'title' => __('Auto ordering', 'posti-warehouse'),
-                        'desc' => "",
-                        'type' => 'checkbox',
-                        'default' => '',
-                        'desc_tip' => false,
-                    ),
-                    'posti_wh_field_autocomplete' => array(
-                        'title' => __('Auto mark orders as "Completed"', 'posti-warehouse'),
-                        'desc' => "",
-                        'type' => 'checkbox',
-                        'default' => '',
-                        'desc_tip' => false,
-                    ),
-                    'posti_wh_field_addtracking' => array(
-                        'title' => __('Add tracking to email', 'posti-warehouse'),
-                        'desc' => "",
-                        'type' => 'checkbox',
-                        'default' => '',
-                        'desc_tip' => false,
-                    ),
-                    'posti_wh_field_crontime' => array(
-                        'title' => __('Delay between stock and order checks in seconds', 'posti-warehouse'),
-                        'desc' => "",
-                        'type' => 'number',
-                        'default' => '7200',
-                        'desc_tip' => false,
-                    ),
-                    'posti_wh_field_test_mode' => array(
-                        'title' => __('Test mode', 'posti-warehouse'),
-                        'desc' => "",
-                        'type' => 'checkbox',
-                        'default' => '',
-                        'desc_tip' => false,
-                    ),
-                    'posti_wh_field_debug' => array(
-                        'title' => __('Debug', 'posti-warehouse'),
-                        'desc' => "",
-                        'type' => 'checkbox',
-                        'default' => '',
-                        'desc_tip' => false,
-                    ),
-                    
                     'pickup_points' => array(
                         'title' => "Pickup",
                         'type' => 'pickuppoints',
@@ -428,7 +253,7 @@ function warehouse_shipping_method() {
                 }
 
                 foreach ($all_shipping_methods as $shipping_method) {
-                    $services[strval($shipping_method->code)] = sprintf('%1$s: %2$s', $shipping_method->provider, $shipping_method->description[$user_lang] ?? $shipping_method->description['en']);
+                    $services[strval($shipping_method->id)] = sprintf('%1$s: %2$s', $shipping_method->deliveryOperator, $shipping_method->description[$user_lang] ?? $shipping_method->description['en']);
                 }
 
                 ksort($services);
@@ -440,17 +265,6 @@ function warehouse_shipping_method() {
                 $user_splited_locale = explode('_', get_user_locale($user));
 
                 return $user_splited_locale[0] ?? 'en';
-            }
-
-            private function get_pickup_point_methods() {
-                $methods = array(
-                    '2103' => 'Posti',
-                    '90080' => 'Matkahuolto',
-                    '80010' => 'DB Schenker',
-                    '2711' => 'Posti International',
-                );
-
-                return $methods;
             }
 
             public function get_additional_services() {
@@ -466,7 +280,7 @@ function warehouse_shipping_method() {
                         continue;
                     }
                     foreach ($shipping_method->additionalServices as $key => $service) {
-                        $additional_services[strval($shipping_method->code)][$key] = (object)$service;
+                        $additional_services[strval($shipping_method->id)][$key] = (object)$service;
                     }
                 }
 
@@ -480,7 +294,6 @@ function warehouse_shipping_method() {
                 $all_shipping_methods = get_transient($transient_name);
                 if (empty($all_shipping_methods)) {
                     try {
-                        //$all_shipping_methods = $this->client->listShippingMethods();
                         $all_shipping_methods = $this->api->getDeliveryServices($this->delivery_service);
 
                         $log_msg = (empty($all_shipping_methods)) ? "An empty list was received" : "List received successfully";
@@ -514,7 +327,7 @@ function warehouse_shipping_method() {
                 }
 
                 foreach ($all_shipping_methods as $shipping_method) {
-                    if (strval($shipping_method->code) !== strval($service_id)) {
+                    if (strval($shipping_method->id) !== strval($service_id)) {
                         continue;
                     }
                     if (!isset($shipping_method->tags)) {
@@ -528,9 +341,7 @@ function warehouse_shipping_method() {
 
                 return false;
             }
-
         }
-
     }
 }
 

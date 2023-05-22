@@ -30,7 +30,7 @@ function warehouse_pickup_point_change(element) {
   });
 }
 
-function pakettikauppa_custom_pickup_point_change(element) {
+function warehouse_custom_pickup_point_change(element) {
   var $ = jQuery;
   var address = element.value;
 

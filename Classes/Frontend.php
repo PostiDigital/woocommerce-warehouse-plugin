@@ -20,13 +20,13 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
          */
         public $core = null;
         
-        public $client = null;
+        public $api = null;
         
         private $errors = array();
 
         public function __construct(Core $plugin) {
             $this->core = $plugin;
-            $this->client = $this->core->getApi()->getClient();
+            $this->api = $this->core->getApi();
         }
 
         public function load() {
@@ -248,8 +248,8 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
             $shipping_method_providers = array();
             $shipment_meta_data = $shipping_rate->get_meta_data();
 
-            $settings = get_option('woocommerce_posti_warehouse_settings');
-            $pickup_points = json_decode($settings['pickup_points'], true);
+            $settings = Settings::get_shipping_settings();
+            $pickup_points = isset($settings['pickup_points']) ? json_decode($settings['pickup_points'], true) : array();
 
             if (isset($shipment_meta_data['service_code'])) {
                 $shipping_method_id = $shipment_meta_data['service_code'];
@@ -433,6 +433,24 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
                         'value' => null,
                     );
                 }
+
+                if ($selected_point === 'other' || $is_klarna || !$options_array) {
+                  $custom_field_title = $is_klarna ? 'Pickup address' : 'Custom pickup address';
+
+                  $custom_field = array(
+                    'name' => 'pakettikauppacustom_pickup_point',
+                    'data' => array(
+                      'type' => 'textarea',
+                      'custom_attributes' => array(
+                        'onchange' => 'warehouse_custom_pickup_point_change(this)',
+                      ),
+                    ),
+                    'value' => $session['custom_address'],
+                  );
+
+                  $custom_field_desc = ($is_klarna) ? 'Search pickup points near you by typing your address above.': 'If none of your preferred pickup points are listed, fill in a custom address above and select another pickup point.';
+                }
+                
             }
             
             wc_get_template(
@@ -467,7 +485,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
                 $custom_address = false;
             }
 
-            if ($custom_address && $this->core->shipping_method_instance->get_option('show_pickup_point_override_query') === 'yes') {
+            if ($custom_address) {
                 $pickup_point_data = $this->get_pickup_points_by_free_input($custom_address, $shipping_method_provider);
             } else {
                 $pickup_point_data = $this->get_pickup_points($shipping_postcode, $shipping_address, $shipping_country, $shipping_method_provider);
@@ -478,36 +496,38 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 
         private function process_pickup_points_to_option_array($pickup_points) {
             $options_array = array('' => array('text' => '- ' . __('Select a pickup point', 'woo-pakettikauppa') . ' -'));
-
             if (!empty($pickup_points)) {
                 $show_provider = false;
                 $provider = '';
-                foreach ($pickup_points as $key => $value) {
-                    if (!isset($value->provider)) {
+                foreach ($pickup_points as $pickup_point) {
+                    if (!isset($pickup_point['serviceProvider'])) {
                         $show_provider = true;
                         break;
                     }
-                    if (!empty($provider) && $provider !== $value->provider) {
+                    if (!empty($provider) && $provider !== $pickup_point['serviceProvider']) {
                         $show_provider = true;
                         break;
                     }
-                    $provider = $value->provider;
+                    $provider = $pickup_point['serviceProvider'];
                 }
-                foreach ($pickup_points as $key => $value) {
-                    if (!isset($value->provider)) {
+                foreach ($pickup_points as $pickup_point) {
+                    if (!isset($pickup_point['serviceProvider'])) {
                         continue;
                     }
-                    $pickup_point_key = $value->provider . ': ' . $value->name . ' (#' . $value->pickup_point_id . ')';
-                    $pickup_point_value = $value->name . ' (' . $value->street_address . ')';
+                    $pickup_point_key = $pickup_point['serviceProvider']
+                            . ': ' . $pickup_point['name']
+                            . ' (#' . $pickup_point['externalId'] . ')';
+                    $pickup_point_value = $pickup_point['name']
+                            . ' (' . $pickup_point['streetAddress'] . ')';
 
                     if ($show_provider) {
-                        $pickup_point_value = $value->provider . ': ' . $pickup_point_value;
+                        $pickup_point_value = $pickup_point['serviceProvider'] . ': ' . $pickup_point_value;
                     }
 
                     // $options_array[ $pickup_point_key ] = $pickup_point_value;
                     $options_array[$pickup_point_key] = array(
                         'text' => $pickup_point_value,
-                        'is_private' => $value->point_type === 'PRIVATE_LOCKER',
+                        'is_private' => $pickup_point['type'] === 'PRIVATE_LOCKER',
                     );
                 }
             }
@@ -572,36 +592,30 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
         }
 
         public function get_pickup_points($postcode, $street_address = null, $country = null, $service_provider = null) {
-            $pickup_point_limit = 5; // Default limit value for pickup point search
-
-            $pickup_point_data = $this->client->searchPickupPoints(trim($postcode), trim($street_address), trim($country), $service_provider, $pickup_point_limit);
-
-            if ($pickup_point_data === 'Bad request') {
-                throw new \Exception(__('Error while searching pickuppoints'));
+            $pickup_point_data = $this->api->getPickupPoints(trim($postcode), trim($street_address), trim($country), $service_provider);
+            if ($pickup_point_data === false) {
+                throw new \Exception(__('Error while searching pickup points'));
             }
 
             // This makes zero sense unless you read this issue:
             // https://github.com/Pakettikauppa/api-library/issues/11
             if (empty($pickup_point_data)) {
-                throw new \Exception(__('No pickuppoints found'));
+                throw new \Exception(__('No pickup points found'));
             }
 
             return $pickup_point_data;
         }
 
         public function get_pickup_points_by_free_input($input, $service_provider = null) {
-            $pickup_point_limit = 5; // Default limit value for pickup point search
-
-            $pickup_point_data = $this->client->searchPickupPointsByText(trim($input), $service_provider, $pickup_point_limit);
-
-            if ($pickup_point_data === 'Bad request') {
-                throw new \Exception(__('Error while searching pickuppoints'));
+            $pickup_point_data = $this->api->getPickupPointsByText(trim($input), $service_provider);
+            if ($pickup_point_data === false) {
+                throw new \Exception(__('Error while searching pickup points'));
             }
 
             // This makes zero sense unless you read this issue:
             // https://github.com/Pakettikauppa/api-library/issues/11
             if (empty($pickup_point_data)) {
-                throw new \Exception(__('No pickuppoints found'));
+                throw new \Exception(__('No pickup points found'));
             }
 
             return $pickup_point_data;
