@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Plugin Name: Posti Warehouse Plugin
+ * Plugin Name: Posti Warehouse
  * Version: 2.0.0
- * Description: Warehouse plugin for WooCommerce.
+ * Description: Provides integration to Posti warehouse and dropshipping services.
  * Author: Posti
  * Author URI: https://www.posti.fi/
  * Text Domain: posti-warehouse
