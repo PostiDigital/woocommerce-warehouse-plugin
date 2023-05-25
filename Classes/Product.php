@@ -283,10 +283,7 @@ class Product {
             }
             
             $type = $this->get_stock_type($warehouses, $product_warehouse);
-            if ($type == 'Catalog') {
-                $this->get_update_product_id($post_id, $_product->get_sku(), $product_id_diffs);
-            }
-            elseif (!empty($product_warehouse) && ($type == "Posti" || $type == "Store")) {
+            if (!empty($product_warehouse) && ($type == 'Posti' || $type == 'Store' || $type == 'Catalog')) {
                 $retailerId = $this->get_retailer_id($warehouses, $product_warehouse);
                 $product_distributor = get_post_meta($post_id, '_posti_wh_distribution', true);
                 $wholesale_price = (float) str_ireplace(',', '.', get_post_meta($post_id, '_wholesale_price', true));
