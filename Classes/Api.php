@@ -135,18 +135,16 @@ class Api {
     }
 
     public function getProduct($id) {
-        $product = $this->ApiCall('/ecommerce/v3/inventory/' . urlencode($id), '', 'GET');
-        return $product;
+        return $this->ApiCall('/ecommerce/v3/inventory/' . urlencode($id), '', 'GET');
     }
     
-    public function getProducts($ids) {
+    public function getProducts(&$ids) {
         $ids_encoded = array();
         foreach ($ids as $id) {
             array_push($ids_encoded, urlencode($id));
         }
         
-        $products = $this->ApiCall('/ecommerce/v3/inventory?productExternalId=' . implode(',', $ids_encoded), '', 'GET');
-        return $products;
+        return $this->ApiCall('/ecommerce/v3/inventory?productExternalId=' . implode(',', $ids_encoded), '', 'GET');
     }
     
     public function getBalancesUpdatedSince($dttm_since, $size, $page = 0) {
@@ -154,21 +152,34 @@ class Api {
             return [];
         }
         
-        $products = $this->ApiCall('/ecommerce/v3/inventory/balances?modifiedFromDate=' . urlencode($dttm_since) . '&size=' . $size . '&page=' . $page, '', 'GET');
-        return $products;
+        return $this->ApiCall('/ecommerce/v3/catalogs/balances?modifiedFromDate=' . urlencode($dttm_since) . '&size=' . $size . '&page=' . $page, '', 'GET');
+    }
+    
+    public function getBalances(&$ids) {
+        $ids_encoded = array();
+        foreach ($ids as $id) {
+            array_push($ids_encoded, urlencode($id));
+        }
+        
+        return $this->ApiCall('/ecommerce/v3/catalogs/balances?productExternalId=' . implode(',', $ids_encoded), '', 'GET');
+    }
+    
+    public function patchBalances($catalogId, &$balances) {
+        $status = $this->ApiCall('/ecommerce/v3/catalogs/' . urlencode($catalogId) . '/balances', $balances, 'PATCH');
+        return $status;
     }
 
-    public function putInventory($products) {
+    public function putInventory(&$products) {
         $status = $this->ApiCall('/ecommerce/v3/inventory', $products, 'PUT');
         return $status;
     }
     
-    public function deleteInventory($products) {
+    public function deleteInventory(&$products) {
         $status = $this->ApiCall('/ecommerce/v3/inventory', $products, 'DELETE');
         return $status;
     }
-
-    public function addOrder($order) {
+    
+    public function addOrder(&$order) {
         $status = $this->ApiCall('/ecommerce/v3/orders', $order, 'POST');
         return $status;
     }
