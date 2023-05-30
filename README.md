@@ -95,6 +95,7 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile addtional service is added to order/delivery. 
 
 ## Version history
+- 2.0.1: Fix products quantity sync for dropshipping use case
 - 2.0.0:
     - Expanded pickup points support.
     - Deprecated business ID prefix in orders and products.
