@@ -93,6 +93,7 @@ class Core {
                 || Settings::is_changed($old_value, $value, 'posti_wh_field_test_mode')) {
                 //login info changed, try to get token
                 delete_option('posti_wh_api_auth');
+                delete_option('posti_wh_api_warehouses');
                 if (session_id() === '' || !isset($_SESSION)) {
                     session_start();
                 }
