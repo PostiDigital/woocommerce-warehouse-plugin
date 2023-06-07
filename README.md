@@ -12,9 +12,9 @@ Main features of the plug-in are:
 
 - You can select which Posti delivery methods are available in a shopping cart.
 - You can select if product is shipped by Posti warehouse, dropshipping supplier, or yourself.
-- When you create a new product it is also created to warehouse. Simple product and Variable product types are supported. Grouped product type is not supported.
+- When you create a new product in WooCommerce it is also created to warehouse. Simple product and Variable product types are supported. Grouped product type is not supported.
 - Product quantities are automatically updated from warehouse and/or dropshipping supplier.
-- Send order to warehouse and/or dropshipping supplier. Your business ID is added as a prefix to WooCommerce order ID.
+- Send order to warehouse and/or dropshipping supplier. 
 - Order status is updated from Glue to WooCommerce. This includes a tracking ID of the delivery. 
 
 More information about warehouse service is available at [Posti.fi / verkkokaupan varasto](https://www.posti.fi/fi/yrityksille/paketit-ja-logistiikka/verkkokaupoille/verkkokaupan-varasto) 
@@ -29,7 +29,7 @@ This plug-in has been tested with WooCommerce version 7.7.0/WordPress version 6.
 1. Remove previous version of the plug-in if you are updating the plugin.
 1. Install the plug-in via admin UI of the Wordpress > Plugins > Add plugin.
 1. Activate the plugin.
-1. Configure the plugin using the following instructions. If you are updating the plugin, make sure you map shipping options to Posti't delivery servies again. All other settings are ready if you had previous version of the plug-in installed. Use test mode for new installations first.
+1. Configure the plugin using the following instructions. If you are updating the plugin, make sure you map shipping options to Posti delivery servies again. All other settings are ready if you had previous version of the plug-in installed. Use test mode for new installations first - please do not make tests in production environment as all orders are processed by warehouse.
 1. Update product information. 
 1. Test the plug-in to ensure compatibility with your existing environment.
 1. Switch off the test mode. Now you are ready to use the service.
@@ -52,7 +52,7 @@ Add information to configure the warehouse settings:
 - **Password** – this is API password (secret) for the production environment of the Glue, which is provided by Posti.
 - **TEST Username** -  this is API key for the test environment of the Glue, which is provided by Posti. 
 - **TEST Pasword**  – this is API password for the test environment of the Glue, which is provided by Posti.
-- **Delivery service - Select either Posti Warehouse or Dropshipping, this determines which delivery methods are available when you map shipping options..
+- **Delivery service** - Select either Posti Warehouse or Dropshipping, this determines which delivery methods are available when you map shipping options..
 - **Contract number** – your contract number for Posti parcel services (6-digit long number which starts with number 6 )
 - **Default stock type** - select service you are mainly using (warehouse or dropshipping). You can change the value when you add new products.
   - **Posti Warehouse** - product is stocked by Posti warehouse
@@ -75,7 +75,7 @@ Select your existing product or create a new, and update the product information
 - **General > Wholesales price** - Glue is able to show total value of your stock if wholesales price is available.
 - **Inventory > SKU** - product ID
   - **Warehouse service**: this is product ID, which is used by warehouse also. Product is creted to the warehouse with this ID. The plug-in adds your business ID as a prefix to the front of the product ID. For example WooCommerce SKU "2001" will be sent as "01234567-8-2001" to warehouse.
-  - **Dropshipping service** - this is supplier's product ID. You need to find out this value from Glue and input it manually or use CSV upload to create products in WooCommerce
+  - **Dropshipping service** - this is supplier's product ID. You need to find out this value from Glue and input it manually or use CSV upload to create products in WooCommerce. Note that WooCommerce does not accept dublicate SKUs. If two suppliers have the same SKU, then workaround is to create a new SKU by Supplier with Grouped product feature.
 - **Manage stock?** - if enabled then the plug-in is polling stock quantities from the Glue.
 - **Stock quantity** - leave this 0 and let the plug-in to update stock quantities from the Glue (if "Manage stock" is enabled).
 - **Inventory > EAN** - additional product ID. In case of warehouse service this is updated to warehouse also.
@@ -95,6 +95,7 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile addtional service is added to order/delivery. 
 
 ## Version history
+- 2.0.2: EAN field renamed to EAN / ISBN / Barcode
 - 2.0.1: Fix products quantity sync for dropshipping use case
 - 2.0.0:
     - Expanded pickup points support.

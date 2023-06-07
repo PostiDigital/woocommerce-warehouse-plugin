@@ -97,10 +97,10 @@ class Product {
         woocommerce_wp_text_input(
                 array(
                     'id' => '_ean',
-                    'label' => __('EAN', 'posti-warehouse'),
+                    'label' => __('EAN / ISBN / Barcode', 'posti-warehouse'),
                     'placeholder' => '',
                     'desc_tip' => 'true',
-                    'description' => __('Enter EAN number', 'posti-warehouse')
+                    'description' => __('Enter EAN / ISBN / Barcode', 'posti-warehouse')
                 )
         );
         echo '</div>';
@@ -131,10 +131,10 @@ class Product {
         woocommerce_wp_text_input(
                 array(
                     'id' => '_ean[' . $variation->ID . ']',
-                    'label' => __('EAN', 'posti-warehouse'),
+                    'label' => __('EAN / ISBN / Barcode', 'posti-warehouse'),
                     'placeholder' => '',
                     'desc_tip' => 'true',
-                    'description' => __('Enter EAN number', 'posti-warehouse'),
+                    'description' => __('Enter EAN / ISBN / Barcode', 'posti-warehouse'),
                     'value' => get_post_meta($variation->ID, '_ean', true)
                 )
         );
