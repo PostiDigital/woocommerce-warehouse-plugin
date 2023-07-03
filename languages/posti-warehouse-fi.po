@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: Posti Warehouse\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-07-03 11:04+0000\n"
-"PO-Revision-Date: 2023-07-03 11:05+0000\n"
+"PO-Revision-Date: 2023-07-03 11:19+0000\n"
 "Last-Translator: \n"
 "Language-Team: Finnish\n"
 "Language: fi\n"
@@ -126,7 +126,7 @@ msgstr ""
 
 #: classes/class-text.php:242
 msgid "Fragile"
-msgstr ""
+msgstr "Särkyvä"
 
 #. Author URI of the plugin
 msgid "https://www.posti.fi/"
@@ -139,7 +139,7 @@ msgstr ""
 
 #: classes/class-text.php:238
 msgid "Large"
-msgstr ""
+msgstr "Suuri"
 
 #: classes/class-text.php:250
 msgid "Logs"
@@ -147,7 +147,7 @@ msgstr ""
 
 #: classes/class-text.php:234
 msgid "LQ Process permission"
-msgstr ""
+msgstr "LQ Prosessilupa"
 
 #: classes/class-text.php:270
 msgid "Message"
