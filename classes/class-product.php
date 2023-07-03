@@ -149,7 +149,7 @@ class Product {
 
     public function posti_wh_product_tab($product_data_tabs) {
         $product_data_tabs['posti-tab'] = array(
-            'label' => __('Posti', 'postic'),
+            'label' => Text::company(),
             'target' => 'posti_wh_tab',
         );
         return $product_data_tabs;

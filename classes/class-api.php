@@ -11,7 +11,7 @@ class Api {
     private $logger;
     private $last_status = false;
     private $token_option = 'posti_wh_api_auth';
-    private $user_agent = 'woo-wh-client/2.0.2';
+    private $user_agent = 'woo-wh-client/2.1.0';
 
     public function __construct(Logger $logger, array &$options) {
         $this->logger = $logger;

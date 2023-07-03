@@ -51,10 +51,10 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
             ?>
             <div style="clear: both;">
                 <p>
-            <?php echo __('Phone', 'woocommerce'); ?>
+            <?php echo Text::field_phone(); ?>
                     : <?php echo get_post_meta($order->get_id(), '_shipping_phone', true); ?>
                     <br>
-            <?php echo __('Email', 'woocommerce'); ?>
+            <?php echo Text::field_email(); ?>
                     : <?php echo get_post_meta($order->get_id(), '_shipping_email', true); ?>
             </div>
             <?php

@@ -61,14 +61,9 @@ class Order {
     public function getOrderActionButton() {
         if (!$this->orderStatus) {
             ?>
-            <button type = "button" class="button button-posti" id = "posti-order-btn" name="posti_order_action"  onclick="posti_order_change(this);" value="place_order"><?php _e('Place Order', 'posti-warehouse'); ?></button>
+            <button type = "button" class="button button-posti" id = "posti-order-btn" name="posti_order_action"  onclick="posti_order_change(this);" value="place_order"><?php echo Text::order_place(); ?></button>
             <?php
         } elseif ($this->orderStatus != "Delivered") {
-            /*
-              ?>
-              <button type = "button" class="button button-posti" id = "posti-order-btn" name="posti_order_action"  onclick="posti_order_change(this);" value="complete"><?php _e('Complete Order', 'posti-warehouse');?></button>
-              <?php
-             */
         }
     }
 

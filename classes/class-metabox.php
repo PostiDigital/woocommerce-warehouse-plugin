@@ -34,7 +34,7 @@ class Metabox {
         <div id ="posti-order-metabox">
             <input type="hidden" name="posti_order_metabox_nonce" value="<?php echo wp_create_nonce(str_replace('wc_', '', 'posti-order') . '-meta-box'); ?>" id="posti_order_metabox_nonce" />
             <img src ="<?php echo plugins_url('assets/img/posti-orange.png', dirname(__FILE__)); ?>"/>
-            <label><?php _e('Order status', 'posti-warehouse'); ?> </label>
+            <label><?php echo Text::order_status(); ?> </label>
             <strong id = "posti-order-status"><?php echo $this->postiOrder->getOrderStatus($post->ID); ?></strong>
             <br/>
             <div id = "posti-order-action">
@@ -65,7 +65,7 @@ class Metabox {
             wp_die('', '', 200);
         }
 
-        $this->error = __('Unexpected error. Please try again','posti-warehouse');
+        $this->error = Text::error_generic();
         $this->add_order_meta_box_html($post);
         wp_die('', '', 200);
     }

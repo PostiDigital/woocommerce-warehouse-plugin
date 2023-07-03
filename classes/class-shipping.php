@@ -132,12 +132,12 @@ function warehouse_shipping_method() {
                             <hr>
                             <?php $zone = new \WC_Shipping_Zone($zone_raw['zone_id']); ?>
                             <h3>
-                                <?php esc_html_e('Zone name', 'woocommerce'); ?>: <?php echo $zone->get_zone_name(); ?>
+                                <?php echo Text::zone_name(); ?>: <?php echo $zone->get_zone_name(); ?>
                             </h3>
                             <p>
-                                <?php esc_html_e('Zone regions', 'woocommerce'); ?>: <?php echo $zone->get_formatted_location(); ?>
+                                <?php echo Text::zone_regions(); ?>: <?php echo $zone->get_formatted_location(); ?>
                             </p>
-                            <h4><?php esc_html_e('Shipping method(s)', 'woocommerce'); ?></h4>
+                            <h4><?php echo Text::zone_shipping(); ?></h4>
                             <?php foreach ($zone->get_shipping_methods() as $method_id => $shipping_method) : ?>
                                 <?php if ($shipping_method->enabled === 'yes' && $shipping_method->id !== "posti_warehouse" && $shipping_method->id !== 'local_pickup') : ?>
                                     <?php
@@ -198,7 +198,7 @@ function warehouse_shipping_method() {
                                                                 <input type="checkbox"
                                                                        name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($service_id) . '][pickuppoints]'; ?>"
                                                                        value="yes" <?php echo ((!empty($values[$method_id][$service_id]['pickuppoints']) && $values[$method_id][$service_id]['pickuppoints'] === 'yes') || empty($values[$method_id][$service_id]['pickuppoints'])) ? 'checked' : ''; ?>>
-                                                                       <?php echo __('Pickup points', 'woo-pakettikauppa'); ?>
+                                                                       <?php echo Text::pickup_points_title(); ?>
                                                             </label>
                                                         </p>
                                                     </div>

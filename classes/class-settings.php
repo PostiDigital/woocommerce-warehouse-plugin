@@ -112,14 +112,14 @@ class Settings {
         $developer_fields_class = $is_developer ? 'posti_wh_row' : 'hidden';
         add_settings_section(
                 'posti_wh_options',
-                '<span class="dashicons dashicons-admin-generic" style="padding-right: 2pt"></span>' . __('Posti Warehouse settings', 'posti-warehouse'),
+            '<span class="dashicons dashicons-admin-generic" style="padding-right: 2pt"></span>' . Text::field_warehouse_settings(),
                 array($this, 'posti_wh_section_developers_cb'),
                 'posti_wh'
         );
 
         add_settings_field(
                 'posti_wh_field_username',
-                __('Username', 'posti-warehouse'),
+                Text::field_username(),
                 array($this, 'posti_wh_field_string_cb'),
                 'posti_wh',
                 'posti_wh_options',
@@ -132,7 +132,7 @@ class Settings {
 
         add_settings_field(
                 'posti_wh_field_password',
-                __('Password', 'posti-warehouse'),
+                Text::field_password(),
                 array($this, 'posti_wh_field_string_cb'),
                 'posti_wh',
                 'posti_wh_options',
@@ -145,7 +145,7 @@ class Settings {
 
         add_settings_field(
                 'posti_wh_field_username_test',
-                __('TEST Username', 'posti-warehouse'),
+                Text::field_username_test(),
                 array($this, 'posti_wh_field_string_cb'),
                 'posti_wh',
                 'posti_wh_options',
@@ -158,7 +158,7 @@ class Settings {
 
         add_settings_field(
                 'posti_wh_field_password_test',
-                __('TEST Password', 'posti-warehouse'),
+                Text::field_password_test(),
                 array($this, 'posti_wh_field_string_cb'),
                 'posti_wh',
                 'posti_wh_options',
@@ -171,7 +171,7 @@ class Settings {
 
         add_settings_field(
             'posti_wh_field_business_id',
-            __('Business ID', 'posti-warehouse'),
+            Text::field_business_id(),
             array($this, 'posti_wh_field_string_cb'),
             'posti_wh',
             'posti_wh_options',
@@ -184,7 +184,7 @@ class Settings {
 
         add_settings_field(
                 'posti_wh_field_service',
-                __('Delivery service', 'posti-warehouse'),
+                Text::field_service(),
                 array($this, 'posti_wh_field_service_cb'),
                 'posti_wh',
                 'posti_wh_options',
@@ -197,7 +197,7 @@ class Settings {
 
         add_settings_field(
                 'posti_wh_field_contract',
-                __('Contract number', 'posti-warehouse'),
+                Text::field_contract(),
                 array($this, 'posti_wh_field_string_cb'),
                 'posti_wh',
                 'posti_wh_options',
@@ -210,7 +210,7 @@ class Settings {
 
         add_settings_field(
                 'posti_wh_field_type',
-                __('Default stock type', 'posti-warehouse'),
+                Text::field_type(),
                 array($this, 'posti_wh_field_type_cb'),
                 'posti_wh',
                 'posti_wh_options',
@@ -223,7 +223,7 @@ class Settings {
 
         add_settings_field(
                 'posti_wh_field_autoorder',
-                __('Auto ordering', 'posti-warehouse'),
+                Text::field_autoorder(),
                 array($this, 'posti_wh_field_checkbox_cb'),
                 'posti_wh',
                 'posti_wh_options',
@@ -236,7 +236,7 @@ class Settings {
 
         add_settings_field(
                 'posti_wh_field_autocomplete',
-                __('Auto mark orders as "Completed"', 'posti-warehouse'),
+                Text::field_autocomplete(),
                 array($this, 'posti_wh_field_checkbox_cb'),
                 'posti_wh',
                 'posti_wh_options',
@@ -249,7 +249,7 @@ class Settings {
 
         add_settings_field(
                 'posti_wh_field_addtracking',
-                __('Add tracking to email', 'posti-warehouse'),
+                Text::field_addtracking(),
                 array($this, 'posti_wh_field_checkbox_cb'),
                 'posti_wh',
                 'posti_wh_options',
@@ -262,7 +262,7 @@ class Settings {
 
         add_settings_field(
                 'posti_wh_field_crontime',
-                __('Stock and order update interval (in seconds)', 'posti-warehouse'),
+                Text::field_crontime(),
                 array($this, 'posti_wh_field_string_cb'),
                 'posti_wh',
                 'posti_wh_options',
@@ -277,7 +277,7 @@ class Settings {
 
         add_settings_field(
                 'posti_wh_field_test_mode',
-                __('Test mode', 'posti-warehouse'),
+                Text::field_test_mode(),
                 array($this, 'posti_wh_field_checkbox_cb'),
                 'posti_wh',
                 'posti_wh_options',
@@ -290,7 +290,7 @@ class Settings {
 
         add_settings_field(
                 'posti_wh_field_debug',
-                __('Debug', 'posti-warehouse'),
+                Text::field_field_debug(),
                 array($this, 'posti_wh_field_checkbox_cb'),
                 'posti_wh',
                 'posti_wh_options',
@@ -303,7 +303,7 @@ class Settings {
 
         add_settings_field(
                 'posti_wh_field_stock_sync_dttm',
-                __('Datetime of last stock update', 'posti-warehouse'),
+                Text::field_stock_sync_dttm(),
                 array($this, 'posti_wh_field_string_cb'),
                 'posti_wh',
                 'posti_wh_options',
@@ -316,7 +316,7 @@ class Settings {
         
         add_settings_field(
                 'posti_wh_field_order_sync_dttm',
-                __('Datetime of last order update', 'posti-warehouse'),
+                Text::field_order_sync_dttm(),
                 array($this, 'posti_wh_field_string_cb'),
                 'posti_wh',
                 'posti_wh_options',

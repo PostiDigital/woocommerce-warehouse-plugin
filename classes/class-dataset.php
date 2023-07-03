@@ -6,25 +6,25 @@ namespace Woo_Posti_Warehouse;
 class Dataset {
     public static function getStoreTypes(){
         return array(
-            'Store' => __('Store', 'posti-warehouse'),
-            'Posti' => __('Posti Warehouse', 'posti-warehouse'),
-            'Not_in_stock' => __('Not in stock', 'posti-warehouse'),
-            'Catalog' => __('Dropshipping', 'posti-warehouse'),
+            'Store' => Text::type_store(),
+            'Posti' => Text::type_warehouse(),
+            'Not_in_stock' => Text::type_none(),
+            'Catalog' => Text::type_dropshipping(),
         );
     }
 
     public static function getDeliveryTypes(){
         return array(
-            'WAREHOUSE' => __('Posti Warehouse', 'posti-warehouse'),
-            'DROPSHIPPING' => __('Dropshipping', 'posti-warehouse'),
+            'WAREHOUSE' => Text::type_warehouse(),
+            'DROPSHIPPING' => Text::type_dropshipping(),
         );
     }
     
     public static function getServicesTypes(){
         return array(
-            '_posti_lq' => __('LQ Process permission', 'posti-warehouse'),
-            '_posti_large' => __('Large', 'posti-warehouse'),
-            '_posti_fragile' => __('Fragile', 'posti-warehouse'),
+            '_posti_lq' => Text::feature_lq(),
+            '_posti_large' => Text::feature_large(),
+            '_posti_fragile' => Text::feature_fragile(),
         );
     }
 }

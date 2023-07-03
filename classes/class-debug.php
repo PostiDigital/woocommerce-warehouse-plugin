@@ -14,8 +14,8 @@ class Debug {
     public function posti_wh_debug_page() {
         add_submenu_page(
                 'options-general.php',
-                __('Posti Warehouse Debug', 'posti-warehouse'),
-                __('Posti Warehouse Debug', 'posti-warehouse'),
+                Text::field_warehouse_debug(),
+                Text::field_warehouse_debug(),
                 'manage_options',
                 'posti_wh_debug',
                 array($this, 'posti_wh_debug_page_html')
@@ -32,8 +32,8 @@ class Debug {
             <?php $token_data = get_option('posti_wh_api_auth'); ?>
             <?php if (is_array($token_data)): ?>
                 <div class="notice notice-info">
-                    <p style = "word-break: break-all;"><strong><?php _e('Current token:', 'posti-warehouse'); ?><br/> </strong> <?= $token_data['token']; ?></p>
-                    <p><strong><?php _e('Token expiration:', 'posti-warehouse'); ?> </strong> <?= date('Y-m-d H:i:s', $token_data['expires']); ?></p>
+                    <p style = "word-break: break-all;"><strong><?php echo Text::logs_token_data(); ?><br/> </strong> <?= $token_data['token']; ?></p>
+                    <p><strong><?php echo Text::logs_token_expiration(); ?> </strong> <?= date('Y-m-d H:i:s', $token_data['expires']); ?></p>
                 </div>
             <?php endif; ?>
             <?php
@@ -41,13 +41,13 @@ class Debug {
             $logs = $logger->getLogs();
             ?>
             <?php if (count($logs)): ?>
-                <h3><?php _e('Logs', 'posti-warehouse'); ?></h3>
+                <h3><?php echo Text::logs_title(); ?></h3>
                 <table class="widefat fixed" cellspacing="0">
                     <thead>
                         <tr>
-                            <th class="manage-column column-columnname " style = "width: 150px" scope="col"><?php _e('Created', 'posti-warehouse'); ?></th> 
-                            <th class="manage-column column-columnname" style = "width: 80px" scope="col"><?php _e('Type', 'posti-warehouse'); ?></th>
-                            <th class="manage-column column-columnname " scope="col"><?php _e('Message', 'posti-warehouse'); ?></th> 
+                            <th class="manage-column column-columnname " style = "width: 150px" scope="col"><?php echo Text::column_created_date(); ?></th> 
+                            <th class="manage-column column-columnname" style = "width: 80px" scope="col"><?php echo Text::column_type(); ?></th>
+                            <th class="manage-column column-columnname " scope="col"><?php echo Text::column_message(); ?></th> 
                         </tr>
                     </thead>
                     <tbody>
@@ -61,7 +61,7 @@ class Debug {
                     </tbody>
                 </table>
             <?php else: ?>
-                <h3><?php _e('No logs found', 'posti-warehouse'); ?></h3>
+                <h3><?php echo Text::logs_empty(); ?></h3>
             <?php endif; ?>
         </div>
         <?php

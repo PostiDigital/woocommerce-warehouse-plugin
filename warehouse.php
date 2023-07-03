@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name: Posti Warehouse
- * Version: 2.0.2
+ * Version: 2.1.0
  * Description: Provides integration to Posti warehouse and dropshipping services.
  * Author: Posti
  * Author URI: https://www.posti.fi/
@@ -25,6 +25,7 @@ if ( ! defined('ABSPATH') ) {
 
 define( '__POSTI_WH_FILE__', __FILE__ );
 
+require_once __DIR__ . '/classes/class-text.php';
 require_once __DIR__ . '/classes/class-settings.php';
 require_once __DIR__ . '/classes/class-order.php';
 require_once __DIR__ . '/classes/class-metabox.php';

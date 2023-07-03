@@ -118,7 +118,7 @@ class Core {
     public function token_error() {
         ?>
         <div class="error notice">
-            <p><?php _e('Wrong credentials - access token not received!', 'posti-warehouse'); ?></p>
+            <p><?php Text::error_api_credentials_wrong(); ?></p>
         </div>
         <?php
     }
@@ -126,7 +126,7 @@ class Core {
     public function token_success() {
         ?>
         <div class="updated notice">
-            <p><?php _e('Credentials matched - access token received!', 'posti-warehouse'); ?></p>
+            <p><?php Text::api_credentials_correct(); ?></p>
         </div>
         <?php
     }
@@ -157,7 +157,7 @@ class Core {
     public function posti_interval($schedules) {
         $schedules['posti_wh_time'] = array(
             'interval' => $this->cron_time,
-            'display' => esc_html__('Every ' . $this->cron_time . ' seconds'));
+            'display' => Text::interval_every($this->cron_time));
         return $schedules;
     }
 
