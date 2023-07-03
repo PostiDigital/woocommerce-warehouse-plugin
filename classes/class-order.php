@@ -1,11 +1,8 @@
 <?php
 
-namespace PostiWarehouse\Classes;
+namespace Woo_Posti_Warehouse;
 
 defined('ABSPATH') || exit;
-
-use PostiWarehouse\Classes\Api;
-use PostiWarehouse\Classes\Logger;
 
 class Order {
 
@@ -46,7 +43,7 @@ class Order {
 
     public function change_metadata_title_for_order_shipping_method($key, $meta, $item) {
         if ( 'warehouse_pickup_point' === $meta->key ) {
-            $key = __( 'Pickup point', 'posti-warehouse');
+            $key = Text::pickup_point_title();
         }
      
         return $key;
@@ -55,7 +52,7 @@ class Order {
     public function getOrderStatus($order_id) {
         $order_data = $this->getOrder($order_id);
         if (!$order_data) {
-            return __("Order not placed", "posti-warehouse");
+            return Text::order_not_placed();
         }
         $this->orderStatus = $order_data['status']['value'];
         return $order_data['status']['value'];
@@ -109,7 +106,7 @@ class Order {
 
         $order_services = $this->get_additional_services($order);
         if (!isset($order_services['service']) || empty($order_services['service'])) {
-            $order->update_status('on-hold', __('Failed to order: Shipping method not configured.', 'posti-warehouse'), true);
+            $order->update_status('on-hold', Text::error_order_failed_no_shipping(), true);
             return [ 'error' => 'ERROR: Shipping method not configured.' ];
         }
 
@@ -133,10 +130,10 @@ class Order {
             update_post_meta($order_id, '_posti_id', (string) $order->get_id());
         }
         else {
-            $order->update_status('failed', __('Failed to order.', 'posti-warehouse'), true);
+            $order->update_status('failed', Text::order_failed(), true);
         }
 
-        return $result === false ? [ 'error' => __('ERROR: Unable to place order.','posti-warehouse') ] : [];
+        return $result === false ? [ 'error' => Text::error_order_not_placed() ] : [];
     }
     
     public function sync($datetime) {
@@ -463,7 +460,7 @@ class Order {
         foreach ($columns as $key => $name) {
             $new_columns[$key] = $name;
             if ('order_status' === $key) {
-                $new_columns['posti_api_tracking'] = __('Posti API Tracking', 'posti-warehouse');
+                $new_columns['posti_api_tracking'] = Text::tracking_title();
             }
         }
         return $new_columns;
@@ -479,7 +476,7 @@ class Order {
     public function addTrackingToEmail($order, $sent_to_admin, $plain_text, $email) {
         $tracking = get_post_meta($order->get_id(), '_posti_api_tracking', true);
         if ($tracking) {
-            echo __('Tracking number', 'posti-warehouse') . ': ' . $tracking;
+            echo Text::tracking_number($tracking);
         }
     }
 

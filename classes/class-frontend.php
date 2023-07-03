@@ -1,6 +1,6 @@
 <?php
 
-namespace PostiWarehouse\Classes;
+namespace Woo_Posti_Warehouse;
 
 // Prevent direct access to this script
 if (!defined('ABSPATH')) {
@@ -154,7 +154,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
          */
         public function display_error($error = null) {
             if (!$error) {
-                $error = __('An error occurred. Please try again later.', 'woo-pakettikauppa');
+                $error = Text::error_generic();
             }
 
             wc_add_notice($error, 'error');
@@ -175,7 +175,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
                     $this->core->prefix . '_js',
                     'pakettikauppaData',
                     array(
-                        'privatePickupPointConfirm' => __('Confirm selection'),
+                        'privatePickupPointConfirm' => Text::confirm_selection(),
                     )
             );
         }
@@ -355,13 +355,9 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 
             // Return if the customer has not yet chosen a postcode
             if (empty($shipping_postcode)) {
-                $error_msg = esc_attr__('Empty postcode. Please check your address information.', 'woo-pakettikauppa');
+                $error_msg = Text::error_empty_postcode();
             } else if (!is_numeric($shipping_postcode)) {
-                $error_msg = sprintf(
-                        /* translators: %s: Postcode */
-                        esc_attr__('Invalid postcode "%1$s". Please check your address information.', 'woo-pakettikauppa'),
-                        esc_attr($shipping_postcode)
-                );
+                $error_msg = Text::error_invalid_postcode($shipping_postcode);
             } else {
                 try {
                     $options_array = $this->fetch_pickup_point_options($shipping_postcode, $shipping_address, $shipping_country, implode(',', $shipping_method_providers));
@@ -495,7 +491,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
         }
 
         private function process_pickup_points_to_option_array($pickup_points) {
-            $options_array = array('' => array('text' => '- ' . __('Select a pickup point', 'woo-pakettikauppa') . ' -'));
+            $options_array = array('' => array('text' => '- ' . Text::select_pickup_point() . ' -'));
             if (!empty($pickup_points)) {
                 $show_provider = false;
                 $provider = '';
@@ -524,7 +520,6 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
                         $pickup_point_value = $pickup_point['serviceProvider'] . ': ' . $pickup_point_value;
                     }
 
-                    // $options_array[ $pickup_point_key ] = $pickup_point_value;
                     $options_array[$pickup_point_key] = array(
                         'text' => $pickup_point_value,
                         'is_private' => $pickup_point['type'] === 'PRIVATE_LOCKER',
@@ -532,14 +527,9 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
                 }
             }
 
-            // issue #163 - added 'Other' option for custom address
-            // $options_array[ $pickup_point_key ] = $pickup_point_value;
             $options_array['other'] = array(
-                'text' => __('Other', 'woo-pakettikauppa'),
-                    //'is_private' => $value->point_type === 'PRIVATE_LOCKER',
+                'text' => Text::pickup_point_other(),
             );
-
-            //else unset($options_array['__NULL__']);
 
             return $options_array;
         }
@@ -561,8 +551,6 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
             $logger = wc_get_logger();
             if (!wp_verify_nonce(sanitize_key($_POST['woocommerce-process-checkout-nonce']), 'woocommerce-process_checkout')) {
                 $logger->error('Checkout nonce failed to verify');
-                //$this->add_error(__('We were unable to process your order, please try again.', 'woo-pakettikauppa'));
-                //return;
             }
 
             $key = str_replace('wc_', '', $this->core->prefix) . '_pickup_point';
@@ -576,7 +564,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
                 $shipping_needs_pickup_points = isset($_POST[$key]) ? $_POST[$key] === 'true' : false;
 
                 if ($shipping_needs_pickup_points) {
-                    $this->add_error(__('Please choose a pickup point.', 'woo-pakettikauppa'));
+                    $this->add_error(Text::error_pickup_point_not_provided());
                 }
 
                 foreach ($this->errors as $error) {
@@ -587,20 +575,18 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 
         public function add_metadata_to_order_shipping_method($item, $package_key, $package, $order) {
             if (isset($_POST['warehouse_pickup_point'])) {
-                $item->update_meta_data( str_replace('wc_', '', $this->core->prefix) . '_pickup_point', sanitize_text_field($_POST['warehouse_pickup_point']));
+                $item->update_meta_data(str_replace('wc_', '', $this->core->prefix) . '_pickup_point', sanitize_text_field($_POST['warehouse_pickup_point']));
             }
         }
 
         public function get_pickup_points($postcode, $street_address = null, $country = null, $service_provider = null) {
             $pickup_point_data = $this->api->getPickupPoints(trim($postcode), trim($street_address), trim($country), $service_provider);
             if ($pickup_point_data === false) {
-                throw new \Exception(__('Error while searching pickup points'));
+                throw new \Exception(Text::error_pickup_point_generic());
             }
 
-            // This makes zero sense unless you read this issue:
-            // https://github.com/Pakettikauppa/api-library/issues/11
             if (empty($pickup_point_data)) {
-                throw new \Exception(__('No pickup points found'));
+                throw new \Exception(Text::error_pickup_point_not_found());
             }
 
             return $pickup_point_data;
@@ -609,13 +595,11 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
         public function get_pickup_points_by_free_input($input, $service_provider = null) {
             $pickup_point_data = $this->api->getPickupPointsByText(trim($input), $service_provider);
             if ($pickup_point_data === false) {
-                throw new \Exception(__('Error while searching pickup points'));
+                throw new \Exception(Text::error_pickup_point_generic());
             }
 
-            // This makes zero sense unless you read this issue:
-            // https://github.com/Pakettikauppa/api-library/issues/11
             if (empty($pickup_point_data)) {
-                throw new \Exception(__('No pickup points found'));
+                throw new \Exception(Text::error_pickup_point_not_found());
             }
 
             return $pickup_point_data;

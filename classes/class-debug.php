@@ -1,8 +1,6 @@
 <?php
 
-namespace PostiWarehouse\Classes;
-
-use PostiWarehouse\Classes\Logger;
+namespace Woo_Posti_Warehouse;
 
 class Debug {
     

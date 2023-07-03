@@ -1,16 +1,8 @@
 <?php
 
-namespace PostiWarehouse\Classes;
+namespace Woo_Posti_Warehouse;
 
 defined('ABSPATH') || exit;
-
-use PostiWarehouse\Classes\Api;
-use PostiWarehouse\Classes\Settings;
-use PostiWarehouse\Classes\Order;
-use PostiWarehouse\Classes\Product;
-use PostiWarehouse\Classes\Metabox;
-use PostiWarehouse\Classes\Logger;
-use PostiWarehouse\Classes\Frontend;
 
 class Core {
 

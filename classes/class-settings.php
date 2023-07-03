@@ -1,8 +1,6 @@
 <?php
 
-namespace PostiWarehouse\Classes;
-
-use PostiWarehouse\Classes\Dataset;
+namespace Woo_Posti_Warehouse;
 
 defined('ABSPATH') || exit;
 

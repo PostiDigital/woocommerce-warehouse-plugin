@@ -1,11 +1,6 @@
 <?php
 
-namespace PostiWarehouse\Classes;
-
-use \WP_Query;
-use PostiWarehouse\Classes\Dataset;
-use PostiWarehouse\Classes\Api;
-use PostiWarehouse\Classes\Logger;
+namespace Woo_Posti_Warehouse;
 
 class Product {
 
@@ -41,7 +36,7 @@ class Product {
     
     public function custom_columns_register($columns) {
         if ($this->has_warehouse()) {
-            $columns['warehouse'] = __( 'Warehouse','posti-warehouse');
+            $columns['warehouse'] = Text::column_warehouse();
         }
         
         return $columns;
@@ -55,8 +50,8 @@ class Product {
     
     public function bulk_actions_warehouse_products($bulk_actions) {
         if ($this->has_warehouse()) {
-            $bulk_actions['_posti_wh_bulk_actions_publish_products'] = __( 'Publish to warehouse (Posti)', 'posti-warehouse' );
-            $bulk_actions['_posti_wh_bulk_actions_remove_products'] = __( 'Remove from warehouse (Posti)', 'posti-warehouse' );
+            $bulk_actions['_posti_wh_bulk_actions_publish_products'] = Text::action_publish_to_warehouse();
+            $bulk_actions['_posti_wh_bulk_actions_remove_products'] = Text::action_remove_from_warehouse();
         }
 
         return $bulk_actions;
@@ -72,7 +67,7 @@ class Product {
 
             $cnt_fail = 0;
             if ($action === '_posti_wh_bulk_actions_publish_products') {
-                $warehouse = $_REQUEST['_posti_wh_warehouse_bulk_publish'];
+                $warehouse = sanitize_text_field($_REQUEST['_posti_wh_warehouse_bulk_publish']);
                 if (!empty($warehouse)) {
                     $cnt_fail = $this->handle_products($post_ids, $warehouse);
                 }
@@ -97,10 +92,10 @@ class Product {
         woocommerce_wp_text_input(
                 array(
                     'id' => '_ean',
-                    'label' => __('EAN / ISBN / Barcode', 'posti-warehouse'),
+                    'label' => Text::field_ean(),
                     'placeholder' => '',
                     'desc_tip' => 'true',
-                    'description' => __('Enter EAN / ISBN / Barcode', 'posti-warehouse')
+                    'description' => Text::field_ean_caption()
                 )
         );
         echo '</div>';
@@ -113,7 +108,7 @@ class Product {
         woocommerce_wp_text_input(
                 array(
                     'id' => '_wholesale_price',
-                    'label' => __('Wholesale price', 'posti-warehouse'),
+                    'label' => Text::field_price(),
                     'placeholder' => '',
                     'desc_tip' => 'true',
                     'type' => 'number',
@@ -121,7 +116,7 @@ class Product {
                         'step' => '0.01',
                         'min' => '0'
                     ),
-                    'description' => __('Enter wholesale price', 'posti-warehouse')
+                    'description' => Text::field_price_caption()
                 )
         );
         echo '</div>';
@@ -131,10 +126,10 @@ class Product {
         woocommerce_wp_text_input(
                 array(
                     'id' => '_ean[' . $variation->ID . ']',
-                    'label' => __('EAN / ISBN / Barcode', 'posti-warehouse'),
+                    'label' => Text::field_ean(),
                     'placeholder' => '',
                     'desc_tip' => 'true',
-                    'description' => __('Enter EAN / ISBN / Barcode', 'posti-warehouse'),
+                    'description' => Text::field_ean_caption(),
                     'value' => get_post_meta($variation->ID, '_ean', true)
                 )
         );
@@ -142,9 +137,9 @@ class Product {
 
     public function save_variation_settings_fields($post_id) {
 
-        $ean_post = $_POST['_ean'][$post_id];
+        $ean_post = sanitize_text_field($_POST['_ean'][$post_id]);
         if (isset($ean_post)) {
-            update_post_meta($post_id, '_ean', esc_attr($ean_post));
+            update_post_meta($post_id, '_ean', $ean_post);
         }
         $ean_post = get_post_meta($post_id, '_ean', true);
         if (empty($ean_post)) {
@@ -164,7 +159,7 @@ class Product {
         $warehouses = $this->api->getWarehouses();
         $warehouses_options = array();
         
-        $catalogType = $_POST['catalog_type'];
+        $catalogType = sanitize_text_field($_POST['catalog_type']);
         foreach ($warehouses as $warehouse) {
             if (empty($catalogType) || $warehouse['catalogType'] === $catalogType) {
                 array_push($warehouses_options, array(
@@ -204,7 +199,7 @@ class Product {
                     array(
                         'id' => '_posti_wh_stock_type',
                         'class' => 'select short posti-wh-select2',
-                        'label' => __('Stock type', 'posti-warehouse'),
+                        'label' => Text::field_stock_type(),
                         'options' => Dataset::getSToreTypes(),
                         'value' => $type
                     )
@@ -214,7 +209,7 @@ class Product {
                     array(
                         'id' => '_posti_wh_warehouse',
                         'class' => 'select short posti-wh-select2',
-                        'label' => __('Warehouse', 'posti-warehouse'),
+                        'label' => Text::field_warehouse(),
                         'options' => $warehouses_options,
                         'value' => $product_warehouse
                     )
@@ -223,7 +218,7 @@ class Product {
             woocommerce_wp_text_input(
                     array(
                         'id' => '_posti_wh_distribution',
-                        'label' => __('Distributor ID', 'posti-warehouse'),
+                        'label' => Text::field_distributor(),
                         'placeholder' => '',
                         'type' => 'text',
                     )
@@ -252,7 +247,7 @@ class Product {
             $this->save_form_field($id, $post_id);
         }
         
-        $warehouse = $_POST['_posti_wh_warehouse'];
+        $warehouse = sanitize_text_field($_POST['_posti_wh_warehouse']);
         update_post_meta($post_id, '_posti_wh_warehouse_single', (empty($warehouse) ? '--delete' : $warehouse));
     }
     
@@ -602,19 +597,19 @@ class Product {
             $last_sync = get_post_meta($post->ID, '_posti_last_sync', true);
             if (isset($last_sync) && $last_sync == 0) {
                 $class = 'notice notice-error';
-                $message = __('Posti error: product sync not active. Please check product SKU, price or try resave.', 'posti-warehouse');
+                $message = Text::error_product_update();
                 printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), esc_html($message));
 
                 delete_post_meta($post->ID, '_posti_last_sync', '');
             }
         }
         
-  	if (isset($_REQUEST['products_total']) && isset($_REQUEST['products_fail'])) {
-            $cnt_total = $_REQUEST['products_total'];
+        if (isset($_REQUEST['products_fail'])) {
             $cnt_fail = $_REQUEST['products_fail'];
             if ($cnt_fail > 0) {
                 $class = 'notice notice-error';
-                printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), "Action failed for $cnt_fail product(s)");
+                $message = "Action failed for $cnt_fail product(s)";
+                printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), esc_html($message));
             }
         }
     }
@@ -729,7 +724,7 @@ class Product {
     }
 
     private function save_form_field($name, $post_id) {
-        $value = isset($_POST[$name]) ? $_POST[$name] : '';
+        $value = isset($_POST[$name]) ? sanitize_text_field($_POST[$name]) : '';
         update_post_meta($post_id, $name, $value);
         
         return $value;

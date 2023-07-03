@@ -11,13 +11,13 @@
  * License: GPL v3 or later
  *
  * WC requires at least: 3.4
- * WC tested up to: 4.1
+ * WC tested up to: 6.2.2
  *
  * License: GNU General Public License v3.0
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  */
 
-namespace PostiWarehouse;
+namespace Woo_Posti_Warehouse;
 // Prevent direct access to this script
 if ( ! defined('ABSPATH') ) {
   exit;
@@ -25,19 +25,19 @@ if ( ! defined('ABSPATH') ) {
 
 define( '__POSTI_WH_FILE__', __FILE__ );
 
-require_once __DIR__ . '/Classes/Settings.php';
-require_once __DIR__ . '/Classes/Order.php';
-require_once __DIR__ . '/Classes/Metabox.php';
-require_once __DIR__ . '/Classes/Api.php';
-require_once __DIR__ . '/Classes/Core.php';
-require_once __DIR__ . '/Classes/Logger.php';
-require_once __DIR__ . '/Classes/Debug.php';
-require_once __DIR__ . '/Classes/Product.php';
-require_once __DIR__ . '/Classes/Dataset.php';
-require_once __DIR__ . '/Classes/Shipping.php';
-require_once __DIR__ . '/Classes/Frontend.php';
+require_once __DIR__ . '/classes/class-settings.php';
+require_once __DIR__ . '/classes/class-order.php';
+require_once __DIR__ . '/classes/class-metabox.php';
+require_once __DIR__ . '/classes/class-api.php';
+require_once __DIR__ . '/classes/class-core.php';
+require_once __DIR__ . '/classes/class-logger.php';
+require_once __DIR__ . '/classes/class-debug.php';
+require_once __DIR__ . '/classes/class-product.php';
+require_once __DIR__ . '/classes/class-dataset.php';
+require_once __DIR__ . '/classes/class-shipping.php';
+require_once __DIR__ . '/classes/class-frontend.php';
 
-use PostiWarehouse\Classes\Core;
+use Woo_Posti_Warehouse\Core;
 
 new Core();
 

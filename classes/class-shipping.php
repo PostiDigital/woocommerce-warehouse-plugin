@@ -1,13 +1,10 @@
 <?php
 
-namespace PostiWarehouse\Classes;
+namespace Woo_Posti_Warehouse;
 
 // Prevent direct access to the script
 use WC_Countries;
 //use WC_Shipping_Method;
-use PostiWarehouse\Classes\Api;
-use PostiWarehouse\Classes\Logger;
-use PostiWarehouse\Classes\Settings;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -345,11 +342,11 @@ function warehouse_shipping_method() {
     }
 }
 
-add_action('woocommerce_shipping_init', '\PostiWarehouse\Classes\warehouse_shipping_method');
+add_action('woocommerce_shipping_init', '\Woo_Posti_Warehouse\warehouse_shipping_method');
 
 function add_warehouse_shipping_method($methods) {
     $methods[] = '\PostiWarehouse\Classes\WarehouseShipping';
     return $methods;
 }
 
-add_filter('woocommerce_shipping_methods', '\PostiWarehouse\Classes\add_warehouse_shipping_method');
+add_filter('woocommerce_shipping_methods', '\Woo_Posti_Warehouse\add_warehouse_shipping_method');

@@ -1,9 +1,7 @@
 <?php
-namespace PostiWarehouse\Classes;
+namespace Woo_Posti_Warehouse;
 
 defined('ABSPATH') || exit;
-
-use PostiWarehouse\Classes\Order;
 
 class Metabox {
 
