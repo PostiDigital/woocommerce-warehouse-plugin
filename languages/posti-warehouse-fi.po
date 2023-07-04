@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: Posti Warehouse\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-07-03 11:04+0000\n"
-"PO-Revision-Date: 2023-07-04 07:00+0000\n"
+"PO-Revision-Date: 2023-07-04 07:37+0000\n"
 "Language-Team: Finnish\n"
 "Language: fi\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
@@ -208,9 +208,11 @@ msgstr "Posti API Tracking"
 
 #: classes/class-text.php:100
 msgid ""
-"Cannot save the product information. Please check product SKU, price or try "
+"Posti error: product sync not active. Please check product SKU, price or try "
 "resave."
 msgstr ""
+"Posti virhe: Tuotteen tallentaminen ei onnistunut. Tarkasta tuotteen SKU, "
+"hinta, tai yritä tallentaa uudelleen."
 
 #. Name of the plugin
 #: classes/class-text.php:222
@@ -219,7 +221,7 @@ msgstr "Posti Varastopalvelu"
 
 #: classes/class-text.php:214
 msgid "Posti Warehouse Debug"
-msgstr ""
+msgstr "Postin varastopalvelu Debug"
 
 #: classes/class-text.php:210
 msgid "Posti Warehouse settings"
@@ -227,14 +229,14 @@ msgstr "Postin varastopalvelun asetukset"
 
 #. Description of the plugin
 msgid "Provides integration to Posti warehouse and dropshipping services."
-msgstr ""
+msgstr "Tarjoaa liittymän Postin varastopalveluun ja suoratoimituksiin"
 
 #: classes/class-text.php:60
-msgid "Select supplier"
+msgid "Select Posti warehouse/supplier"
 msgstr "Julkaise varastoon (Posti)"
 
 #: classes/class-text.php:64
-msgid "Remove supplier"
+msgid "Remove Posti warehouse/supplier"
 msgstr "Poista varastosta (Posti)"
 
 #: templates/checkout-pickup.php:32

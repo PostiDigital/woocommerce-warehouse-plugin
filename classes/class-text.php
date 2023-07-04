@@ -57,11 +57,11 @@ class Text {
     }
     
     public static function action_publish_to_warehouse() {
-        return __( 'Publish to warehouse (Posti)', 'posti-warehouse');
+        return __('Select Posti warehouse/supplier', 'posti-warehouse');
     }
     
     public static function action_remove_from_warehouse() {
-        return __( 'Remove from warehouse (Posti)', 'posti-warehouse');
+        return __('Remove Posti warehouse/supplier', 'posti-warehouse');
     }
     
     public static function field_ean() {
