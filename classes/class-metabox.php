@@ -60,7 +60,7 @@ class Metabox {
 		$post_id = sanitize_key($_POST['post_id']);
 		$post = get_post($post_id);
 		if (isset($_POST['order_action']) && 'place_order' == $_POST['order_action']) {
-		    $result = $this->postiOrder->addOrder($post_id); 
+			$result = $this->postiOrder->addOrder($post_id); 
 			$this->error = isset($result['error']) ? $result['error'] : '';
 			$this->add_order_meta_box_html($post);
 			wp_die('', '', 200);

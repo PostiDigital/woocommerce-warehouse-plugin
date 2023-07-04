@@ -49,7 +49,7 @@ class Text {
 	}
 	
 	public static function tracking_number( $number) {
-	    /* translators: $number, not translatable */
+		/* translators: $number, not translatable */
 		return sprintf(__('Tracking number: %1$s', 'posti-warehouse'), \esc_html($number));
 	}
 	
@@ -119,7 +119,7 @@ class Text {
 	
 	public static function error_invalid_postcode( $shipping_postcode) {
 		return sprintf(
-		    /* translators: $shipping_postcode, not translatable */
+			/* translators: $shipping_postcode, not translatable */
 			esc_attr__('Invalid postcode "%1$s". Please check your address information.', 'posti-warehouse'),
 			esc_attr($shipping_postcode));
 	}
@@ -273,7 +273,7 @@ class Text {
 	}
 	
 	public static function interval_every( $secs) {
-	    /* translators: $secs, not translatable */
+		/* translators: $secs, not translatable */
 		return sprintf(__('Every %1$s seconds', 'posti-warehouse'), \esc_html($secs));
 	}
 	

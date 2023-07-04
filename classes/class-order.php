@@ -430,7 +430,7 @@ class Order {
 	}
 
 	public function posti_check_order( $order_id, $old_status, $new_status) {
-	    if ('processing' === $new_status) {
+		if ('processing' === $new_status) {
 			$options = Settings::get();
 			if (isset($options['posti_wh_field_autoorder'])) {
 				$order = wc_get_order($order_id);
@@ -459,7 +459,7 @@ class Order {
 	}
 
 	public function posti_tracking_column_data( $column_name) {
-	    if ('posti_api_tracking' == $column_name) {
+		if ('posti_api_tracking' == $column_name) {
 			$tracking = get_post_meta(get_the_ID(), '_posti_api_tracking', true);
 			echo $tracking ? esc_html($tracking) : '–';
 		}

@@ -248,7 +248,7 @@ function warehouse_shipping_method() {
 				}
 
 				foreach ($all_shipping_methods as $shipping_method) {
-				    $value = isset($shipping_method->description[$user_lang]) ? $shipping_method->description[$user_lang] : $shipping_method->description['en'];
+					$value = isset($shipping_method->description[$user_lang]) ? $shipping_method->description[$user_lang] : $shipping_method->description['en'];
 					$services[strval($shipping_method->id)] = sprintf('%1$s: %2$s', $shipping_method->deliveryOperator, $value);
 				}
 

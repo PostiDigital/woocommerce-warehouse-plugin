@@ -67,7 +67,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 		}
 
 		public function save_pickup_point_info_to_session() {
-		    if (!check_ajax_referer($this->add_prefix('-pickup_point_update'), 'security')) {
+			if (!check_ajax_referer($this->add_prefix('-pickup_point_update'), 'security')) {
 				return;
 			}
 
@@ -104,7 +104,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 		}
 
 		public function use_custom_address_for_pickup_point() {
-		    if (!check_ajax_referer($this->add_prefix('-pickup_point_update'), 'security')) {
+			if (!check_ajax_referer($this->add_prefix('-pickup_point_update'), 'security')) {
 				return;
 			}
 
@@ -173,7 +173,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 		public function update_order_meta_pickup_point_field( $order_id) {
 			$logger = wc_get_logger();
 			if (!isset($_POST['woocommerce-process-checkout-nonce'])
-			    || !wp_verify_nonce(sanitize_key($_POST['woocommerce-process-checkout-nonce']), 'woocommerce-process_checkout')) {
+				|| !wp_verify_nonce(sanitize_key($_POST['woocommerce-process-checkout-nonce']), 'woocommerce-process_checkout')) {
 				$logger->error('Failed to verify update_order_meta_pickup_point_field nonce');
 			}
 
@@ -397,7 +397,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 					}
 
 					$select_field = array(
-					    'name' => $this->add_prefix('_pickup_point'),
+						'name' => $this->add_prefix('_pickup_point'),
 						'data' => array(
 							'clear' => true,
 							'type' => $list_type,
@@ -436,10 +436,10 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			wc_get_template(
 					$this->core->templates['checkout_pickup'],
 					array(
-					    'nonce' => wp_create_nonce($this->add_prefix('-pickup_point_update')),
+						'nonce' => wp_create_nonce($this->add_prefix('-pickup_point_update')),
 						'error' => array(
 							'msg' => $error_msg,
-						    'name' => esc_attr($this->add_prefix('_pickup_point')),
+							'name' => esc_attr($this->add_prefix('_pickup_point')),
 						),
 						'pickup' => array(
 							'show' => ( $select_field ) ? true : false,
@@ -524,7 +524,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 		 * @param WC_Order $order the order that was placed
 		 */
 		public function display_order_data( $order) {
-		    $pickup_point = $order->get_meta('_' . $this->add_prefix('_pickup_point'));
+			$pickup_point = $order->get_meta('_' . $this->add_prefix('_pickup_point'));
 
 			if (!empty($pickup_point)) {
 				wc_get_template($this->core->templates['account_order'], array('pickup_point' => esc_attr($pickup_point)), '', $this->core->templates_dir);
@@ -534,7 +534,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 		public function validate_checkout() {
 			$logger = wc_get_logger();
 			if (!isset($_POST['woocommerce-process-checkout-nonce'])
-			    || !wp_verify_nonce(sanitize_key($_POST['woocommerce-process-checkout-nonce']), 'woocommerce-process_checkout')) {
+				|| !wp_verify_nonce(sanitize_key($_POST['woocommerce-process-checkout-nonce']), 'woocommerce-process_checkout')) {
 				$logger->error('Checkout nonce failed to verify');
 			}
 
@@ -560,7 +560,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 
 		public function add_metadata_to_order_shipping_method( $item, $package_key, $package, $order) {
 			if (isset($_POST['warehouse_pickup_point'])) {
-			    $item->update_meta_data($this->add_prefix('_pickup_point'), sanitize_text_field($_POST['warehouse_pickup_point']));
+				$item->update_meta_data($this->add_prefix('_pickup_point'), sanitize_text_field($_POST['warehouse_pickup_point']));
 			}
 		}
 
@@ -590,8 +590,8 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			return $pickup_point_data;
 		}
 
-	    private function add_prefix($name) {
-	        return str_replace('wc_', '', $this->core->prefix) . $name;
-	    }
+		private function add_prefix( $name) {
+			return str_replace('wc_', '', $this->core->prefix) . $name;
+		}
 	}
 }

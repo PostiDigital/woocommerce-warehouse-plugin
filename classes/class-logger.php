@@ -6,8 +6,8 @@ defined('ABSPATH') || exit;
 
 class Logger {
 
-    const DB_VERSION = '1.0';
-    const TABLE_NAME = 'posti_warehouse_logs';
+	const DB_VERSION = '1.0';
+	const TABLE_NAME = 'posti_warehouse_logs';
 	private $is_debug = false;
 
 	public static function install() {

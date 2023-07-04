@@ -103,8 +103,8 @@ class Settings {
 	}
 	
 	public static function is_developer() {
-	    return ( isset($_GET) && isset($_GET['developer']) )
-            || ( isset($_POST) && isset($_POST['developer']) );
+		return ( isset($_GET) && isset($_GET['developer']) )
+			|| ( isset($_POST) && isset($_POST['developer']) );
 	}
 	
 	public function posti_wh_settings_init() {
@@ -464,7 +464,7 @@ class Settings {
 	}
 	
 	public function warehouse_products_migrate() {
-	    wp_verify_nonce(isset($_POST['security']) ? sanitize_text_field($_POST['security']) : null, 'posti-migration');
+		wp_verify_nonce(isset($_POST['security']) ? sanitize_text_field($_POST['security']) : null, 'posti-migration');
 
 		if (self::is_test_mode() && !self::is_developer()) {
 			echo json_encode(array('testMode' => true));
@@ -494,7 +494,7 @@ class Settings {
 				$product_id = get_post_meta($post->ID, '_posti_id', true);
 				if (isset($product_id) && !empty($product_id)) {
 					if (substr_compare($product_id, $business_id, 0, strlen($business_id)) === 0) {
-					    update_post_meta($post->ID, '_posti_id', sanitize_text_field(substr($product_id, strlen($business_id) + 1)));
+						update_post_meta($post->ID, '_posti_id', sanitize_text_field(substr($product_id, strlen($business_id) + 1)));
 					}
 				}
 			}
