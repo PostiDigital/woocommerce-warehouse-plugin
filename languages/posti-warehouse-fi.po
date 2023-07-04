@@ -3,8 +3,7 @@ msgstr ""
 "Project-Id-Version: Posti Warehouse\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-07-03 11:04+0000\n"
-"PO-Revision-Date: 2023-07-03 11:19+0000\n"
-"Last-Translator: \n"
+"PO-Revision-Date: 2023-07-04 07:00+0000\n"
 "Language-Team: Finnish\n"
 "Language: fi\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
@@ -17,112 +16,112 @@ msgstr ""
 
 #: classes/class-text.php:186
 msgid "Add tracking to email"
-msgstr ""
+msgstr "Lisää lähetystunnus sähköpostiin"
 
 #: classes/class-text.php:112
 msgid "An error occurred. Please try again later."
-msgstr ""
+msgstr "Tapahtui virhe. Yritä hetken kuluttua uudelleen."
 
 #: classes/class-text.php:182
 msgid "Auto mark orders as \"Completed\""
-msgstr ""
+msgstr "Vaihda valmis tilaus automaattisesti \"Toimitettu\" tilaan. "
 
 #: classes/class-text.php:178
 msgid "Auto ordering"
-msgstr ""
+msgstr "Lähetä tilaus automaattisesti varastolle"
 
 #: classes/class-text.php:162
 msgid "Business ID"
-msgstr ""
+msgstr "Y-tunnus"
 
 #: templates/checkout-pickup.php:22
 msgid "Choose one of pickup points close to the address you entered:"
-msgstr ""
+msgstr "Valitse ilmoittamaasi osoitetta lähellä oleva noutopiste."
 
 #: classes/class-text.php:96
 msgid "Confirm selection"
-msgstr ""
+msgstr "Vahvista valinta"
 
 #: classes/class-text.php:170
 msgid "Contract number"
-msgstr ""
+msgstr "Sopimusnumero"
 
 #: classes/class-text.php:262
 msgid "Created"
-msgstr ""
+msgstr "Luotu"
 
 #: classes/class-text.php:142
 msgid "Credentials matched - access token received!"
-msgstr ""
+msgstr "Tunnukset ovat oikein!"
 
 #: classes/class-text.php:254
 msgid "Current token:"
-msgstr ""
+msgstr "Voimassa oleva valtuutus:"
 
 #: classes/class-text.php:206
 msgid "Datetime of last order update"
-msgstr ""
+msgstr "Viimeisin tilauspäivityksen päiväys:"
 
 #: classes/class-text.php:202
 msgid "Datetime of last stock update"
-msgstr ""
+msgstr "Viimeisimmän saldopäivityksen päiväys"
 
 #: classes/class-text.php:198
 msgid "Debug"
-msgstr ""
+msgstr "Ongelman paikantaminen"
 
 #: classes/class-text.php:174
 msgid "Default stock type"
-msgstr ""
+msgstr "Oletus varastointitapa"
 
 #: classes/class-text.php:166
 msgid "Delivery service"
-msgstr ""
+msgstr "Toimitustapa"
 
 #: classes/class-text.php:92
 msgid "Distributor ID"
-msgstr ""
+msgstr "Toimittajan tunnus"
 
 #: classes/class-text.php:230
 msgid "Dropshipping"
-msgstr ""
+msgstr "Suoratoimitus"
 
 #: classes/class-text.php:68
 msgid "EAN / ISBN / Barcode"
-msgstr ""
+msgstr "EAN / ISBN / Viivakoodi"
 
 #: classes/class-text.php:116
 msgid "Empty postcode. Please check your address information."
-msgstr ""
+msgstr "Tyhjä postinumero. Tarkasta osoitetiedot."
 
 #: classes/class-text.php:72
 msgid "Enter EAN / ISBN / Barcode"
-msgstr ""
+msgstr "Syötä EAN / ISBN / viivakoodi"
 
 #: classes/class-text.php:80
 msgid "Enter wholesale price"
-msgstr ""
+msgstr "Syötä tukkuhinta"
 
 #: classes/class-text.php:134
 msgid "Error while searching pickup points"
-msgstr ""
+msgstr "Virhe noutopisteitä haettaessa"
 
 #: classes/class-text.php:104
 msgid "ERROR: Unable to place order."
-msgstr ""
+msgstr "VIRHE: Tilauksen lähettäminen epäonnistui."
 
 #: classes/class-text.php:274
 #, php-format
 msgid "Every %1$s seconds"
-msgstr ""
+msgstr "Joks %1$s sekuntti"
 
 #: classes/class-text.php:40
 msgid "Failed to order."
-msgstr ""
+msgstr "Tilaus epäonnistui."
 
 #: classes/class-text.php:108
 msgid "Failed to order: Shipping method not configured."
-msgstr ""
+msgstr "Tilaus epäonnistui: Toimitustapaa ei ole asetettu."
 
 #: classes/class-text.php:242
 msgid "Fragile"
@@ -130,12 +129,12 @@ msgstr "Särkyvä"
 
 #. Author URI of the plugin
 msgid "https://www.posti.fi/"
-msgstr ""
+msgstr "https://www.posti.fi/"
 
 #: classes/class-text.php:121
 #, php-format
 msgid "Invalid postcode \"%1$s\". Please check your address information."
-msgstr ""
+msgstr "Väärä postinumero \"%1$s\". Tarkasta osoitetiedot. "
 
 #: classes/class-text.php:238
 msgid "Large"
@@ -143,7 +142,7 @@ msgstr "Suuri"
 
 #: classes/class-text.php:250
 msgid "Logs"
-msgstr ""
+msgstr "Lokitiedot"
 
 #: classes/class-text.php:234
 msgid "LQ Process permission"
@@ -151,72 +150,72 @@ msgstr "LQ Prosessilupa"
 
 #: classes/class-text.php:270
 msgid "Message"
-msgstr ""
+msgstr "Viesti"
 
 #: classes/class-text.php:246
 msgid "No logs found"
-msgstr ""
+msgstr "Lokitietoja ei löytynyt"
 
 #: classes/class-text.php:130
 msgid "No pickup points found"
-msgstr ""
+msgstr "Noutopisteitä ei löytynyt"
 
 #: classes/class-text.php:226
 msgid "Not in stock"
-msgstr ""
+msgstr "Ei varastossa"
 
 #: classes/class-text.php:32
 msgid "Order not placed"
-msgstr ""
+msgstr "Tilausta ei ole lähetetty."
 
 #: classes/class-text.php:44
 msgid "Order status"
-msgstr ""
+msgstr "Tilauksen status"
 
 #: classes/class-text.php:28
 msgid "Other"
-msgstr ""
+msgstr "Muu"
 
 #: classes/class-text.php:150
 msgid "Password"
-msgstr ""
+msgstr "Salasana"
 
-#: classes/class-text.php:16 templates/checkout-pickup.php:14
+#: classes/class-text.php:16 templates/checkout-pickup.php:14 
 #: templates/checkout-pickup.php:15 templates/myaccount-order.php:10
 msgid "Pickup point"
-msgstr ""
+msgstr "Noutopiste"
 
 #: classes/class-text.php:20
 msgid "Pickup points"
-msgstr ""
+msgstr "Noutopisteet"
 
 #: classes/class-text.php:36
 msgid "Place Order"
-msgstr ""
+msgstr "Lähetä tilaus"
 
 #: classes/class-text.php:126
 msgid "Please choose a pickup point."
-msgstr ""
+msgstr "Valitse noutopiste."
 
 #. Author of the plugin
 #: classes/class-text.php:12
 msgid "Posti"
-msgstr ""
+msgstr "Posti"
 
 #: classes/class-text.php:48
 msgid "Posti API Tracking"
-msgstr ""
+msgstr "Posti API Tracking"
 
 #: classes/class-text.php:100
 msgid ""
-"Posti error: product sync not active. Please check product SKU, price or try "
+"Cannot save the product information. Please check product SKU, price or try "
 "resave."
 msgstr ""
 
 #. Name of the plugin
 #: classes/class-text.php:222
 msgid "Posti Warehouse"
-msgstr ""
+msgstr "Posti Varastopalvelu"
 
 #: classes/class-text.php:214
 msgid "Posti Warehouse Debug"
@@ -224,77 +223,77 @@ msgstr ""
 
 #: classes/class-text.php:210
 msgid "Posti Warehouse settings"
-msgstr ""
+msgstr "Postin varastopalvelun asetukset"
 
 #. Description of the plugin
 msgid "Provides integration to Posti warehouse and dropshipping services."
 msgstr ""
 
 #: classes/class-text.php:60
-msgid "Publish to warehouse (Posti)"
-msgstr ""
+msgid "Select supplier"
+msgstr "Julkaise varastoon (Posti)"
 
 #: classes/class-text.php:64
-msgid "Remove from warehouse (Posti)"
-msgstr ""
+msgid "Remove supplier"
+msgstr "Poista varastosta (Posti)"
 
 #: templates/checkout-pickup.php:32
 msgid "Search"
-msgstr ""
+msgstr "Hae"
 
 #: classes/class-text.php:24
 msgid "Select a pickup point"
-msgstr ""
+msgstr "Valitse noutopiste"
 
 #: classes/class-text.php:190
 msgid "Stock and order update interval (in seconds)"
-msgstr ""
+msgstr "Tuotemäärien ja tilaustietojen päivitysväli (sekunteja)"
 
 #: classes/class-text.php:84
 msgid "Stock type"
-msgstr ""
+msgstr "Varastointitapa"
 
 #: classes/class-text.php:218
 msgid "Store"
-msgstr ""
+msgstr "Myymälä"
 
 #: classes/class-text.php:194
 msgid "Test mode"
-msgstr ""
+msgstr "Testitila"
 
 #: classes/class-text.php:158
 msgid "TEST Password"
-msgstr ""
+msgstr "TESTI Salasana"
 
 #: classes/class-text.php:154
 msgid "TEST Username"
-msgstr ""
+msgstr "TESTI Käyttäjätunnus"
 
 #: classes/class-text.php:258
 msgid "Token expiration:"
-msgstr ""
+msgstr "Valtuutuksen vanhentuminen:"
 
 #: classes/class-text.php:52
 #, php-format
 msgid "Tracking number: %1$s"
-msgstr ""
+msgstr "Seurantatunnus: %1$s"
 
 #: classes/class-text.php:266
 msgid "Type"
-msgstr ""
+msgstr "Tyyppi"
 
 #: classes/class-text.php:146
 msgid "Username"
-msgstr ""
+msgstr "Käyttäjätunnus"
 
 #: classes/class-text.php:56 classes/class-text.php:88
 msgid "Warehouse"
-msgstr ""
+msgstr "Varasto"
 
 #: classes/class-text.php:76
 msgid "Wholesale price"
-msgstr ""
+msgstr "Tukkuhinta"
 
 #: classes/class-text.php:138
 msgid "Wrong credentials - access token not received!"
-msgstr ""
+msgstr "Väärä käyttäjätunnus/salasana - käytön valtuutusta ei saatu!"

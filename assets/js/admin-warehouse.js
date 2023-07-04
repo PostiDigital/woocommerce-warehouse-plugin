@@ -69,8 +69,7 @@ jQuery(function ($) {
                     opts_warehouses.attr("id", "_posti_wh_warehouse_bulk_publish");
 
                     var data = {
-                        action: 'posti_warehouses',
-                        catalog_type: 'Posti'
+                        action: 'posti_warehouses'
                     };
                     $.post(woocommerce_admin_meta_boxes.ajax_url, data, function (response) {
                         var options = $("#_posti_wh_warehouse_bulk_publish");

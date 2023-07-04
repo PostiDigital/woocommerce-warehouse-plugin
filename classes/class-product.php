@@ -35,10 +35,8 @@ class Product {
     }
     
     public function custom_columns_register($columns) {
-        if ($this->has_warehouse()) {
-            $columns['warehouse'] = Text::column_warehouse();
-        }
-        
+        $columns['warehouse'] = Text::column_warehouse();
+
         return $columns;
     }
 
@@ -49,10 +47,8 @@ class Product {
     }
     
     public function bulk_actions_warehouse_products($bulk_actions) {
-        if ($this->has_warehouse()) {
-            $bulk_actions['_posti_wh_bulk_actions_publish_products'] = Text::action_publish_to_warehouse();
-            $bulk_actions['_posti_wh_bulk_actions_remove_products'] = Text::action_remove_from_warehouse();
-        }
+        $bulk_actions['_posti_wh_bulk_actions_publish_products'] = Text::action_publish_to_warehouse();
+        $bulk_actions['_posti_wh_bulk_actions_remove_products'] = Text::action_remove_from_warehouse();
 
         return $bulk_actions;
     }
@@ -743,17 +739,6 @@ class Product {
     private function contains_error($errors, $idx) {
         foreach ($errors as $error) {
             if ($error['index'] === $idx) {
-                return true;
-            }
-        }
-        
-        return false;
-    }
-
-    private function has_warehouse() {
-        $warehouses = $this->api->getWarehouses();
-        foreach ($warehouses as $warehouse) {
-            if ($warehouse['catalogType'] === 'Posti') {
                 return true;
             }
         }
