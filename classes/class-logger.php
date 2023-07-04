@@ -6,14 +6,14 @@ defined('ABSPATH') || exit;
 
 class Logger {
 
-	const db_version = '1.0';
-	const table_name = 'posti_warehouse_logs';
+    const DB_VERSION = '1.0';
+    const TABLE_NAME = 'posti_warehouse_logs';
 	private $is_debug = false;
 
 	public static function install() {
 		global $wpdb;
 
-		$table_name = $wpdb->prefix . self::table_name;
+		$table_name = $wpdb->prefix . self::TABLE_NAME;
 
 		$charset_collate = $wpdb->get_charset_collate();
 
@@ -28,12 +28,12 @@ class Logger {
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 		dbDelta($sql);
 
-		add_option('posti_warehouse_db_version', self::db_version);
+		add_option('posti_warehouse_db_version', self::DB_VERSION);
 	}
 
 	public static function uninstall() {
 		global $wpdb;
-		$table_name = $wpdb->prefix . self::table_name;
+		$table_name = $wpdb->prefix . self::TABLE_NAME;
 		$sql = "DROP TABLE IF EXISTS $table_name";
 		$wpdb->query($sql);
 		delete_option('posti_warehouse_db_version');
@@ -47,7 +47,7 @@ class Logger {
 		if ($this->is_debug) {
 			global $wpdb;
 
-			$table_name = $wpdb->prefix . self::table_name;
+			$table_name = $wpdb->prefix . self::TABLE_NAME;
 
 			$wpdb->insert(
 					$table_name,
@@ -65,16 +65,16 @@ class Logger {
 		 
 		$this->clearOldLogs();
 	   
-		$table_name = $wpdb->prefix . self::table_name;
+		$table_name = $wpdb->prefix . self::TABLE_NAME;
 
-		$results = $wpdb->get_results('SELECT * FROM ' . $table_name . ' order by created_at DESC, id DESC LIMIT 50');
+		$results = $wpdb->get_results('SELECT * FROM `' . $table_name . '` order by created_at DESC, id DESC LIMIT 50');
 		return $results;
 	}
 
 	private function clearOldLogs() {
 		global $wpdb;
 
-		$table_name = $wpdb->prefix . self::table_name;
+		$table_name = $wpdb->prefix . self::TABLE_NAME;
 
 		$sql = 'DELETE FROM `' . $table_name . '` WHERE `created_at` < %s;';
 

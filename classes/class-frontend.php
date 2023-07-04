@@ -41,10 +41,10 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			?>
 			<div style="clear: both;">
 				<p>
-			<?php echo Text::field_phone(); ?>
+			<?php echo esc_html(Text::field_phone()); ?>
 					: <?php echo esc_html(get_post_meta($order->get_id(), '_shipping_phone', true)); ?>
 					<br>
-			<?php echo Text::field_email(); ?>
+			<?php echo esc_html(Text::field_email()); ?>
 					: <?php echo esc_html(get_post_meta($order->get_id(), '_shipping_email', true)); ?>
 			</div>
 			<?php

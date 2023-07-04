@@ -44,7 +44,7 @@ class Product {
 
 	public function custom_columns_show( $column, $product_id) {
 		if ($column === 'warehouse') {
-			echo get_post_meta($product_id, '_posti_wh_warehouse', true);
+			echo esc_html(get_post_meta($product_id, '_posti_wh_warehouse', true));
 		}
 	}
 	
@@ -65,7 +65,7 @@ class Product {
 
 			$cnt_fail = 0;
 			if ($action === '_posti_wh_bulk_actions_publish_products') {
-				$warehouse = sanitize_text_field($_REQUEST['_posti_wh_warehouse_bulk_publish']);
+			    $warehouse = isset($_REQUEST['_posti_wh_warehouse_bulk_publish']) ? sanitize_text_field($_REQUEST['_posti_wh_warehouse_bulk_publish']) : null;
 				if (!empty($warehouse)) {
 					$cnt_fail = $this->handle_products($post_ids, $warehouse);
 				}
@@ -135,7 +135,7 @@ class Product {
 
 	public function save_variation_settings_fields( $post_id) {
 
-		$ean_post = sanitize_text_field($_POST['_ean'][$post_id]);
+	    $ean_post = isset($_POST['_ean']) && isset($_POST['_ean'][$post_id]) ? sanitize_text_field($_POST['_ean'][$post_id]) : null;
 		if (isset($ean_post)) {
 			update_post_meta($post_id, '_ean', $ean_post);
 		}
@@ -157,7 +157,7 @@ class Product {
 		$warehouses = $this->api->getWarehouses();
 		$warehouses_options = array();
 		
-		$catalogType = sanitize_text_field($_POST['catalog_type']);
+		$catalogType = isset($_POST['catalog_type']) ? sanitize_text_field($_POST['catalog_type']) : null;
 		foreach ($warehouses as $warehouse) {
 			if (empty($catalogType) || $warehouse['catalogType'] === $catalogType) {
 				array_push($warehouses_options, array(
@@ -245,7 +245,7 @@ class Product {
 			$this->save_form_field($id, $post_id);
 		}
 		
-		$warehouse = sanitize_text_field($_POST['_posti_wh_warehouse']);
+		$warehouse = isset($_POST['_posti_wh_warehouse']) ? sanitize_text_field($_POST['_posti_wh_warehouse']) : null;
 		update_post_meta($post_id, '_posti_wh_warehouse_single', ( empty($warehouse) ? '--delete' : $warehouse ));
 	}
 	
@@ -369,10 +369,10 @@ class Product {
 	}
 	
 	private function link_product_to_post( $post_id, $variation_post_id, $product_id, $product_warehouse_override) {
-		update_post_meta($post_id, '_posti_wh_warehouse', $product_warehouse_override);
+	    update_post_meta($post_id, '_posti_wh_warehouse', sanitize_text_field($product_warehouse_override));
 		
 		$_post_id = !empty($variation_post_id) ? $variation_post_id : $post_id;
-		update_post_meta($_post_id, '_posti_id', $product_id);
+		update_post_meta($_post_id, '_posti_id', sanitize_text_field($product_id));
 	}
 	
 	private function unlink_product_from_post( $post_id) {
@@ -596,7 +596,7 @@ class Product {
 		}
 		
 		if (isset($_REQUEST['products_fail'])) {
-			$cnt_fail = $_REQUEST['products_fail'];
+		    $cnt_fail = sanitize_text_field($_REQUEST['products_fail']);
 			if ($cnt_fail > 0) {
 				$class = 'notice notice-error';
 				$message = "Action failed for $cnt_fail product(s)";

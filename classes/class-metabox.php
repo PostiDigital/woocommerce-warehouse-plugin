@@ -32,17 +32,17 @@ class Metabox {
 	public function add_order_meta_box_html( $post) {
 		?>
 		<div id ="posti-order-metabox">
-			<input type="hidden" name="posti_order_metabox_nonce" value="<?php echo wp_create_nonce(str_replace('wc_', '', 'posti-order') . '-meta-box'); ?>" id="posti_order_metabox_nonce" />
-			<img src ="<?php echo plugins_url('assets/img/posti-orange.png', dirname(__FILE__)); ?>"/>
-			<label><?php echo Text::order_status(); ?> </label>
-			<strong id = "posti-order-status"><?php echo $this->postiOrder->getOrderStatus($post->ID); ?></strong>
+			<input type="hidden" name="posti_order_metabox_nonce" value="<?php echo esc_attr(wp_create_nonce(str_replace('wc_', '', 'posti-order') . '-meta-box')); ?>" id="posti_order_metabox_nonce" />
+			<img src ="<?php echo esc_attr(plugins_url('assets/img/posti-orange.png', dirname(__FILE__))); ?>"/>
+			<label><?php echo esc_html(Text::order_status()); ?> </label>
+			<strong id = "posti-order-status"><?php echo esc_html($this->postiOrder->getOrderStatus($post->ID)); ?></strong>
 			<br/>
 			<div id = "posti-order-action">
 				<?php $this->postiOrder->getOrderActionButton($post->ID); ?>
 			</div>
 			<?php if ($this->error) : ?>
 			<div>
-				<?php echo $this->error; ?>
+				<?php echo esc_html($this->error); ?>
 			</div>
 			<?php endif; ?>
 		</div>
@@ -53,13 +53,14 @@ class Metabox {
 		
 		check_ajax_referer(str_replace('wc_', '', 'posti-order') . '-meta-box', 'security');
 
-		if (!is_numeric($_POST['post_id'])) {
+		if (!isset($_POST['post_id']) || !is_numeric($_POST['post_id'])) {
 			wp_die('', '', 501);
 		}
 		
-		$post = get_post($_POST['post_id']);
-		if ($_POST['order_action'] == 'place_order') {
-			$result = $this->postiOrder->addOrder($_POST['post_id']); 
+		$post_id = sanitize_key($_POST['post_id']);
+		$post = get_post($post_id);
+		if (isset($_POST['order_action']) && 'place_order' == $_POST['order_action']) {
+		    $result = $this->postiOrder->addOrder($post_id); 
 			$this->error = isset($result['error']) ? $result['error'] : '';
 			$this->add_order_meta_box_html($post);
 			wp_die('', '', 200);

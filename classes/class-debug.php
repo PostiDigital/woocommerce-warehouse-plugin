@@ -34,8 +34,8 @@ class Debug {
 			<?php $token_data = get_option('posti_wh_api_auth'); ?>
 			<?php if (is_array($token_data)) : ?>
 				<div class="notice notice-info">
-					<p style = "word-break: break-all;"><strong><?php echo Text::logs_token_data(); ?><br/> </strong> <?php echo $token_data['token']; ?></p>
-					<p><strong><?php echo Text::logs_token_expiration(); ?> </strong> <?php echo date('Y-m-d H:i:s', $token_data['expires']); ?></p>
+					<p style = "word-break: break-all;"><strong><?php echo esc_html(Text::logs_token_data()); ?><br/> </strong> <?php echo esc_html($token_data['token']); ?></p>
+					<p><strong><?php echo esc_html(Text::logs_token_expiration()); ?> </strong> <?php echo date('Y-m-d H:i:s', esc_html($token_data['expires'])); ?></p>
 				</div>
 			<?php endif; ?>
 			<?php
@@ -43,27 +43,27 @@ class Debug {
 			$logs = $logger->getLogs();
 			?>
 			<?php if (count($logs)) : ?>
-				<h3><?php echo Text::logs_title(); ?></h3>
+				<h3><?php echo esc_html(Text::logs_title()); ?></h3>
 				<table class="widefat fixed" cellspacing="0">
 					<thead>
 						<tr>
-							<th class="manage-column column-columnname " style = "width: 150px" scope="col"><?php echo Text::column_created_date(); ?></th> 
-							<th class="manage-column column-columnname" style = "width: 80px" scope="col"><?php echo Text::column_type(); ?></th>
-							<th class="manage-column column-columnname " scope="col"><?php echo Text::column_message(); ?></th> 
+							<th class="manage-column column-columnname " style = "width: 150px" scope="col"><?php echo esc_html(Text::column_created_date()); ?></th> 
+							<th class="manage-column column-columnname" style = "width: 80px" scope="col"><?php echo esc_html(Text::column_type()); ?></th>
+							<th class="manage-column column-columnname " scope="col"><?php echo esc_html(Text::column_message()); ?></th> 
 						</tr>
 					</thead>
 					<tbody>
 						<?php foreach ($logs as $key => $log) : ?>
 							<tr class="<?php echo ( $key % 2 == 0?'alternate':'' ); ?>">
-								<td class="column-columnname"><?php echo $log->created_at; ?></td>
-								<td class="column-columnname"><?php echo $log->type; ?></td>
+								<td class="column-columnname"><?php echo esc_html($log->created_at); ?></td>
+								<td class="column-columnname"><?php echo esc_html($log->type); ?></td>
 								<td class="column-columnname"><?php echo nl2br(esc_html($log->message)); ?></td>
 							</tr>
 						<?php endforeach; ?>
 					</tbody>
 				</table>
 			<?php else : ?>
-				<h3><?php echo Text::logs_empty(); ?></h3>
+				<h3><?php echo esc_html(Text::logs_empty()); ?></h3>
 			<?php endif; ?>
 		</div>
 		<?php

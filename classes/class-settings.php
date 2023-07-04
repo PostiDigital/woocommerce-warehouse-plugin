@@ -103,15 +103,15 @@ class Settings {
 	}
 	
 	public static function is_developer() {
-		return ( isset($_GET) && isset($_GET['developer']) )
-			|| ( isset($_POST) && isset($_POST['developer']) );
+	    return ( isset($_GET) && isset($_GET['developer']) )
+            || ( isset($_POST) && isset($_POST['developer']) );
 	}
 	
 	public function posti_wh_settings_init() {
 		$is_developer = self::is_developer();
 		$developer_fields_class = $is_developer ? 'posti_wh_row' : 'hidden';
 		add_settings_section(
-				'posti_wh_options',
+			'posti_wh_options',
 			'<span class="dashicons dashicons-admin-generic" style="padding-right: 2pt"></span>' . Text::field_warehouse_settings(),
 				array($this, 'posti_wh_section_developers_cb'),
 				'posti_wh'
@@ -339,7 +339,7 @@ class Settings {
 			$checked = ' checked="checked" ';
 		}
 		?>
-		<input <?php echo $checked; ?> id = "<?php echo esc_attr($args['label_for']); ?>" name='posti_wh_options[<?php echo esc_attr($args['label_for']); ?>]' type='checkbox' value = "1"/>
+		<input <?php echo esc_html($checked); ?> id = "<?php echo esc_attr($args['label_for']); ?>" name='posti_wh_options[<?php echo esc_attr($args['label_for']); ?>]' type='checkbox' value = "1"/>
 		<?php
 	}
 	
@@ -354,7 +354,7 @@ class Settings {
 			$value = $args['default'];
 		}
 		?>
-		<input id="<?php echo esc_attr($args['label_for']); ?>" name="posti_wh_options[<?php echo esc_attr($args['label_for']); ?>]" size='20' type='<?php echo $type; ?>' value="<?php echo $value; ?>" />
+		<input id="<?php echo esc_attr($args['label_for']); ?>" name="posti_wh_options[<?php echo esc_attr($args['label_for']); ?>]" size='20' type='<?php echo esc_attr($type); ?>' value="<?php echo esc_attr($value); ?>" />
 		<?php
 	}
 
@@ -367,9 +367,9 @@ class Settings {
 				name="posti_wh_options[<?php echo esc_attr($args['label_for']); ?>]"
 				>
 		<?php foreach (Dataset::getSToreTypes() as $val => $type) : ?>
-				<option value="<?php echo $val; ?>" <?php echo isset($options[$args['label_for']]) ? ( selected($options[$args['label_for']], $val, false) ) : ( '' ); ?>>
+				<option value="<?php echo esc_attr($val); ?>" <?php echo isset($options[$args['label_for']]) ? ( selected($options[$args['label_for']], $val, false) ) : ( '' ); ?>>
 						<?php
-						echo $type;
+						echo esc_html($type);
 						?>
 				</option>
 				<?php endforeach; ?>
@@ -386,9 +386,9 @@ class Settings {
 				name="posti_wh_options[<?php echo esc_attr($args['label_for']); ?>]"
 				>
 		<?php foreach (Dataset::getDeliveryTypes() as $val => $type) : ?>
-				<option value="<?php echo $val; ?>" <?php echo isset($options[$args['label_for']]) ? ( selected($options[$args['label_for']], $val, false) ) : ( '' ); ?>>
+				<option value="<?php echo esc_attr($val); ?>" <?php echo isset($options[$args['label_for']]) ? ( selected($options[$args['label_for']], $val, false) ) : ( '' ); ?>>
 						<?php
-						echo $type;
+						echo esc_html($type);
 						?>
 				</option>
 				<?php endforeach; ?>
@@ -426,10 +426,10 @@ class Settings {
 			if (!empty($token)) {
 				?>
 		<input id="posti_migration_metabox_nonce" name="posti_migration_metabox_nonce"
-			value="<?php echo wp_create_nonce(str_replace('wc_', '', 'posti-migration') . '-meta-box'); ?>"
+			value="<?php echo esc_attr(wp_create_nonce('posti-migration')); ?>"
 			type="hidden" />
 		<input id="posti_migration_url" name="posti_migration_url"
-			value="<?php echo admin_url('admin-ajax.php'); ?>"
+			value="<?php echo esc_attr(admin_url('admin-ajax.php')); ?>"
 			type="hidden" />
 		<div class="wrap">
 			<hr/>
@@ -464,6 +464,8 @@ class Settings {
 	}
 	
 	public function warehouse_products_migrate() {
+	    wp_verify_nonce(isset($_POST['security']) ? sanitize_text_field($_POST['security']) : null, 'posti-migration');
+
 		if (self::is_test_mode() && !self::is_developer()) {
 			echo json_encode(array('testMode' => true));
 			exit();
@@ -492,7 +494,7 @@ class Settings {
 				$product_id = get_post_meta($post->ID, '_posti_id', true);
 				if (isset($product_id) && !empty($product_id)) {
 					if (substr_compare($product_id, $business_id, 0, strlen($business_id)) === 0) {
-						update_post_meta($post->ID, '_posti_id', substr($product_id, strlen($business_id) + 1));
+					    update_post_meta($post->ID, '_posti_id', sanitize_text_field(substr($product_id, strlen($business_id) + 1)));
 					}
 				}
 			}
@@ -518,10 +520,10 @@ class Settings {
 			return false;
 		}
 		
-		return $value === 1
-			|| $value === '1'
-			|| $value === 'yes'
-			|| $value === 'true';
+		return 1 === $value
+			|| '1' === $value
+			|| 'yes' === $value
+			|| 'true' === $value;
 	}
 	
 	private static function get_business_id() {

@@ -61,7 +61,7 @@ class Order {
 	public function getOrderActionButton() {
 		if (!$this->orderStatus) {
 			?>
-			<button type = "button" class="button button-posti" id = "posti-order-btn" name="posti_order_action"  onclick="posti_order_change(this);" value="place_order"><?php echo Text::order_place(); ?></button>
+			<button type = "button" class="button button-posti" id = "posti-order-btn" name="posti_order_action"  onclick="posti_order_change(this);" value="place_order"><?php echo esc_html(Text::order_place()); ?></button>
 			<?php
 		}
 	}
@@ -207,7 +207,7 @@ class Order {
 			if (is_array($tracking)) {
 				$tracking = implode(', ', $tracking);
 			}
-			update_post_meta($id, '_posti_api_tracking', $tracking);
+			update_post_meta($id, '_posti_api_tracking', sanitize_text_field($tracking));
 		}
 
 		$status = $order['status']['value'];
@@ -468,7 +468,7 @@ class Order {
 	public function addTrackingToEmail( $order, $sent_to_admin, $plain_text, $email) {
 		$tracking = get_post_meta($order->get_id(), '_posti_api_tracking', true);
 		if ($tracking) {
-			echo Text::tracking_number($tracking);
+			echo esc_html(Text::tracking_number($tracking));
 		}
 	}
 
