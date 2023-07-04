@@ -3,9 +3,7 @@
 namespace Woo_Posti_Warehouse;
 
 // Prevent direct access to this script
-if (!defined('ABSPATH')) {
-    exit;
-}
+defined('ABSPATH') || exit;
 
 if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 

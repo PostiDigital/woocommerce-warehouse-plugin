@@ -18,10 +18,9 @@
  */
 
 namespace Woo_Posti_Warehouse;
+
 // Prevent direct access to this script
-if ( ! defined('ABSPATH') ) {
-  exit;
-}
+defined('ABSPATH') || exit;
 
 define( '__POSTI_WH_FILE__', __FILE__ );
 
@@ -41,6 +40,3 @@ require_once __DIR__ . '/classes/class-frontend.php';
 use Woo_Posti_Warehouse\Core;
 
 new Core();
-
-
-

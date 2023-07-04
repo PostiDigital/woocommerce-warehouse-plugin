@@ -1,7 +1,8 @@
 <?php
 
-
 namespace Woo_Posti_Warehouse;
+
+defined('ABSPATH') || exit;
 
 class Dataset {
     public static function getStoreTypes(){

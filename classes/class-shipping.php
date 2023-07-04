@@ -6,9 +6,7 @@ namespace Woo_Posti_Warehouse;
 use WC_Countries;
 //use WC_Shipping_Method;
 
-if (!defined('ABSPATH')) {
-    exit;
-}
+defined('ABSPATH') || exit;
 
 function warehouse_shipping_method() {
     if (!class_exists('WarehouseShipping')) {

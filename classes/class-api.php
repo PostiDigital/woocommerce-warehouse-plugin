@@ -2,6 +2,8 @@
 
 namespace Woo_Posti_Warehouse;
 
+defined('ABSPATH') || exit;
+
 class Api {
 
     private $username = null;
