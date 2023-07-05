@@ -201,7 +201,7 @@ class Api {
 	}
 	
 	public function getPickupPoints( $postcode = null, $street_address = null, $country = null, $service_code = null) {
-	    if (( null == $postcode && null == $street_address ) || ( '' == trim($postcode) && '' == trim($street_address) )) {
+		if (( null == $postcode && null == $street_address ) || ( '' == trim($postcode) && '' == trim($street_address) )) {
 			return array();
 		}
 
@@ -213,7 +213,7 @@ class Api {
 	}
 
 	public function getPickupPointsByText( $query_text, $service_code) {
-	    if (null == $query_text || '' == trim($query_text)) {
+		if (null == $query_text || '' == trim($query_text)) {
 			return array();
 		}
 
