@@ -114,7 +114,7 @@ class Order {
 				sleep(1);
 				$result = $this->api->addOrder($data);
 				$status = $this->api->getLastStatus();
-				if ($status == 200) {
+				if (200 == $status) {
 					break;
 				}
 			}
@@ -147,7 +147,7 @@ class Order {
 	}
 	
 	private function sync_page( $page) {
-		if (!isset($page) || $page === false) {
+		if (!isset($page) || false === $page) {
 			return false;
 		}
 
@@ -217,14 +217,14 @@ class Order {
 		$status_new = $this->status_mapping[$status];
 
 		$_order = wc_get_order($id);
-		if ($_order === false) {
+		if (false === $_order) {
 			return;
 		}
 
 		$data = $_order->get_data();
-		$status_old = $data !== false ? $data['status'] : '';
+		$status_old = false !== $data ? $data['status'] : '';
 		if ($status_old !== $status_new) {
-			if ($status_new == 'completed') {
+			if ('completed' == $status_new) {
 				if (isset($autocomplete)) {
 					$_order->update_status($status_new, "Posti Glue: $status", true);
 					$this->logger->log('info', "Changed order $id status $status_old -> $status_new");
@@ -256,7 +256,7 @@ class Order {
 			if (isset($pickup_points[$instance_id])
 				&& isset($pickup_points[$instance_id]['service'])
 				&& !empty($pickup_points[$instance_id]['service'])
-				&& $pickup_points[$instance_id]['service'] !== '__NULL__') {
+				&& '__NULL__' !== $pickup_points[$instance_id]['service']) {
 
 				$service_id = $pickup_points[$instance_id]['service'];
 				$shipping_service = $service_id;
@@ -269,9 +269,9 @@ class Order {
 
 					$services = $pickup_points[$instance_id][$service_id]['additional_services'];
 					foreach ($services as $service_code => $service) {
-						if ($service === 'yes' && $service_code !== '3101') {
+						if ('yes' === $service && '3101' !== $service_code) {
 							$additional_services[$service_code] = null;
-						} elseif ($service === 'yes' && $service_code === '3101') {
+						} elseif ('yes' === $service && '3101' === $service_code) {
 							$add_cod_to_additional_services = true;
 						}
 					}

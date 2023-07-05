@@ -220,12 +220,12 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 					}
 				}
 
-				if ($shipping_rate !== null) {
+				if (null !== $shipping_rate) {
 					break;
 				}
 			}
 
-			if ($shipping_rate === null) {
+			if (null === $shipping_rate) {
 				return false;
 			}
 
@@ -253,15 +253,15 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 				$instance_id = $temp_array[1];
 
 				if (!empty($pickup_points[$instance_id])) {
-					if (!empty($pickup_points[$instance_id]['service']) && $pickup_points[$instance_id]['service'] === '__PICKUPPOINTS__') {
+					if (!empty($pickup_points[$instance_id]['service']) && '__PICKUPPOINTS__' === $pickup_points[$instance_id]['service']) {
 						foreach ($pickup_points[$instance_id] as $shipping_method => $shipping_method_data) {
-							if (isset($shipping_method_data['active']) && $shipping_method_data['active'] === 'yes') {
+							if (isset($shipping_method_data['active']) && 'yes' === $shipping_method_data['active']) {
 								$shipping_method_providers[] = $shipping_method;
 							}
 						}
 					} else if (!empty($pickup_points[$instance_id]['service'])) {
 						if (!empty($pickup_points[$instance_id]['service'])) {
-							if (isset($pickup_points[$instance_id][$pickup_points[$instance_id]['service']]['pickuppoints']) && $pickup_points[$instance_id][$pickup_points[$instance_id]['service']]['pickuppoints'] === 'yes') {
+							if (isset($pickup_points[$instance_id][$pickup_points[$instance_id]['service']]['pickuppoints']) && 'yes' === $pickup_points[$instance_id][$pickup_points[$instance_id]['service']]['pickuppoints']) {
 								$shipping_method_providers[] = $pickup_points[$instance_id]['service'];
 							}
 						}
@@ -298,14 +298,14 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 
 			$shipping_method_providers = $this->shipping_needs_pickup_points();
 
-			echo '<input type="hidden" name="' . esc_attr($this->core->prefix) . '_validate_pickup_points" value="' . ( $shipping_method_providers === false ? 'false' : 'true' ) . '" />';
+			echo '<input type="hidden" name="' . esc_attr($this->core->prefix) . '_validate_pickup_points" value="' . ( false === $shipping_method_providers ? 'false' : 'true' ) . '" />';
 
-			if ($shipping_method_providers === false) {
+			if (false === $shipping_method_providers) {
 				return;
 			}
 
 			$selected_payment_method = WC()->session->get('chosen_payment_method');
-			$is_klarna = $selected_payment_method === 'kco';
+			$is_klarna = 'kco' === $selected_payment_method;
 
 			$shipping_postcode = WC()->customer->get_shipping_postcode();
 			$shipping_address = WC()->customer->get_shipping_address();
@@ -315,11 +315,11 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			$stale_items = array_filter(
 					$session,
 					function ( $v, $k) use ( $shipping_postcode, $shipping_address, $shipping_country) {
-						if ($k === 'postcode' && $v !== $shipping_postcode) {
+						if ('postcode' === $k && $v !== $shipping_postcode) {
 							return true;
-						} else if ($k === 'address' && $v !== $shipping_address) {
+						} else if ('address' === $k && $v !== $shipping_address) {
 							return true;
-						} else if ($k === 'country' && $v !== $shipping_country) {
+						} else if ('country' === $k && $v !== $shipping_country) {
 							return true;
 						}
 
@@ -364,7 +364,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 				if (!$error_msg) {
 					$list_type = 'select';
 
-					if (isset($settings['pickup_point_list_type']) && $settings['pickup_point_list_type'] === 'list') {
+					if (isset($settings['pickup_point_list_type']) && 'list' === $settings['pickup_point_list_type']) {
 						$list_type = 'radio';
 
 						array_splice($options_array, 0, 1);
@@ -379,7 +379,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 							\array_filter(
 									$options_array,
 									function ( $point) {
-										return isset($point['is_private']) ? $point['is_private'] === true : false;
+										return isset($point['is_private']) ? true === $point['is_private'] : false;
 									}
 							)
 					);
@@ -414,7 +414,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 					);
 				}
 
-				if ($selected_point === 'other' || $is_klarna || !$options_array) {
+				if ('other' === $selected_point || $is_klarna || !$options_array) {
 				  $custom_field_title = $is_klarna ? 'Pickup address' : 'Custom pickup address';
 
 				  $custom_field = array(
@@ -459,7 +459,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 
 		private function fetch_pickup_point_options( $shipping_postcode, $shipping_address, $shipping_country, $shipping_method_provider) {
 			$pickup_point = WC()->session->get(str_replace('wc_', 'woo_', $this->core->prefix) . '_pickup_point');
-			if ($pickup_point != null && isset($pickup_point['custom_address'])) {
+			if (null != $pickup_point && isset($pickup_point['custom_address'])) {
 				$custom_address = $pickup_point['custom_address'];
 			} else {
 				$custom_address = false;
@@ -506,7 +506,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 
 					$options_array[$pickup_point_key] = array(
 						'text' => $pickup_point_value,
-						'is_private' => $pickup_point['type'] === 'PRIVATE_LOCKER',
+						'is_private' => 'PRIVATE_LOCKER' === $pickup_point['type'],
 					);
 				}
 			}
@@ -540,13 +540,13 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 
 			$key = $this->add_prefix('_pickup_point');
 			$pickup_data = isset($_POST[$key]) ? sanitize_text_field($_POST[$key]) : '__NULL__';
-			$pickup_data = $pickup_data === '__null__' ? strtoupper($pickup_data) : $pickup_data;
+			$pickup_data = '__null__' === $pickup_data ? strtoupper($pickup_data) : $pickup_data;
 
 			// if there is no pickup point data, let's see do we need it
-			if ($pickup_data === '__NULL__' || $pickup_data === '' || $pickup_data === 'other') {
+			if ('__NULL__' === $pickup_data || '' === $pickup_data || 'other' === $pickup_data) {
 				$key = $this->core->prefix . '_validate_pickup_points';
 				// if the value does not exists, then we expect to have pickup point data
-				$shipping_needs_pickup_points = isset($_POST[$key]) ? $_POST[$key] === 'true' : false;
+				$shipping_needs_pickup_points = isset($_POST[$key]) ? 'true' === $_POST[$key] : false;
 
 				if ($shipping_needs_pickup_points) {
 					$this->add_error(Text::error_pickup_point_not_provided());
@@ -566,7 +566,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 
 		public function get_pickup_points( $postcode, $street_address = null, $country = null, $service_provider = null) {
 			$pickup_point_data = $this->api->getPickupPoints(trim($postcode), trim($street_address), trim($country), $service_provider);
-			if ($pickup_point_data === false) {
+			if (false === $pickup_point_data) {
 				throw new \Exception(Text::error_pickup_point_generic());
 			}
 
@@ -579,7 +579,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 
 		public function get_pickup_points_by_free_input( $input, $service_provider = null) {
 			$pickup_point_data = $this->api->getPickupPointsByText(trim($input), $service_provider);
-			if ($pickup_point_data === false) {
+			if (false === $pickup_point_data) {
 				throw new \Exception(Text::error_pickup_point_generic());
 			}
 

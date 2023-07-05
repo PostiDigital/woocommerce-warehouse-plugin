@@ -8,4 +8,4 @@
 ?>
 
 <h2><?php esc_attr_e('Pickup point', 'posti-warehouse'); ?></h2>
-<p><?php echo $pickup_point; ?></p>
+<p><?php echo esc_html($pickup_point); ?></p>

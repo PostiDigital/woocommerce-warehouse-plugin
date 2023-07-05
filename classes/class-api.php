@@ -76,18 +76,18 @@ class Api {
 
 		$header[] = 'Authorization: Bearer ' . $this->token;
 		$payload = null;
-		if ($action == 'POST' || $action == 'PUT' || $action == 'DELETE') {
+		if ('POST' == $action || 'PUT' == $action || 'DELETE' == $action) {
 			$payload = json_encode($data);
 
 			$header[] = 'Content-Type: application/json';
 			$header[] = 'Content-Length: ' . strlen($payload);
-			if ($action == 'POST') {
+			if ('POST' == $action) {
 				curl_setopt($curl, CURLOPT_POST, 1);
 			} else {
 				curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $action);
 			}
 			curl_setopt($curl, CURLOPT_POSTFIELDS, $payload);
-		} elseif ($action == 'GET' && is_array($data)) {
+		} elseif ('GET' == $action && is_array($data)) {
 			$url .= '?' . http_build_query($data);
 		}
 		
@@ -201,7 +201,7 @@ class Api {
 	}
 	
 	public function getPickupPoints( $postcode = null, $street_address = null, $country = null, $service_code = null) {
-		if (( $postcode == null && $street_address == null ) || ( trim($postcode) == '' && trim($street_address) == '' )) {
+	    if (( null == $postcode && null == $street_address ) || ( '' == trim($postcode) && '' == trim($street_address) )) {
 			return array();
 		}
 
@@ -213,7 +213,7 @@ class Api {
 	}
 
 	public function getPickupPointsByText( $query_text, $service_code) {
-		if ($query_text == null || trim($query_text) == '') {
+	    if (null == $query_text || '' == trim($query_text)) {
 			return array();
 		}
 

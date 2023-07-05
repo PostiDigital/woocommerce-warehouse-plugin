@@ -77,7 +77,7 @@ class Core {
 	}
 
 	public function after_settings_update( $option, $old_value, $value) {
-		if ($option == 'posti_wh_options') {
+		if ('posti_wh_options' == $option) {
 			if (Settings::is_changed($old_value, $value, 'posti_wh_field_username')
 				|| Settings::is_changed($old_value, $value, 'posti_wh_field_password')
 				|| Settings::is_changed($old_value, $value, 'posti_wh_field_username_test')
@@ -86,7 +86,7 @@ class Core {
 				//login info changed, try to get token
 				delete_option('posti_wh_api_auth');
 				delete_option('posti_wh_api_warehouses');
-				if (session_id() === '' || !isset($_SESSION)) {
+				if ('' === session_id() || !isset($_SESSION)) {
 					session_start();
 				}
 				
@@ -170,13 +170,13 @@ class Core {
 		$nextStockSyncDttm = $this->posti_cronjob_sync_stock($options);
 		$nextOrderSyncDttm = $this->posti_cronjob_sync_orders($options);
 
-		if ($nextStockSyncDttm !== false || $nextOrderSyncDttm !== false) {
+		if (false !== $nextStockSyncDttm || false !== $nextOrderSyncDttm) {
 			$new_options = Settings::get();
-			if ($nextStockSyncDttm !== false) {
+			if (false !== $nextStockSyncDttm) {
 				$new_options['posti_wh_field_stock_sync_dttm'] = $nextStockSyncDttm;
 			}
 			
-			if ($nextOrderSyncDttm !== false) {
+			if (false !== $nextOrderSyncDttm) {
 				$new_options['posti_wh_field_order_sync_dttm'] = $nextOrderSyncDttm;
 			}
 
@@ -222,7 +222,7 @@ class Core {
 		foreach ($items as $item => $values) {
 			$product_warehouse = get_post_meta($values['data']->get_id(), '_posti_wh_warehouse', true);
 			$type = $this->product->get_stock_type_by_warehouse($product_warehouse);
-			if (( $type == 'Posti' ) && $product_warehouse) {
+			if (( 'Posti' == $type ) && $product_warehouse) {
 				$hide_other = true;
 				break;
 			}

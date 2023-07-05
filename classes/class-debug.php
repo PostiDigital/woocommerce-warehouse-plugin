@@ -35,7 +35,7 @@ class Debug {
 			<?php if (is_array($token_data)) : ?>
 				<div class="notice notice-info">
 					<p style = "word-break: break-all;"><strong><?php echo esc_html(Text::logs_token_data()); ?><br/> </strong> <?php echo esc_html($token_data['token']); ?></p>
-					<p><strong><?php echo esc_html(Text::logs_token_expiration()); ?> </strong> <?php echo date('Y-m-d H:i:s', esc_html($token_data['expires'])); ?></p>
+					<p><strong><?php echo esc_html(Text::logs_token_expiration()); ?> </strong> <?php echo esc_html(date('Y-m-d H:i:s'), esc_html($token_data['expires'])); ?></p>
 				</div>
 			<?php endif; ?>
 			<?php
@@ -54,7 +54,7 @@ class Debug {
 					</thead>
 					<tbody>
 						<?php foreach ($logs as $key => $log) : ?>
-							<tr class="<?php echo ( $key % 2 == 0?'alternate':'' ); ?>">
+							<tr class="<?php echo ( 0 == $key % 2 ? 'alternate' : '' ); ?>">
 								<td class="column-columnname"><?php echo esc_html($log->created_at); ?></td>
 								<td class="column-columnname"><?php echo esc_html($log->type); ?></td>
 								<td class="column-columnname"><?php echo nl2br(esc_html($log->message)); ?></td>

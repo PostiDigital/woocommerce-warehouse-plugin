@@ -178,7 +178,7 @@ function warehouse_shipping_method() {
 																<label>
 																	<input type="checkbox"
 																		   name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($method_code) . '][additional_services][' . esc_attr($additional_service->code) . ']'; ?>"
-																		   value="yes" <?php echo ( !empty($values[$method_id][$method_code]['additional_services'][$additional_service->code]) && $values[$method_id][$method_code]['additional_services'][$additional_service->code] === 'yes' ) ? 'checked' : ''; ?>>
+																		   value="yes" <?php echo ( !empty($values[$method_id][$method_code]['additional_services'][$additional_service->code]) && 'yes' === $values[$method_id][$method_code]['additional_services'][$additional_service->code] ) ? 'checked' : ''; ?>>
 																		   <?php echo esc_html(isset($additional_service->description[$user_lang]) ? $additional_service->description[$user_lang] : $additional_service->description['en']); ?>
 																</label>
 															</p>
@@ -242,7 +242,7 @@ function warehouse_shipping_method() {
 				$all_shipping_methods = $this->get_shipping_methods();
 
 				// List all available methods as shipping options on checkout page
-				if ($all_shipping_methods === null) {
+				if (null === $all_shipping_methods) {
 					// returning null seems to invalidate services cache
 					return null;
 				}
