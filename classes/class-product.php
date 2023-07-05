@@ -5,27 +5,27 @@ namespace Woo_Posti_Warehouse;
 defined('ABSPATH') || exit;
 
 class Product {
-
+	
 	private $api;
 	private $logger;
-
+	
 	public function __construct( Api $api, Logger $logger) {
-
+		
 		$this->api = $api;
 		$this->logger = $logger;
-
+		
 		add_action('admin_notices', array($this, 'posti_notices'));
-
+		
 		add_action('wp_ajax_posti_warehouses', array($this, 'get_ajax_posti_warehouse'));
-
+		
 		add_filter('woocommerce_product_data_tabs', array($this, 'posti_wh_product_tab'), 99, 1);
 		add_action('woocommerce_product_data_panels', array($this, 'posti_wh_product_tab_fields'));
 		add_action('woocommerce_process_product_meta', array($this, 'posti_wh_product_tab_fields_save'));
 		add_action('woocommerce_process_product_meta', array($this, 'after_product_save'), 99);
-
+		
 		add_action('woocommerce_product_options_inventory_product_data', array($this, 'woocom_simple_product_ean_field'), 10, 1);
 		add_action('woocommerce_product_options_general_product_data', array($this, 'woocom_simple_product_wholesale_field'), 10, 1);
-
+		
 		add_action('woocommerce_product_after_variable_attributes', array($this, 'variation_settings_fields'), 10, 3);
 		add_action('woocommerce_save_product_variation', array($this, 'save_variation_settings_fields'), 10, 2);
 		
@@ -38,10 +38,10 @@ class Product {
 	
 	public function custom_columns_register( $columns) {
 		$columns['warehouse'] = Text::column_warehouse();
-
+		
 		return $columns;
 	}
-
+	
 	public function custom_columns_show( $column, $product_id) {
 		if ('warehouse' === $column) {
 			echo esc_html(get_post_meta($product_id, '_posti_wh_warehouse', true));
@@ -51,10 +51,10 @@ class Product {
 	public function bulk_actions_warehouse_products( $bulk_actions) {
 		$bulk_actions['_posti_wh_bulk_actions_publish_products'] = Text::action_publish_to_warehouse();
 		$bulk_actions['_posti_wh_bulk_actions_remove_products'] = Text::action_remove_from_warehouse();
-
+		
 		return $bulk_actions;
 	}
-
+	
 	public function handle_bulk_actions_warehouse_products( $redirect_to, $action, $post_ids) {
 		if (count($post_ids) == 0) {
 			return $redirect_to;
@@ -62,79 +62,83 @@ class Product {
 		
 		if ('_posti_wh_bulk_actions_publish_products' === $action
 			|| '_posti_wh_bulk_actions_remove_products' === $action) {
-
-			$cnt_fail = 0;
+				
+				$cnt_fail = 0;
 			if ('_posti_wh_bulk_actions_publish_products' === $action) {
 				$warehouse = isset($_REQUEST['_posti_wh_warehouse_bulk_publish']) ? sanitize_text_field($_REQUEST['_posti_wh_warehouse_bulk_publish']) : null;
 				if (!empty($warehouse)) {
 					$cnt_fail = $this->handle_products($post_ids, $warehouse);
 				}
-
+					
 			} elseif ('_posti_wh_bulk_actions_remove_products' === $action) {
 				$cnt_fail = $this->handle_products($post_ids, '--delete');
-				
+					
 			}
-			
-			$redirect_to = add_query_arg(array(
-				'products_total' => count($post_ids),
-				'products_fail' => $cnt_fail), $redirect_to);
+				
+				$redirect_to = add_query_arg(array(
+					'products_total' => count($post_ids),
+					'products_fail' => $cnt_fail), $redirect_to);
 		}
-
-		return $redirect_to;
+			
+			return $redirect_to;
 	}
-
+	
 	public function woocom_simple_product_ean_field() {
 		global $woocommerce, $post;
 		$product = new \WC_Product(get_the_ID());
 		echo '<div id="ean_attr" class="options_group">';
 		woocommerce_wp_text_input(
-				array(
-					'id' => '_ean',
-					'label' => Text::field_ean(),
-					'placeholder' => '',
-					'desc_tip' => 'true',
-					'description' => Text::field_ean_caption()
-				)
-		);
+			array(
+				'id' => '_ean',
+				'label' => Text::field_ean(),
+				'placeholder' => '',
+				'desc_tip' => 'true',
+				'description' => Text::field_ean_caption()
+			)
+			);
 		echo '</div>';
 	}
-
+	
 	public function woocom_simple_product_wholesale_field() {
 		global $woocommerce, $post;
 		$product = new \WC_Product(get_the_ID());
 		echo '<div id="wholesale_attr" class="options_group">';
 		woocommerce_wp_text_input(
-				array(
-					'id' => '_wholesale_price',
-					'label' => Text::field_price(),
-					'placeholder' => '',
-					'desc_tip' => 'true',
-					'type' => 'number',
-					'custom_attributes' => array(
-						'step' => '0.01',
-						'min' => '0'
-					),
-					'description' => Text::field_price_caption()
-				)
-		);
+			array(
+				'id' => '_wholesale_price',
+				'label' => Text::field_price(),
+				'placeholder' => '',
+				'desc_tip' => 'true',
+				'type' => 'number',
+				'custom_attributes' => array(
+					'step' => '0.01',
+					'min' => '0'
+				),
+				'description' => Text::field_price_caption()
+			)
+			);
 		echo '</div>';
 	}
-
+	
 	public function variation_settings_fields( $loop, $variation_data, $variation) {
 		woocommerce_wp_text_input(
-				array(
-					'id' => '_ean[' . $variation->ID . ']',
-					'label' => Text::field_ean(),
-					'placeholder' => '',
-					'desc_tip' => 'true',
-					'description' => Text::field_ean_caption(),
-					'value' => get_post_meta($variation->ID, '_ean', true)
-				)
-		);
+			array(
+				'id' => '_ean[' . $variation->ID . ']',
+				'label' => Text::field_ean(),
+				'placeholder' => '',
+				'desc_tip' => 'true',
+				'description' => Text::field_ean_caption(),
+				'value' => get_post_meta($variation->ID, '_ean', true)
+			)
+			);
+		wp_nonce_field('var_save', 'var_nonce_' . $variation->ID);
 	}
-
+	
 	public function save_variation_settings_fields( $post_id) {
-
+		if (!check_admin_referer('var_save', 'var_nonce_' . $post_id)) {
+			throw new \Exception('Nonce check failed for save_variation_settings_fields');
+		}
+		
 		$ean_post = isset($_POST['_ean']) && isset($_POST['_ean'][$post_id]) ? sanitize_text_field($_POST['_ean'][$post_id]) : null;
 		if (isset($ean_post)) {
 			update_post_meta($post_id, '_ean', $ean_post);
@@ -144,7 +148,7 @@ class Product {
 			delete_post_meta($post_id, '_ean', '');
 		}
 	}
-
+	
 	public function posti_wh_product_tab( $product_data_tabs) {
 		$product_data_tabs['posti-tab'] = array(
 			'label' => Text::company(),
@@ -152,8 +156,12 @@ class Product {
 		);
 		return $product_data_tabs;
 	}
-
+	
 	public function get_ajax_posti_warehouse() {
+		if (!isset($_REQUEST['security']) || !wp_verify_nonce(sanitize_key($_REQUEST['security']), 'posti_wh_nonce')) {
+			throw new \Exception('Nonce check failed for get_ajax_posti_warehouse');
+		}
+		
 		$warehouses = $this->api->getWarehouses();
 		$warehouses_options = array();
 		
@@ -170,7 +178,7 @@ class Product {
 		echo json_encode($warehouses_options);
 		die();
 	}
-
+	
 	public function posti_wh_product_tab_fields() {
 		global $woocommerce, $post;
 		?>
@@ -603,9 +611,11 @@ class Product {
 				printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), esc_html($message));
 			}
 		}
+		
+		wp_nonce_field('posti_wh_nonce', 'posti_wh_nonce');
 	}
 
-	public function sync( $datetime) {        
+	public function sync( $datetime) {
 		$response = $this->api->getBalancesUpdatedSince($datetime, 100);
 		if (!$this->sync_page($response)) {
 			return false;

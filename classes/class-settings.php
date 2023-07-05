@@ -464,7 +464,11 @@ class Settings {
 	}
 	
 	public function warehouse_products_migrate() {
-		wp_verify_nonce(isset($_POST['security']) ? sanitize_text_field($_POST['security']) : null, 'posti-migration');
+		if (!isset($_POST['security'])
+			|| !wp_verify_nonce(sanitize_key($_POST['security']), 'posti-migration')) {
+			$this->logger->log('error', 'Unable to migrate products: nonce check failed');
+			throw new \Exception('Unable to migrate products');
+		}
 
 		if (self::is_test_mode() && !self::is_developer()) {
 			echo json_encode(array('testMode' => true));

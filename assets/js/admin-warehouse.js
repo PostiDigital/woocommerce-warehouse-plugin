@@ -36,7 +36,8 @@ jQuery(function ($) {
         check_stock_type();
         var data = {
             action: 'posti_warehouses',
-            catalog_type: $(this).val()
+            catalog_type: $(this).val(),
+            security: $('#posti_wh_nonce').val(),
         };
 
         $('#posti_wh_tab').addClass('loading');
@@ -69,7 +70,8 @@ jQuery(function ($) {
                     opts_warehouses.attr("id", "_posti_wh_warehouse_bulk_publish");
 
                     var data = {
-                        action: 'posti_warehouses'
+                        action: 'posti_warehouses',
+                        security: $('#posti_wh_nonce').val()
                     };
                     $.post(woocommerce_admin_meta_boxes.ajax_url, data, function (response) {
                         var options = $("#_posti_wh_warehouse_bulk_publish");
