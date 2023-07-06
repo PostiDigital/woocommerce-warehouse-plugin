@@ -4,7 +4,7 @@ namespace Woo_Posti_Warehouse;
 
 // Prevent direct access to the script
 use WC_Countries;
-//use WC_Shipping_Method;
+use WC_Shipping_Method;
 
 defined('ABSPATH') || exit;
 
@@ -343,7 +343,7 @@ function warehouse_shipping_method() {
 add_action('woocommerce_shipping_init', '\Woo_Posti_Warehouse\warehouse_shipping_method');
 
 function add_warehouse_shipping_method( $methods) {
-	$methods[] = '\PostiWarehouse\Classes\WarehouseShipping';
+	$methods[] = '\Woo_Posti_Warehouse\WarehouseShipping';
 	return $methods;
 }
 

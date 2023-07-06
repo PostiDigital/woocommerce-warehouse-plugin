@@ -175,6 +175,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			if (!isset($_POST['woocommerce-process-checkout-nonce'])
 				|| !wp_verify_nonce(sanitize_key($_POST['woocommerce-process-checkout-nonce']), 'woocommerce-process_checkout')) {
 				$logger->error('Failed to verify update_order_meta_pickup_point_field nonce');
+				throw new \Exception('Failed to verify update_order_meta_pickup_point_field nonce');
 			}
 
 			$key = $this->add_prefix('_pickup_point');
@@ -475,7 +476,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 		}
 
 		private function process_pickup_points_to_option_array( $pickup_points) {
-			$options_array = array('' => array('text' => '- ' . Text::select_pickup_point() . ' -'));
+			$options_array = array('' => array('text' => '- ' . Text::pickup_point_select() . ' -'));
 			if (!empty($pickup_points)) {
 				$show_provider = false;
 				$provider = '';
@@ -536,6 +537,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			if (!isset($_POST['woocommerce-process-checkout-nonce'])
 				|| !wp_verify_nonce(sanitize_key($_POST['woocommerce-process-checkout-nonce']), 'woocommerce-process_checkout')) {
 				$logger->error('Checkout nonce failed to verify');
+				throw new \Exception('Checkout nonce failed to verify');
 			}
 
 			$key = $this->add_prefix('_pickup_point');
@@ -559,6 +561,13 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 		}
 
 		public function add_metadata_to_order_shipping_method( $item, $package_key, $package, $order) {
+			$logger = wc_get_logger();
+			if (!isset($_POST['woocommerce-process-checkout-nonce'])
+				|| !wp_verify_nonce(sanitize_key($_POST['woocommerce-process-checkout-nonce']), 'woocommerce-process_checkout')) {
+				$logger->error('Checkout nonce failed to verify');
+				throw new \Exception('Checkout nonce failed to verify');
+			}
+			
 			if (isset($_POST['warehouse_pickup_point'])) {
 				$item->update_meta_data($this->add_prefix('_pickup_point'), sanitize_text_field($_POST['warehouse_pickup_point']));
 			}

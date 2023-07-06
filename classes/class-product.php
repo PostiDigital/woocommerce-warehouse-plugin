@@ -27,7 +27,7 @@ class Product {
 		add_action('woocommerce_product_options_general_product_data', array($this, 'woocom_simple_product_wholesale_field'), 10, 1);
 		
 		add_action('woocommerce_product_after_variable_attributes', array($this, 'variation_settings_fields'), 10, 3);
-		add_action('woocommerce_save_product_variation', array($this, 'save_variation_settings_fields'), 10, 2);
+		add_action('woocommerce_save_product_variation', array($this, 'variation_settings_fields_save'), 10, 2);
 		
 		add_filter('bulk_actions-edit-product', array($this, 'bulk_actions_warehouse_products'));
 		add_filter('handle_bulk_actions-edit-product', array($this, 'handle_bulk_actions_warehouse_products'), 10, 3);
@@ -131,11 +131,11 @@ class Product {
 				'value' => get_post_meta($variation->ID, '_ean', true)
 			)
 			);
-		wp_nonce_field('var_save', 'var_nonce_' . $variation->ID);
+		wp_nonce_field('posti_wh_nonce_var', 'posti_wh_nonce_var_' . $variation->ID);
 	}
 	
-	public function save_variation_settings_fields( $post_id) {
-		if (!check_admin_referer('var_save', 'var_nonce_' . $post_id)) {
+	public function variation_settings_fields_save( $post_id) {
+		if (!check_admin_referer('posti_wh_nonce_var', 'posti_wh_nonce_var_' . $post_id)) {
 			throw new \Exception('Nonce check failed for save_variation_settings_fields');
 		}
 		
@@ -238,12 +238,18 @@ class Product {
 						)
 				);
 			}
+			
+			wp_nonce_field('posti_wh_nonce_prod', 'posti_wh_nonce_prod');
 			?>
 		</div>
 		<?php
 	}
 
 	public function posti_wh_product_tab_fields_save( $post_id) {
+		if (!check_admin_referer('posti_wh_nonce_prod', 'posti_wh_nonce_prod')) {
+			throw new \Exception('Nonce check failed for save_variation_settings_fields');
+		}
+		
 		$this->save_form_field('_posti_wh_product', $post_id);
 		$this->save_form_field('_posti_wh_distribution', $post_id);
 		$this->save_form_field('_ean', $post_id);
