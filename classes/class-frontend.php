@@ -193,13 +193,8 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 				// Find string like '(#6681)'
 				preg_match('/\(#[A-Za-z0-9\-]+\)/', $pickup_point, $matches);
 				// Cut the number out from a string of the form '(#6681)'
-				$pakettikauppa_pickup_point_id = ( !empty($matches) ) ? substr($matches[0], 2, -1) : '';
-				update_post_meta($order_id, '_' . $key_id, sanitize_text_field($pakettikauppa_pickup_point_id));
-
-				preg_match('/\(\%[0-9]+\)/', $pickup_point, $matches);
-				// Cut the number out from a string of the form '(#6681)'
-				$pakettikauppa_pickup_point_provider_id = ( !empty($matches) ) ? substr($matches[0], 2, -1) : '';
-				update_post_meta($order_id, '_' . $this->add_prefix('_pickup_point_provider_id'), sanitize_text_field($pakettikauppa_pickup_point_provider_id));
+				$pickup_point_id = ( !empty($matches) ) ? substr($matches[0], 2, -1) : '';
+				update_post_meta($order_id, '_' . $key_id, sanitize_text_field($pickup_point_id));
 			}
 		}
 
