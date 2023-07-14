@@ -34,6 +34,7 @@ class Api {
 	
 	public static function uninstall() {
 		delete_option('posti_wh_api_auth');
+		delete_option('posti_wh_api_warehouses');
 	}
 	
 	public function getUserAgent() {

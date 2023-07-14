@@ -191,7 +191,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			if (!empty($pickup_point)) {
 				update_post_meta($order_id, '_' . $key, sanitize_text_field($pickup_point));
 				// Find string like '(#6681)'
-				preg_match('/\(#[0-9]+\)/', $pickup_point, $matches);
+				preg_match('/\(#[A-Za-z0-9\-]+\)/', $pickup_point, $matches);
 				// Cut the number out from a string of the form '(#6681)'
 				$pakettikauppa_pickup_point_id = ( !empty($matches) ) ? substr($matches[0], 2, -1) : '';
 				update_post_meta($order_id, '_' . $key_id, sanitize_text_field($pakettikauppa_pickup_point_id));
@@ -478,36 +478,27 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 		private function process_pickup_points_to_option_array( $pickup_points) {
 			$options_array = array('' => array('text' => '- ' . Text::pickup_point_select() . ' -'));
 			if (!empty($pickup_points)) {
-				$show_provider = false;
-				$provider = '';
 				foreach ($pickup_points as $pickup_point) {
-					if (!isset($pickup_point['serviceProvider'])) {
-						$show_provider = true;
-						break;
-					}
-					if (!empty($provider) && $provider !== $pickup_point['serviceProvider']) {
-						$show_provider = true;
-						break;
-					}
-					$provider = $pickup_point['serviceProvider'];
-				}
-				foreach ($pickup_points as $pickup_point) {
-					if (!isset($pickup_point['serviceProvider'])) {
+					$serviceProvider = isset($pickup_point['serviceProvider']) ? $pickup_point['serviceProvider'] : null;
+					$type = isset($pickup_point['type']) ? $pickup_point['type'] : null;
+					if (empty($serviceProvider) && $type !== 'STORE') {
 						continue;
 					}
-					$pickup_point_key = $pickup_point['serviceProvider']
+
+					$key_part = empty($serviceProvider) ? $type : $serviceProvider;
+					$pickup_point_key = $key_part
 							. ': ' . $pickup_point['name']
 							. ' (#' . $pickup_point['externalId'] . ')';
 					$pickup_point_value = $pickup_point['name']
 							. ' (' . $pickup_point['streetAddress'] . ')';
 
-					if ($show_provider) {
-						$pickup_point_value = $pickup_point['serviceProvider'] . ': ' . $pickup_point_value;
+					if (!empty($serviceProvider)) {
+					    $pickup_point_value = $serviceProvider . ': ' . $pickup_point_value;
 					}
 
 					$options_array[$pickup_point_key] = array(
 						'text' => $pickup_point_value,
-						'is_private' => 'PRIVATE_LOCKER' === $pickup_point['type'],
+					    'is_private' => 'PRIVATE_LOCKER' === $type,
 					);
 				}
 			}
