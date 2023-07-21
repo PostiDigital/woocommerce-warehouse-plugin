@@ -307,9 +307,24 @@ class Product {
 		}
 		
 		if (count($product_whs_diffs) > 0 || count($product_id_diffs) > 0) {
-			$products_obsolete = array();
-			$this->collect_products_for_removal($product_whs_diffs, $product_id_diffs, $products, $products_obsolete, $product_ids_map, $warehouses);
-			
+			$balances_obsolete = $this->get_balances_for_removal($product_whs_diffs, $product_ids_map, $warehouses);
+			if (count($balances_obsolete) > 0) {
+				$errors = $this->api->deleteInventoryBalances($balances_obsolete);
+				if (false !== $errors) {
+					$cnt = count($balances_obsolete);
+					for ($i = 0; $i < $cnt; $i++) {
+						if (!$this->contains_error($errors, $i)) {
+							$balance_obsolete = $balances_obsolete[$i];
+							$product_id_obsolete = $balance_obsolete['productExternalId'];
+							$post_id_obsolete = $product_ids_map[$product_id_obsolete];
+							
+							$this->unlink_balance_from_post($post_id_obsolete);
+						}
+					}
+				}
+			}
+
+			$products_obsolete = $this->get_products_for_removal($product_id_diffs, $products, $product_ids_map, $warehouses);
 			if (count($products_obsolete) > 0) {
 				$errors = $this->api->deleteInventory($products_obsolete);
 				if (false !== $errors) {
@@ -400,6 +415,10 @@ class Product {
 				delete_post_meta($variation['variation_id'], '_posti_id', '');
 			}
 		}
+	}
+	
+	private function unlink_balance_from_post( $post_id) {
+		delete_post_meta($post_id, '_posti_wh_warehouse', '');
 	}
 	
 	private function can_publish_product( $_product) {
@@ -555,32 +574,8 @@ class Product {
 		}
 	}
 	
-	private function collect_products_for_removal( &$product_whs_diffs, &$product_id_diffs, &$products, &$products_obsolete, &$product_ids_map, &$warehouses) {
-		foreach ($product_whs_diffs as $diff) {
-			$warehouse_from = $diff['from'];
-			if ($this->is_warehouse_supports_add_remove($warehouses, $warehouse_from)) {
-				$product_id = get_post_meta($diff['id'], '_posti_id', true);
-				if (!empty($product_id)) {
-					$product_ids_map[$product_id] = $diff['id'];
-
-					$product = array('externalId' => $product_id);
-					array_push($products_obsolete, array('product' => $product));
-				} else {
-					$_product = wc_get_product($diff['id']);
-					if (false !== $_product && 'variable' === $_product->get_type()) {
-						$variations = $_product->get_available_variations();
-						foreach ($variations as $variation) {
-							$variation_product_id = get_post_meta($variation['variation_id'], '_posti_id', true);
-							$product_ids_map[$variation_product_id] = $diff['id'];
-
-							$product = array('externalId' => $variation_product_id);
-							array_push($products_obsolete, array('product' => $product));
-						}
-					}
-				}
-			}
-		}
-		
+	private function get_products_for_removal( &$product_id_diffs, &$products, &$product_ids_map, &$warehouses) {
+		$products_obsolete = array();
 		foreach ($product_id_diffs as $diff) {
 			$product_id = $diff['from'];
 			if (!empty($product_id) && !$this->contains_product($products, $product_id)) {
@@ -593,6 +588,43 @@ class Product {
 				}
 			}
 		}
+		
+		return $products_obsolete;
+	}
+	
+	private function get_balances_for_removal( &$product_whs_diffs, &$product_ids_map, &$warehouses) {
+		$balances_obsolete = array();
+		foreach ($product_whs_diffs as $diff) {
+			$warehouse_from = $diff['from'];
+			if ($this->is_warehouse_supports_add_remove($warehouses, $warehouse_from)) {
+				$product_id = get_post_meta($diff['id'], '_posti_id', true);
+				if (!empty($product_id)) {
+					$product_ids_map[$product_id] = $diff['id'];
+					
+					array_push($balances_obsolete, array(
+						'productExternalId' => $product_id,
+						'catalogExternalId' => $warehouse_from,
+						'retailerId' => $this->get_retailer_id($warehouses, $warehouse_from)));
+				} else {
+					$_product = wc_get_product($diff['id']);
+					if (false !== $_product && 'variable' === $_product->get_type()) {
+						$retailer_id = $this->get_retailer_id($warehouses, $warehouse_from);
+						$variations = $_product->get_available_variations();
+						foreach ($variations as $variation) {
+							$variation_product_id = get_post_meta($variation['variation_id'], '_posti_id', true);
+							$product_ids_map[$variation_product_id] = $diff['id'];
+							
+							array_push($balances_obsolete, array(
+								'productExternalId' => $variation_product_id,
+								'catalogExternalId' => $warehouse_from,
+								'retailerId' => $retailer_id));
+						}
+					}
+				}
+			}
+		}
+		
+		return $balances_obsolete;
 	}
 
 	public function posti_notices() {

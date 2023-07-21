@@ -164,11 +164,6 @@ class Api {
 		return $this->ApiCall('/ecommerce/v3/catalogs/balances?productExternalId=' . implode(',', $ids_encoded), '', 'GET');
 	}
 	
-	public function patchBalances( $catalogId, &$balances) {
-		$status = $this->ApiCall('/ecommerce/v3/catalogs/' . urlencode($catalogId) . '/balances', $balances, 'PATCH');
-		return $status;
-	}
-
 	public function putInventory( &$products) {
 		$status = $this->ApiCall('/ecommerce/v3/inventory', $products, 'PUT');
 		return $status;
@@ -177,6 +172,11 @@ class Api {
 	public function deleteInventory( &$products) {
 		$status = $this->ApiCall('/ecommerce/v3/inventory', $products, 'DELETE');
 		return $status;
+	}
+	
+	public function deleteInventoryBalances( &$balances) {
+	    $status = $this->ApiCall('/ecommerce/v3/inventory/balances', $balances, 'DELETE');
+	    return $status;
 	}
 	
 	public function addOrder( &$order) {
