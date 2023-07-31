@@ -118,7 +118,7 @@ class Core {
 	public function token_error() {
 		?>
 		<div class="error notice">
-			<p><?php esc_html(Text::error_api_credentials_wrong()); ?></p>
+			<p><?php echo esc_html(Text::error_api_credentials_wrong()); ?></p>
 		</div>
 		<?php
 	}
@@ -126,7 +126,7 @@ class Core {
 	public function token_success() {
 		?>
 		<div class="updated notice">
-			<p><?php esc_html(Text::api_credentials_correct()); ?></p>
+			<p><?php echo esc_html(Text::api_credentials_correct()); ?></p>
 		</div>
 		<?php
 	}
