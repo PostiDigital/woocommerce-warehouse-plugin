@@ -476,7 +476,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 				foreach ($pickup_points as $pickup_point) {
 					$serviceProvider = isset($pickup_point['serviceProvider']) ? $pickup_point['serviceProvider'] : null;
 					$type = isset($pickup_point['type']) ? $pickup_point['type'] : null;
-					if (empty($serviceProvider) && $type !== 'STORE') {
+					if (empty($serviceProvider) && 'STORE' !== $type) {
 						continue;
 					}
 
