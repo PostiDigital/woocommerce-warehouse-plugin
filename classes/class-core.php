@@ -57,6 +57,7 @@ class Core {
 		Settings::uninstall();
 		Api::uninstall();
 		Logger::uninstall();
+		delete_transient('posti_warehouse_shipping_methods');
 	}
 
 	public function load_textdomain() {
