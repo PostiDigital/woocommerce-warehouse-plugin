@@ -28,6 +28,10 @@ class Text {
 		return __('Other', 'posti-warehouse');
 	}
 	
+	public static function store_pickup_title() {
+	    return __('Store pickup', 'posti-warehouse');
+	}
+	
 	public static function order_not_placed() {
 		return __('Order not placed', 'posti-warehouse');
 	}

@@ -51,6 +51,7 @@ class Core {
 		Settings::install();
 		Api::install();
 		Logger::install();
+		delete_transient('posti_warehouse_shipping_methods');
 	}
 
 	public function uninstall() {

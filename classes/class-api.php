@@ -60,7 +60,7 @@ class Api {
 	
 	private function ApiCall( $url, $data = '', $action = 'GET') {
 		if (!$this->token) {
-			$token_data = get_option($this->token_option);            
+			$token_data = get_option($this->token_option);			
 			if (!$token_data || isset($token_data['expires']) && $token_data['expires'] < time()) {
 				$this->getToken();
 			} elseif (isset($token_data['token'])) {
@@ -175,8 +175,8 @@ class Api {
 	}
 	
 	public function deleteInventoryBalances( &$balances) {
-	    $status = $this->ApiCall('/ecommerce/v3/inventory/balances', $balances, 'DELETE');
-	    return $status;
+		$status = $this->ApiCall('/ecommerce/v3/inventory/balances', $balances, 'DELETE');
+		return $status;
 	}
 	
 	public function addOrder( &$order) {
@@ -201,26 +201,31 @@ class Api {
 		return $products;
 	}
 	
-	public function getPickupPoints( $postcode = null, $street_address = null, $country = null, $service_code = null) {
-		if (( null == $postcode && null == $street_address ) || ( '' == trim($postcode) && '' == trim($street_address) )) {
+	public function getPickupPoints( $postcode = null, $street_address = null, $country = null, $city = null, $service_code = null, $type = null) {
+		if ((null == $postcode && null == $street_address)
+			|| ('' == trim($postcode) && '' == trim($street_address))) {
 			return array();
 		}
 
 		return $this->ApiCall('/ecommerce/v3/pickup-points'
 				. '?serviceCode=' . urlencode($service_code)
 				. '&postalCode=' . urlencode($postcode)
+				. '&postOffice=' . urlencode($city)
 				. '&streetAddress=' . urlencode($street_address)
-				. '&country=' . urlencode($country), '', 'GET');
+				. '&country=' . urlencode($country)
+				. '&type=' . urlencode($type), '', 'GET');
 	}
 
-	public function getPickupPointsByText( $query_text, $service_code) {
+	public function getPickupPointsByText( $query_text, $country, $service_code, $type = null) {
 		if (null == $query_text || '' == trim($query_text)) {
 			return array();
 		}
 
 		return $this->ApiCall('/ecommerce/v3/pickup-points'
 				. '?serviceCode=' . urlencode($service_code)
-				. '&search=' . urlencode($query_text), '', 'GET');
+				. '&search=' . urlencode($query_text)
+				. '&country=' . urlencode($country)
+				. '&type=' . urlencode($type), '', 'GET');
 	}
 	
 	public function migrate() {
@@ -241,15 +246,15 @@ class Api {
 		$headers[] = 'Authorization: Basic ' . base64_encode("$user:$secret");
 
 		$options = array(
-			CURLOPT_POST            => 0,
-			CURLOPT_HEADER          => 0,
-			CURLOPT_URL             => $url,
-			CURLOPT_FRESH_CONNECT   => 1,
-			CURLOPT_RETURNTRANSFER  => 1,
-			CURLOPT_FORBID_REUSE    => 1,
-			CURLOPT_USERAGENT       => $this->user_agent,
-			CURLOPT_TIMEOUT         => 30,
-			CURLOPT_HTTPHEADER      => $headers,
+			CURLOPT_POST => 0,
+			CURLOPT_HEADER => 0,
+			CURLOPT_URL => $url,
+			CURLOPT_FRESH_CONNECT => 1,
+			CURLOPT_RETURNTRANSFER => 1,
+			CURLOPT_FORBID_REUSE => 1,
+			CURLOPT_USERAGENT => $this->user_agent,
+			CURLOPT_TIMEOUT => 30,
+			CURLOPT_HTTPHEADER => $headers,
 
 		);
 

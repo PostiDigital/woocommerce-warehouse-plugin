@@ -103,6 +103,7 @@ function warehouse_shipping_method() {
 						var servicesElement = document.getElementById('services-' + methodId + '-' + strUser);
 						var pickuppointsElement = document.getElementById('pickuppoints-' + methodId);
 						var servicePickuppointsElement = document.getElementById('service-' + methodId + '-' + strUser + '-pickuppoints');
+						var servicePickupstoresElement = document.getElementById('service-' + methodId + '-' + strUser + '-pickupstores');
 
 						for (var i = 0; i < elements.length; ++i) {
 							elements[i].style.display = "none";
@@ -120,6 +121,8 @@ function warehouse_shipping_method() {
 								servicesElement.style.display = "block";
 							if (elem.options[elem.selectedIndex].getAttribute('data-haspp') == 'true')
 								servicePickuppointsElement.style.display = "block";
+							if (elem.options[elem.selectedIndex].getAttribute('data-hassp') == 'true')
+								servicePickupstoresElement.style.display = "block";
 						}
 					}
 				</script>
@@ -151,7 +154,8 @@ function warehouse_shipping_method() {
 												<option value="__NULL__"><?php echo 'No shipping'; ?></option>  <?php //Issue: #171, was no echo ?>
 												<?php foreach ($all_shipping_methods as $service_id => $service_name) : ?>
 													<?php $has_pp = ( $this->service_has_pickup_points($service_id) ) ? true : false; ?>
-													<option value="<?php echo esc_attr($service_id); ?>" <?php echo ( strval($selected_service) === strval($service_id) ? 'selected' : '' ); ?> data-haspp="<?php echo ( $has_pp ) ? 'true' : 'false'; ?>">
+													<?php $has_sp = ( $this->service_has_store_pickup($service_id) ) ? true : false; ?>
+													<option value="<?php echo esc_attr($service_id); ?>" <?php echo ( strval($selected_service) === strval($service_id) ? 'selected' : '' ); ?> data-haspp="<?php echo ( $has_pp ) ? 'true' : 'false'; ?>" data-hassp="<?php echo ( $has_sp ) ? 'true' : 'false'; ?>">
 														<?php echo esc_attr($service_name); ?>
 														<?php if ($has_pp) : ?>
 															(Has pickup points)
@@ -197,6 +201,22 @@ function warehouse_shipping_method() {
 																	   name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($service_id) . '][pickuppoints]'; ?>"
 																	   value="yes" <?php echo ( ( !empty($values[$method_id][$service_id]['pickuppoints']) && 'yes' === $values[$method_id][$service_id]['pickuppoints'] ) || empty($values[$method_id][$service_id]['pickuppoints']) ) ? 'checked' : ''; ?>>
 																	   <?php echo esc_html(Text::pickup_points_title()); ?>
+															</label>
+														</p>
+													</div>
+												<?php endif; ?>
+											<?php endforeach; ?>
+											<?php foreach ($all_shipping_methods as $service_id => $service_name) : ?>
+												<?php if ($this->service_has_store_pickup($service_id)) : ?>
+													<div id="service-<?php echo esc_attr($method_id); ?>-<?php echo esc_attr($service_id); ?>-pickupstores" class="pk-services-<?php echo esc_attr($method_id); ?>" style="display: none;">
+														<input type="hidden"
+															   name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($service_id) . '][storepoints]'; ?>" value="no">
+														<p>
+															<label>
+																<input type="checkbox"
+																	   name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($service_id) . '][storepoints]'; ?>"
+																	   value="yes" <?php echo ( ( !empty($values[$method_id][$service_id]['storepoints']) && 'yes' === $values[$method_id][$service_id]['storepoints'] ) ) ? 'checked' : ''; ?>>
+																	   <?php echo esc_html(Text::store_pickup_title()); ?>
 															</label>
 														</p>
 													</div>
@@ -314,13 +334,21 @@ function warehouse_shipping_method() {
 				return $all_shipping_methods;
 			}
 
-			private function service_has_pickup_points( $service_id) {
+			private function service_has_pickup_points($service_id) {
+				return $this->has_service_feature($service_id, 'PICKUP_POINT');
+			}
+			
+			private function service_has_store_pickup($service_id) {
+				return $this->has_service_feature($service_id, 'STORE_PICKUP');
+			}
+			
+			private function has_service_feature($service_id, $feature) {
 				$all_shipping_methods = $this->get_shipping_methods();
-
+				
 				if (null === $all_shipping_methods) {
 					return false;
 				}
-
+				
 				foreach ($all_shipping_methods as $shipping_method) {
 					if (strval($shipping_method->id) !== strval($service_id)) {
 						continue;
@@ -328,12 +356,12 @@ function warehouse_shipping_method() {
 					if (!isset($shipping_method->tags)) {
 						continue;
 					}
-					if (!in_array('PICKUP_POINT', $shipping_method->tags)) {
+					if (!in_array($feature, $shipping_method->tags)) {
 						continue;
 					}
 					return true;
 				}
-
+				
 				return false;
 			}
 		}

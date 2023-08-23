@@ -200,7 +200,6 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 
 		private function shipping_needs_pickup_points() {
 			$chosen_shipping_methods = WC()->session->get('chosen_shipping_methods');
-
 			if (empty($chosen_shipping_methods)) {
 				return false;
 			}
@@ -226,17 +225,18 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			}
 
 			$shipping_method_providers = array();
+			$point_types = array();
 			$shipment_meta_data = $shipping_rate->get_meta_data();
 
 			$settings = Settings::get_shipping_settings();
 			$pickup_points = isset($settings['pickup_points']) ? json_decode($settings['pickup_points'], true) : array();
-
 			if (isset($shipment_meta_data['service_code'])) {
 				$shipping_method_id = $shipment_meta_data['service_code'];
 
 				if (!empty($pickup_points[$shipping_method_id]['service'])) {
 					$shipping_method_providers[] = $shipping_method_id;
 				}
+
 			} else {
 
 				$temp_array = explode(':', $chosen_shipping_id); // for php 5.6 compatibility
@@ -247,19 +247,23 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 				}
 
 				$instance_id = $temp_array[1];
-
-				if (!empty($pickup_points[$instance_id])) {
-					if (!empty($pickup_points[$instance_id]['service']) && '__PICKUPPOINTS__' === $pickup_points[$instance_id]['service']) {
+				if (!empty($pickup_points[$instance_id]) && !empty($pickup_points[$instance_id]['service'])) {
+					$service = $pickup_points[$instance_id]['service'];
+					if ('__PICKUPPOINTS__' === $service) {
 						foreach ($pickup_points[$instance_id] as $shipping_method => $shipping_method_data) {
 							if (isset($shipping_method_data['active']) && 'yes' === $shipping_method_data['active']) {
 								$shipping_method_providers[] = $shipping_method;
 							}
 						}
-					} else if (!empty($pickup_points[$instance_id]['service'])) {
-						if (!empty($pickup_points[$instance_id]['service'])) {
-							if (isset($pickup_points[$instance_id][$pickup_points[$instance_id]['service']]['pickuppoints']) && 'yes' === $pickup_points[$instance_id][$pickup_points[$instance_id]['service']]['pickuppoints']) {
-								$shipping_method_providers[] = $pickup_points[$instance_id]['service'];
-							}
+					} else {
+						if (isset($pickup_points[$instance_id][$service]['pickuppoints']) && 'yes' === $pickup_points[$instance_id][$service]['pickuppoints']) {
+							$shipping_method_providers[] = $service;
+							$point_types['pickup_points'] = true;
+						}
+						
+						if (isset($pickup_points[$instance_id][$service]['storepoints']) && 'yes' === $pickup_points[$instance_id][$service]['storepoints']) {
+							$shipping_method_providers[] = $service;
+							$point_types['store_points'] = true;
 						}
 					}
 				}
@@ -270,7 +274,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 				return false;
 			}
 
-			return $shipping_method_providers;
+			return array('services' => $shipping_method_providers, 'types' => $point_types);
 		}
 
 		/*
@@ -306,16 +310,19 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			$shipping_postcode = WC()->customer->get_shipping_postcode();
 			$shipping_address = WC()->customer->get_shipping_address();
 			$shipping_country = WC()->customer->get_shipping_country();
+			$shipping_city = WC()->customer->get_shipping_city();
 
 			$session = $this->get_pickup_point_session_data();
 			$stale_items = array_filter(
 					$session,
-					function ( $v, $k) use ( $shipping_postcode, $shipping_address, $shipping_country) {
+				function ( $v, $k) use ( $shipping_postcode, $shipping_address, $shipping_country, $shipping_city) {
 						if ('postcode' === $k && $v !== $shipping_postcode) {
 							return true;
 						} else if ('address' === $k && $v !== $shipping_address) {
 							return true;
 						} else if ('country' === $k && $v !== $shipping_country) {
+							return true;
+						} else if ('city' === $k && $v !== $shipping_city) {
 							return true;
 						}
 
@@ -340,7 +347,9 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 				$error_msg = Text::error_invalid_postcode($shipping_postcode);
 			} else {
 				try {
-					$options_array = $this->fetch_pickup_point_options($shipping_postcode, $shipping_address, $shipping_country, implode(',', $shipping_method_providers));
+					$options_array = $this->fetch_pickup_point_options(
+						$shipping_postcode, $shipping_address,
+						$shipping_country, $shipping_city, $shipping_method_providers);
 				} catch (\Exception $e) {
 					$options_array = false;
 
@@ -453,7 +462,8 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			);
 		}
 
-		private function fetch_pickup_point_options( $shipping_postcode, $shipping_address, $shipping_country, $shipping_method_provider) {
+		private function fetch_pickup_point_options( $shipping_postcode, $shipping_address, $shipping_country, $shipping_city, $shipping_method_providers) {
+			$shipping_method_provider = implode(',', $shipping_method_providers['services']);
 			$pickup_point = WC()->session->get(str_replace('wc_', 'woo_', $this->core->prefix) . '_pickup_point');
 			if (null != $pickup_point && isset($pickup_point['custom_address'])) {
 				$custom_address = $pickup_point['custom_address'];
@@ -461,10 +471,23 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 				$custom_address = false;
 			}
 
+			$types = $shipping_method_providers['types'];
+			$type = '';
+			if (!isset($types['pickup_points']) && isset($types['store_points'])) {
+				$type = 'STORE';
+			}
+			else if (isset($types['pickup_points']) && !isset($types['store_points'])) {
+				$type = '!STORE';
+			}
+			
 			if ($custom_address) {
-				$pickup_point_data = $this->get_pickup_points_by_free_input($custom_address, $shipping_method_provider);
+				$pickup_point_data = $this->get_pickup_points_by_free_input(
+					$custom_address, $shipping_country, $shipping_method_provider, $type);
 			} else {
-				$pickup_point_data = $this->get_pickup_points($shipping_postcode, $shipping_address, $shipping_country, $shipping_method_provider);
+				$pickup_point_data = $this->get_pickup_points(
+					$shipping_postcode, $shipping_address,
+					$shipping_country, $shipping_city,
+					$shipping_method_provider, $type);
 			}
 
 			return $this->process_pickup_points_to_option_array($pickup_point_data);
@@ -488,12 +511,12 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 							. ' (' . $pickup_point['streetAddress'] . ')';
 
 					if (!empty($serviceProvider)) {
-					    $pickup_point_value = $serviceProvider . ': ' . $pickup_point_value;
+						$pickup_point_value = $serviceProvider . ': ' . $pickup_point_value;
 					}
 
 					$options_array[$pickup_point_key] = array(
 						'text' => $pickup_point_value,
-					    'is_private' => 'PRIVATE_LOCKER' === $type,
+						'is_private' => 'PRIVATE_LOCKER' === $type,
 					);
 				}
 			}
@@ -559,8 +582,8 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			}
 		}
 
-		public function get_pickup_points( $postcode, $street_address = null, $country = null, $service_provider = null) {
-			$pickup_point_data = $this->api->getPickupPoints(trim($postcode), trim($street_address), trim($country), $service_provider);
+		public function get_pickup_points( $postcode, $street_address = null, $country = null, $city = null, $service_provider = null, $type = null) {
+			$pickup_point_data = $this->api->getPickupPoints(trim($postcode), trim($street_address), trim($country), trim($city), $service_provider, $type);
 			if (false === $pickup_point_data) {
 				throw new \Exception(Text::error_pickup_point_generic());
 			}
@@ -572,8 +595,8 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			return $pickup_point_data;
 		}
 
-		public function get_pickup_points_by_free_input( $input, $service_provider = null) {
-			$pickup_point_data = $this->api->getPickupPointsByText(trim($input), $service_provider);
+		public function get_pickup_points_by_free_input( $input, $shipping_country, $service_provider = null, $type = null) {
+		    $pickup_point_data = $this->api->getPickupPointsByText(trim($input), trim($shipping_country), $service_provider, $type);
 			if (false === $pickup_point_data) {
 				throw new \Exception(Text::error_pickup_point_generic());
 			}
