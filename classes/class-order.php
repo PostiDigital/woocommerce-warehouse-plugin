@@ -422,6 +422,11 @@ class Order {
 			'rows' => $order_items
 		);
 
+		$note = $_order->get_customer_note();
+		if (!empty($note)) {
+			$order['comments'] = array(array('type' => 'pickingNote', 'value' => $note));
+		}
+
 		if ($additional_services) {
 			$order['additionalServices'] = $additional_services;
 		}
