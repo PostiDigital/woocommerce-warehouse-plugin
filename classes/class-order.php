@@ -5,62 +5,62 @@ namespace Woo_Posti_Warehouse;
 defined('ABSPATH') || exit;
 
 class Order {
-
-	private $orderStatus = false;
-	private $addTracking = false;
-	private $api;
-	private $logger;
-	private $product;
-	private $status_mapping;
-
-	public function __construct( Api $api, Logger $logger, Product $product, $addTracking = false) {
-		$this->api = $api;
-		$this->logger = $logger;
-		$this->product = $product;
-		$this->addTracking = $addTracking;
-		
-		$statuses = array();
-		$statuses['Delivered'] = 'completed';
-		$statuses['Accepted'] = 'processing';
-		$statuses['Submitted'] = 'processing';
-		$statuses['Error'] = 'failed';
-		$statuses['Cancelled'] = 'cancelled';
-		$this->status_mapping = $statuses;
-		
-		//on order status change
-		add_action('woocommerce_order_status_changed', array($this, 'posti_check_order'), 10, 3);
-		//api tracking columns
-		add_filter('manage_edit-shop_order_columns', array($this, 'posti_tracking_column'));
-		add_action('manage_posts_custom_column', array($this, 'posti_tracking_column_data'));
-
-		add_filter( 'woocommerce_order_item_display_meta_key', array($this, 'change_metadata_title_for_order_shipping_method'), 20, 3 );
-
-		if ($this->addTracking) {
-			add_action('woocommerce_email_order_meta', array($this, 'addTrackingToEmail'), 10, 4);
-		}
-		
-	}
-
-	public function change_metadata_title_for_order_shipping_method( $key, $meta, $item) {
-		if ('warehouse_pickup_point' === $meta->key) {
-			$key = Text::pickup_point_title();
-		}
-	 
-		return $key;
-	}
-
-	public function getOrderStatus( $order_id) {
-		$order_data = $this->getOrder($order_id);
-		if (!$order_data) {
-			return Text::order_not_placed();
-		}
-		$this->orderStatus = $order_data['status']['value'];
-		return $order_data['status']['value'];
-	}
-
-	public function getOrderActionButton() {
-		if (!$this->orderStatus) {
-			?>
+    
+    private $orderStatus = false;
+    private $addTracking = false;
+    private $api;
+    private $logger;
+    private $product;
+    private $status_mapping;
+    
+    public function __construct( Api $api, Logger $logger, Product $product, $addTracking = false) {
+        $this->api = $api;
+        $this->logger = $logger;
+        $this->product = $product;
+        $this->addTracking = $addTracking;
+        
+        $statuses = array();
+        $statuses['Delivered'] = 'completed';
+        $statuses['Accepted'] = 'processing';
+        $statuses['Submitted'] = 'processing';
+        $statuses['Error'] = 'failed';
+        $statuses['Cancelled'] = 'cancelled';
+        $this->status_mapping = $statuses;
+        
+        //on order status change
+        add_action('woocommerce_order_status_changed', array($this, 'posti_check_order'), 10, 3);
+        //api tracking columns
+        add_filter('manage_edit-shop_order_columns', array($this, 'posti_tracking_column'));
+        add_action('manage_posts_custom_column', array($this, 'posti_tracking_column_data'));
+        
+        add_filter( 'woocommerce_order_item_display_meta_key', array($this, 'change_metadata_title_for_order_shipping_method'), 20, 3 );
+        
+        if ($this->addTracking) {
+            add_action('woocommerce_email_order_meta', array($this, 'addTrackingToEmail'), 10, 4);
+        }
+        
+    }
+    
+    public function change_metadata_title_for_order_shipping_method( $key, $meta, $item) {
+        if ('warehouse_pickup_point' === $meta->key) {
+            $key = Text::pickup_point_title();
+        }
+        
+        return $key;
+    }
+    
+    public function getOrderStatus( $order_id) {
+        $order_data = $this->getOrder($order_id);
+        if (!$order_data) {
+            return Text::order_not_placed();
+        }
+        $this->orderStatus = $order_data['status']['value'];
+        return $order_data['status']['value'];
+    }
+    
+    public function getOrderActionButton() {
+        if (!$this->orderStatus) {
+            ?>
 			<button type = "button" class="button button-posti" id = "posti-order-btn" name="posti_order_action"  onclick="posti_order_change(this);" value="place_order"><?php echo esc_html(Text::order_place()); ?></button>
 			<?php
 		}
@@ -104,8 +104,15 @@ class Order {
 			return [ 'error' => 'ERROR: Shipping method not configured.' ];
 		}
 
+		$data = null;
 		$order_id = (string) $order->get_id();
-		$data = $this->prepare_posti_order($order_id, $order, $order_services);
+		try {
+			$data = $this->prepare_posti_order($order_id, $order, $order_services);
+		} catch (\Exception $e) {
+			$this->logger->log('error', $e->getMessage());
+			return [ 'error' => $e->getMessage() ];
+		}
+		
 		$result = $this->api->addOrder($data);
 		$status = $this->api->getLastStatus();
 
@@ -310,7 +317,15 @@ class Order {
 		return $reference;
 	}
 
-	private function prepare_posti_order( $posti_order_id, &$_order, &$order_services) {
+	private function prepare_posti_order($posti_order_id, &$_order, &$order_services) {
+		$shipping_phone = $_order->get_shipping_phone();
+		$shipping_email = get_post_meta($_order->get_id(), '_shipping_email', true);
+		$phone = !empty($shipping_phone) ? $shipping_phone : $_order->get_billing_phone();
+		$email = !empty($shipping_email) ? $shipping_email : $_order->get_billing_email();
+		if (empty($phone) && empty($email)) {
+			throw new \Exception('ERROR: Email and phone are missing.');
+		}
+		
 		$additional_services = [];
 		foreach ($order_services['additional_services'] as $_service => $_service_data) {
 			$additional_services[] = ['serviceCode' => (string) $_service];
@@ -359,10 +374,6 @@ class Order {
 			}
 		}
 		
-		$shipping_phone = $_order->get_shipping_phone();
-		$shipping_email = get_post_meta($_order->get_id(), '_shipping_email', true);
-		$phone = !empty($shipping_phone) ? $shipping_phone : $_order->get_billing_phone();
-		$email = !empty($shipping_email) ? $shipping_email : $_order->get_billing_email();
 		$order = array(
 			'externalId' => (string) $posti_order_id,
 			'orderDate' => date('Y-m-d\TH:i:s.vP', strtotime($_order->get_date_created()->__toString())),

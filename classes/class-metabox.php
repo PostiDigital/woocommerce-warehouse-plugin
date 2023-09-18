@@ -42,7 +42,7 @@ class Metabox {
 			</div>
 			<?php if ($this->error) : ?>
 			<div>
-				<?php echo esc_html($this->error); ?>
+				<b style="color: red"><?php echo esc_html($this->error); ?></b>
 			</div>
 			<?php endif; ?>
 		</div>
