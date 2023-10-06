@@ -44,7 +44,14 @@ class Product {
 	
 	public function custom_columns_show( $column, $product_id) {
 		if ('warehouse' === $column) {
-			echo esc_html(get_post_meta($product_id, '_posti_wh_warehouse', true));
+			$externalId = get_post_meta($product_id, '_posti_wh_warehouse', true);
+			if (empty($externalId)) {
+				echo '';
+			}
+			else {
+				$warehouses = $this->api->getWarehouses();
+				echo esc_html($this->get_warehouse_name($warehouses, $externalId));
+			}
 		}
 	}
 	
@@ -62,25 +69,25 @@ class Product {
 		
 		if ('_posti_wh_bulk_actions_publish_products' === $action
 			|| '_posti_wh_bulk_actions_remove_products' === $action) {
-				
-				$cnt_fail = 0;
+
+			$cnt_fail = 0;
 			if ('_posti_wh_bulk_actions_publish_products' === $action) {
 				$warehouse = isset($_REQUEST['_posti_wh_warehouse_bulk_publish']) ? sanitize_text_field($_REQUEST['_posti_wh_warehouse_bulk_publish']) : null;
 				if (!empty($warehouse)) {
 					$cnt_fail = $this->handle_products($post_ids, $warehouse);
 				}
-					
+				
 			} elseif ('_posti_wh_bulk_actions_remove_products' === $action) {
 				$cnt_fail = $this->handle_products($post_ids, '--delete');
-					
-			}
 				
-				$redirect_to = add_query_arg(array(
-					'products_total' => count($post_ids),
-					'products_fail' => $cnt_fail), $redirect_to);
-		}
+			}
 			
-			return $redirect_to;
+			$redirect_to = add_query_arg(array(
+				'products_total' => count($post_ids),
+				'products_fail' => $cnt_fail), $redirect_to);
+		}
+		
+		return $redirect_to;
 	}
 	
 	public function woocom_simple_product_ean_field() {
@@ -827,17 +834,25 @@ class Product {
 	}
 	
 	public function get_stock_type( $warehouses, $product_warehouse) {
-		$type = 'Not_in_stock';
-		if (!empty($product_warehouse)) {
+	    return $this->get_warehouse_property($warehouses, $product_warehouse, 'catalogType', 'Not_in_stock');
+	}
+	
+	public function get_warehouse_name( $warehouses, $product_warehouse) {
+		return $this->get_warehouse_property($warehouses, $product_warehouse, 'catalogName', '');
+	}
+	
+	private function get_warehouse_property( $warehouses, $product_warehouse, $property, $defaultValue) {
+		$result = $defaultValue;
+		if (!empty($warehouses) && !empty($product_warehouse)) {
 			foreach ($warehouses as $warehouse) {
 				if ($warehouse['externalId'] === $product_warehouse) {
-					$type = $warehouse['catalogType'];
+					$result = $warehouse[$property];
 					break;
 				}
 			}
 		}
-
-		return $type;
+		
+		return $result;
 	}
 	
 	private function get_retailer_id( $warehouses, $product_warehouse) {
