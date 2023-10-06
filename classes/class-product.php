@@ -503,6 +503,12 @@ class Product {
 				'width' => round(wc_get_dimension($width, 'm'), 3),
 				'height' => round(wc_get_dimension($height, 'm'), 3),
 			);
+			
+			$image_id = isset($variation['image_id']) ? $variation['image_id'] : null;
+			$image_url = !empty($image_id) ? wp_get_attachment_image_url($image_id, 'full') : null;
+			if (!empty($image_url)) {
+			    $product['images'] = [ array('url' => $image_url) ];
+			}
 
 			$product_ids_map[$variation_product_id] = $post_id;
 			$product_ids_map['VAR-' . $variation_product_id] = $variation_post_id;
@@ -563,6 +569,12 @@ class Product {
 			'width' => !empty($width) ? round(wc_get_dimension($width, 'm'), 3) : null,
 			'height' => !empty($height) ? round(wc_get_dimension($height, 'm'), 3) : null
 		);
+
+		$image_id = $_product->get_image_id();
+		$image_url = !empty($image_id) ? wp_get_attachment_image_url($image_id, 'full') : null;
+		if (!empty($image_url)) {
+			$product['images'] = [ array('url' => $image_url) ];
+		}
 
 		$product_ids_map[$product_id] = $post_id;
 		if (!empty($product_warehouse) && $can_add_balances) {
@@ -834,7 +846,7 @@ class Product {
 	}
 	
 	public function get_stock_type( $warehouses, $product_warehouse) {
-	    return $this->get_warehouse_property($warehouses, $product_warehouse, 'catalogType', 'Not_in_stock');
+		return $this->get_warehouse_property($warehouses, $product_warehouse, 'catalogType', 'Not_in_stock');
 	}
 	
 	public function get_warehouse_name( $warehouses, $product_warehouse) {
