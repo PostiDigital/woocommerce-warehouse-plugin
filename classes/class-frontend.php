@@ -464,13 +464,6 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 
 		private function fetch_pickup_point_options( $shipping_postcode, $shipping_address, $shipping_country, $shipping_city, $shipping_method_providers) {
 			$shipping_method_provider = implode(',', $shipping_method_providers['services']);
-			$pickup_point = WC()->session->get(str_replace('wc_', 'woo_', $this->core->prefix) . '_pickup_point');
-			if (null != $pickup_point && isset($pickup_point['custom_address'])) {
-				$custom_address = $pickup_point['custom_address'];
-			} else {
-				$custom_address = false;
-			}
-
 			$types = $shipping_method_providers['types'];
 			$type = '';
 			if (!isset($types['pickup_points']) && isset($types['store_points'])) {
@@ -479,18 +472,49 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			else if (isset($types['pickup_points']) && !isset($types['store_points'])) {
 				$type = '!STORE';
 			}
+
+			$pickup_point = WC()->session->get(str_replace('wc_', 'woo_', $this->core->prefix) . '_pickup_point');
+			$custom_address = isset($pickup_point) && isset($pickup_point['custom_address']) ? $pickup_point['custom_address'] : false;
+
+			$pickup_point_data = $this->fetch_pickup_point_option_array(
+				$shipping_postcode, $shipping_address,
+				$shipping_country, $shipping_city,
+				$shipping_method_provider, $type,
+				$custom_address);
+			if (empty($pickup_point_data) && !empty($shipping_city) && 'STORE' === $type) {
+				$pickup_point_data = $this->fetch_pickup_point_option_array(
+					$shipping_postcode, $shipping_address,
+					$shipping_country, null,
+					$shipping_method_provider, $type,
+					$custom_address);
+			}
+
+			if (false === $pickup_point_data) {
+				throw new \Exception(Text::error_pickup_point_generic());
+			}
 			
+			if (empty($pickup_point_data)) {
+				throw new \Exception(Text::error_pickup_point_not_found());
+			}
+
+			return $this->process_pickup_points_to_option_array($pickup_point_data);
+		}
+		
+		private function fetch_pickup_point_option_array(
+			$shipping_postcode, $shipping_address,
+			$shipping_country, $shipping_city,
+			$shipping_method_provider, $type,
+			$custom_address) {
+
 			if ($custom_address) {
-				$pickup_point_data = $this->get_pickup_points_by_free_input(
+				return $this->get_pickup_points_by_free_input(
 					$custom_address, $shipping_country, $shipping_method_provider, $type);
 			} else {
-				$pickup_point_data = $this->get_pickup_points(
+				return $this->get_pickup_points(
 					$shipping_postcode, $shipping_address,
 					$shipping_country, $shipping_city,
 					$shipping_method_provider, $type);
 			}
-
-			return $this->process_pickup_points_to_option_array($pickup_point_data);
 		}
 
 		private function process_pickup_points_to_option_array( $pickup_points) {
@@ -583,29 +607,11 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 		}
 
 		public function get_pickup_points( $postcode, $street_address = null, $country = null, $city = null, $service_provider = null, $type = null) {
-			$pickup_point_data = $this->api->getPickupPoints(trim($postcode), trim($street_address), trim($country), trim($city), $service_provider, $type);
-			if (false === $pickup_point_data) {
-				throw new \Exception(Text::error_pickup_point_generic());
-			}
-
-			if (empty($pickup_point_data)) {
-				throw new \Exception(Text::error_pickup_point_not_found());
-			}
-
-			return $pickup_point_data;
+			return $this->api->getPickupPoints(trim($postcode), trim($street_address), trim($country), trim($city), $service_provider, $type);
 		}
 
 		public function get_pickup_points_by_free_input( $input, $shipping_country, $service_provider = null, $type = null) {
-		    $pickup_point_data = $this->api->getPickupPointsByText(trim($input), trim($shipping_country), $service_provider, $type);
-			if (false === $pickup_point_data) {
-				throw new \Exception(Text::error_pickup_point_generic());
-			}
-
-			if (empty($pickup_point_data)) {
-				throw new \Exception(Text::error_pickup_point_not_found());
-			}
-
-			return $pickup_point_data;
+			return $this->api->getPickupPointsByText(trim($input), trim($shipping_country), $service_provider, $type);
 		}
 
 		private function add_prefix( $name) {
