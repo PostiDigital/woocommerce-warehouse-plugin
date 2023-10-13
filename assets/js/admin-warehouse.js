@@ -78,15 +78,14 @@ jQuery(function ($) {
                         var whs = JSON.parse(response);
                         if (whs.length > 0) {
                             options.append('<option value="">Select warehouse</option>');
+                            $.each(whs, function () {
+                                options.append('<option value="' + this.value + '">' + this.name + '</option>');
+                            });
                         }
-                        
-                        $.each(whs, function () {
-                            options.append('<option value="' + this.value + '">' + this.name + '</option>');
-                        });
-                        
-                        if (whs.length === 0) {
+                        else {
                             options.append('<option value="">Not configured</option>');
                         }
+                        
                     }).fail(function () {
                     }).always(function () {
                         //$('#posti_wh_tab').removeClass('loading');
@@ -116,7 +115,7 @@ jQuery(function ($) {
                 
                 var params = new URLSearchParams(window.location.search);
                 if (params.has('developer')) {
-					data['developer'] = 'true';
+                    data['developer'] = 'true';
                 }
                 $.post($('#posti_migration_url').val(), data, function (response) {
                     var result = response ? JSON.parse(response) : null;
