@@ -76,7 +76,7 @@ jQuery(function ($) {
                     $.post(woocommerce_admin_meta_boxes.ajax_url, data, function (response) {
                         var options = $("#_posti_wh_warehouse_bulk_publish");
                         var whs = JSON.parse(response);
-                        if (whs.length !== 1) {
+                        if (whs.length > 0) {
                             options.append('<option value="">Select warehouse</option>');
                         }
                         
@@ -84,8 +84,8 @@ jQuery(function ($) {
                             options.append('<option value="' + this.value + '">' + this.name + '</option>');
                         });
                         
-                        if (whs.length === 1) {
-                            options.hide();
+                        if (whs.length === 0) {
+                            options.append('<option value="">Not configured</option>');
                         }
                     }).fail(function () {
                     }).always(function () {
