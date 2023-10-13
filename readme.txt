@@ -1,4 +1,4 @@
-=== Posti Shipping ===
+=== Posti Warehouse ===
 Contributors: pampyras, markakk, suhhomi1
 Tags: woocommerce, warehouse, posti
 Requires at least: 5.0
