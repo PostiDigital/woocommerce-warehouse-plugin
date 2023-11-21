@@ -333,8 +333,8 @@ class Product {
 
 			$products_obsolete = $this->get_products_for_removal($product_id_diffs, $products, $product_ids_map, $warehouses);
 			if (count($products_obsolete) > 0) {
-			    //$errors = $this->api->deleteInventory($products_obsolete); // delete is more correct than update to EOS below
-			    $errors = $this->api->putInventory($products_obsolete);
+				//$errors = $this->api->deleteInventory($products_obsolete); // delete is more correct than update to EOS below
+				$errors = $this->api->putInventory($products_obsolete);
 				if (false !== $errors) {
 					$cnt = count($products_obsolete);
 					for ($i = 0; $i < $cnt; $i++) {
@@ -508,7 +508,7 @@ class Product {
 			$image_id = isset($variation['image_id']) ? $variation['image_id'] : null;
 			$image_url = !empty($image_id) ? wp_get_attachment_image_url($image_id, 'full') : null;
 			if (!empty($image_url)) {
-			    $product['images'] = [ array('url' => $image_url) ];
+				$product['images'] = [ array('url' => $image_url) ];
 			}
 
 			$product_ids_map[$variation_product_id] = $post_id;
