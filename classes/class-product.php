@@ -333,7 +333,8 @@ class Product {
 
 			$products_obsolete = $this->get_products_for_removal($product_id_diffs, $products, $product_ids_map, $warehouses);
 			if (count($products_obsolete) > 0) {
-				$errors = $this->api->deleteInventory($products_obsolete);
+			    //$errors = $this->api->deleteInventory($products_obsolete); // delete is more correct than update to EOS below
+			    $errors = $this->api->putInventory($products_obsolete); // delete is more correct than update to EOS below
 				if (false !== $errors) {
 					$cnt = count($products_obsolete);
 					for ($i = 0; $i < $cnt; $i++) {
@@ -602,7 +603,7 @@ class Product {
 
 				$product_warehouse = get_post_meta($diff['id'], '_posti_wh_warehouse', true);
 				if ($this->is_warehouse_supports_add_remove($warehouses, $product_warehouse)) {
-					$product = array('externalId' => $product_id);
+					$product = array('externalId' => $product_id, 'status' => 'EOS');
 					array_push($products_obsolete, array('product' => $product));
 				}
 			}
