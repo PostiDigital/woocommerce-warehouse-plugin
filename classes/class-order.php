@@ -289,8 +289,6 @@ class Order {
 		if ($add_cod_to_additional_services) {
 			$additional_services['3101'] = array(
 				'amount' => $order->get_total(),
-				'account' => $settings['cod_iban'],
-				'codbic' => $settings['cod_bic'],
 				'reference' => $this->calculate_reference($order->get_id()),
 			);
 		}
