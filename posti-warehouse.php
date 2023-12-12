@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name: Posti Warehouse
- * Version: 2.2.1
+ * Version: 2.2.2
  * Description: Provides integration to Posti warehouse and dropshipping services.
  * Author: Posti
  * Author URI: https://www.posti.fi/
@@ -10,8 +10,8 @@
  * Domain Path: /languages/
  * License: GPL v3 or later
  *
- * WC requires at least: 3.4
- * WC tested up to: 6.2.2
+ * WC requires at least: 5.0
+ * WC tested up to: 6.4.2
  *
  * License: GNU General Public License v3.0
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html

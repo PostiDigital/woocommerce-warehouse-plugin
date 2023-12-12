@@ -95,6 +95,7 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile addtional service is added to order/delivery. 
 
 ## Version history
+- 2.2.2: curl dependency replaced with wp_remote_* functions
 - 2.2.1: Update product status to EOS ("End Of Sale") when removing from warehouse.
 - 2.2.0:
     - Changed Warehouse column to show warehouse name instead of code.

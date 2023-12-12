@@ -134,10 +134,8 @@ class Core {
 	}
 
 	public function posti_wh_admin_styles( $hook) {
-		
-		wp_enqueue_style( 'select2-css', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css', array(), '4.1.0-rc.0');
-		wp_enqueue_script( 'select2-js', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js', 'jquery', '4.1.0-rc.0');
-	
+		wp_enqueue_style('select2-css', plugins_url('assets/css/select2.min.css', dirname(__FILE__)), [], '4.1.0-rc.0');
+		wp_enqueue_script('select2-js', plugins_url('assets/js/select2.min.js', dirname(__FILE__)), 'jquery', '4.1.0-rc.0');
 		wp_enqueue_style('posti_wh_admin_style', plugins_url('assets/css/admin-warehouse-settings.css', dirname(__FILE__)), [], '1.0');
 		wp_enqueue_script('posti_wh_admin_script', plugins_url('assets/js/admin-warehouse.js', dirname(__FILE__)), 'jquery', '1.2');
 	}

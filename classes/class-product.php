@@ -783,7 +783,7 @@ class Product {
 		$product_warehouse = get_post_meta($main_id, '_posti_wh_warehouse', true);
 		if (!empty($product_warehouse)) {
 			if (isset($balance['quantity']) && $product_warehouse === $balance['catalogExternalId']) {
-				$totalStock += $balance['quantity'];
+				$totalStock = $balance['quantity'];
 				$total_stock_old = $_product->get_stock_quantity();
 				if (!isset($total_stock_old) || $total_stock_old != $totalStock) {
 					$_product->set_stock_quantity($totalStock);

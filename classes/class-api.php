@@ -13,7 +13,7 @@ class Api {
 	private $logger;
 	private $last_status = false;
 	private $token_option = 'posti_wh_api_auth';
-	private $user_agent = 'woo-wh-client/2.2.1';
+	private $user_agent = 'woo-wh-client/2.2.2';
 
 	public function __construct( Logger $logger, array &$options) {
 		$this->logger = $logger;
@@ -57,8 +57,8 @@ class Api {
 		}
 		return false;
 	}
-	
-	private function ApiCall( $url, $data = '', $action = 'GET') {
+
+	private function ApiCall($url, $data = '', $method = 'GET') {
 		if (!$this->token) {
 			$token_data = get_option($this->token_option);			
 			if (!$token_data || isset($token_data['expires']) && $token_data['expires'] < time()) {
@@ -70,44 +70,42 @@ class Api {
 				return false;
 			}
 		}
-		
-		$env = $this->test ? 'TEST ': '';
-		$curl = curl_init();
-		$header = array();
 
-		$header[] = 'Authorization: Bearer ' . $this->token;
-		$payload = null;
-		if ('POST' == $action || 'PUT' == $action || 'DELETE' == $action) {
-			$payload = json_encode($data);
+		$request_args = array(
+			'method' => $method,
+			'user-agent' => $this->user_agent,
+			'timeout' => 30
+		);
 
-			$header[] = 'Content-Type: application/json';
-			$header[] = 'Content-Length: ' . strlen($payload);
-			if ('POST' == $action) {
-				curl_setopt($curl, CURLOPT_POST, 1);
-			} else {
-				curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $action);
-			}
-			curl_setopt($curl, CURLOPT_POSTFIELDS, $payload);
-		} elseif ('GET' == $action && is_array($data)) {
-			$url .= '?' . http_build_query($data);
+		$headers = array(
+			'Authorization' => 'Bearer ' . $this->token
+		);
+
+		$request_body = null;
+		if ('POST' == $method || 'PUT' == $method || 'DELETE' == $method) {
+			$request_body = json_encode($data);
+			$request_args['body'] = $request_body;
+			$headers['Content-Type'] = 'application/json';
+			$headers['Content-Length'] = strlen($request_body);
+
+		} elseif ('GET' == $method && is_array($data)) {
+			$url = '?' . http_build_query($data);
 		}
-		
-		curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
-		curl_setopt($curl, CURLOPT_URL, $this->getBaseUrl() . $url);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($curl, CURLOPT_USERAGENT, $this->user_agent);
+		$request_args['headers'] = $headers;
 
-		$result = curl_exec($curl);
-		$http_status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+		$response = wp_remote_request($this->getBaseUrl() . $url, $request_args);
+		$response_body = wp_remote_retrieve_body($response);
+		$http_status = wp_remote_retrieve_response_code($response);
 		$this->last_status = $http_status;
 
+		$env = $this->test ? 'TEST ': '';
 		if ($http_status < 200 || $http_status >= 300) {
-			$this->logger->log('error', $env . "HTTP $http_status : $action request to $url" . ( isset($payload) ? " with payload:\r\n $payload" : '' ) . "\r\n\r\nand result:\r\n $result");
+			$this->logger->log('error', $env . "HTTP $http_status : $method request to $url" . ( isset($request_body) ? " with payload:\r\n $request_body" : '' ) . "\r\n\r\nand result:\r\n $response_body");
 			return false;
 		}
-		
-		$this->logger->log('info', $env . "HTTP $http_status : $action request to $url" . ( isset($payload) ? " with payload\r\n $payload" : '' ));
-		return json_decode($result, true);
+
+		$this->logger->log('info', $env . "HTTP $http_status : $method request to $url" . ( isset($request_body) ? " with payload\r\n $request_body" : '' ));
+		return json_decode($response_body, true);
 	}
 
 	public function getWarehouses() {
@@ -240,31 +238,22 @@ class Api {
 		return 'https://ecom-api.posti.com';
 	}
 
-	private function createToken( $url, $user, $secret) {
-		$headers = array();
-		$headers[] = 'Accept: application/json';
-		$headers[] = 'Authorization: Basic ' . base64_encode("$user:$secret");
-
-		$options = array(
-			CURLOPT_POST => 0,
-			CURLOPT_HEADER => 0,
-			CURLOPT_URL => $url,
-			CURLOPT_FRESH_CONNECT => 1,
-			CURLOPT_RETURNTRANSFER => 1,
-			CURLOPT_FORBID_REUSE => 1,
-			CURLOPT_USERAGENT => $this->user_agent,
-			CURLOPT_TIMEOUT => 30,
-			CURLOPT_HTTPHEADER => $headers,
-
+	private function createToken($url, $user, $secret) {
+		$headers = array(
+			'Accept' => 'application/json',
+			'Authorization' => 'Basic ' . base64_encode("$user:$secret")
 		);
 
-		$ch = curl_init();
-		curl_setopt_array($ch, $options);
+		$response = wp_remote_request(
+			$url,
+			array(
+				'method' => 'GET',
+				'user-agent' => $this->user_agent,
+				'headers' => $headers,
+				'timeout' => 30
+			)
+		);
 
-		$response = curl_exec($ch);
-
-		curl_close($ch);
-
-		return json_decode($response);
+		return json_decode(wp_remote_retrieve_body($response));
 	}
 }
