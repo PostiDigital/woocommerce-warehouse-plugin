@@ -89,7 +89,7 @@ class Api {
 			$headers['Content-Length'] = strlen($request_body);
 
 		} elseif ('GET' == $method && is_array($data)) {
-			$url = '?' . http_build_query($data);
+		    $url = $url . '?' . http_build_query($data);
 		}
 		$request_args['headers'] = $headers;
 
