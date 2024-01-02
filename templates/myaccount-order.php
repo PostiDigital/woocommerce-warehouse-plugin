@@ -5,6 +5,7 @@
  * Variables:
  *   (string) $pickup_point - Selected pickup point
  ***************************************************************/
+defined('ABSPATH') || exit;
 ?>
 
 <h2><?php esc_attr_e('Pickup point', 'posti-warehouse'); ?></h2>

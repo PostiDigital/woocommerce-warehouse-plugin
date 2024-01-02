@@ -13,7 +13,7 @@ class Api {
 	private $logger;
 	private $last_status = false;
 	private $token_option = 'posti_wh_api_auth';
-	private $user_agent = 'woo-wh-client/2.2.2';
+	private $user_agent = 'woo-wh-client/2.2.3';
 
 	public function __construct( Logger $logger, array &$options) {
 		$this->logger = $logger;
@@ -53,7 +53,7 @@ class Api {
 			$this->logger->log('info', 'Refreshed access token');
 			return $token_data->access_token;
 		} else {
-			$this->logger->log('error', 'Failed to get token for ' . $this->username . ', repsonse ' . json_encode($token_data));
+			$this->logger->log('error', 'Failed to get token for ' . $this->username . ', repsonse ' . wp_json_encode($token_data));
 		}
 		return false;
 	}
@@ -83,7 +83,7 @@ class Api {
 
 		$request_body = null;
 		if ('POST' == $method || 'PUT' == $method || 'DELETE' == $method) {
-			$request_body = json_encode($data);
+			$request_body = wp_json_encode($data);
 			$request_args['body'] = $request_body;
 			$headers['Content-Type'] = 'application/json';
 			$headers['Content-Length'] = strlen($request_body);
