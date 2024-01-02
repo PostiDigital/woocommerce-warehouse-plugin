@@ -182,7 +182,7 @@ class Product {
 				));
 			}
 		}
-		echo json_encode($warehouses_options);
+		echo wp_json_encode($warehouses_options);
 		die();
 	}
 	

@@ -8,6 +8,7 @@
  *   (array) $pickup - Pickup point field
  *   (array) $custom - Custom pickup point address field
  ***************************************************************/
+defined('ABSPATH') || exit;
 ?>
 
 <tr class="shipping-pickup-point">

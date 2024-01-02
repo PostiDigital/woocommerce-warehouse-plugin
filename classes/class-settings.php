@@ -471,7 +471,7 @@ class Settings {
 		}
 
 		if (self::is_test_mode() && !self::is_developer()) {
-			echo json_encode(array('testMode' => true));
+			echo wp_json_encode(array('testMode' => true));
 			exit();
 		}
 		
@@ -511,7 +511,7 @@ class Settings {
 		}
 		
 		$this->logger->log('info', 'Products migrated');
-		echo json_encode(array('result' => true));
+		echo wp_json_encode(array('result' => true));
 		exit();
 	}
 	
