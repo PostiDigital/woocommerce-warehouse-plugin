@@ -1,6 +1,6 @@
 <?php
 
-namespace Woo_Posti_Warehouse;
+namespace Posti_Warehouse;
 
 // Prevent direct access to the script
 use WC_Countries;
@@ -8,10 +8,10 @@ use WC_Shipping_Method;
 
 defined('ABSPATH') || exit;
 
-function warehouse_shipping_method() {
-	if (!class_exists('WarehouseShipping')) {
-		class WarehouseShipping extends \WC_Shipping_Method {
-
+function posti_warehouse_define_shipping_method() {
+	if (!class_exists('Posti_Warehouse_Shipping')) {
+		class Posti_Warehouse_Shipping extends \WC_Shipping_Method {
+			
 			public $is_loaded = false;
 			private $is_test = false;
 			private $debug = false;
@@ -19,21 +19,21 @@ function warehouse_shipping_method() {
 			private $delivery_service = 'WAREHOUSE';
 			private $logger;
 			private $options;
-
+			
 			public function __construct() {
-				$this->options = Settings::get();
-				$this->is_test = Settings::is_test($this->options);
-				$this->debug = Settings::is_debug($this->options);
-
-				$this->delivery_service = Settings::get_value($this->options, 'posti_wh_field_service');
-				$this->logger = new Logger();
+				$this->options = Posti_Warehouse_Settings::get();
+				$this->is_test = Posti_Warehouse_Settings::is_test($this->options);
+				$this->debug = Posti_Warehouse_Settings::is_debug($this->options);
+				
+				$this->delivery_service = Posti_Warehouse_Settings::get_value($this->options, 'posti_wh_field_service');
+				$this->logger = new Posti_Warehouse_Logger();
 				$this->logger->setDebug($this->debug);
-
-				$this->api = new Api($this->logger, $this->options);
-
+				
+				$this->api = new Posti_Warehouse_Api($this->logger, $this->options);
+				
 				$this->load();
 			}
-
+			
 			public function load() {
 				$this->id = 'posti_warehouse';
 				$this->method_title = 'Posti warehouse';
@@ -42,13 +42,13 @@ function warehouse_shipping_method() {
 				$this->supports = array(
 					'settings',
 				);
-
+				
 				$this->init();
-
+				
 				// Save settings in admin if you have any defined
 				add_action('woocommerce_update_options_shipping_' . $this->id, array($this, 'process_admin_options'));
 			}
-
+			
 			/**
 			 * Initialize Pakettikauppa shipping
 			 */
@@ -57,45 +57,52 @@ function warehouse_shipping_method() {
 				$this->title = 'Warehouse shipping';
 				$this->init_settings();
 			}
-
+			
 			public function process_admin_options() {
 				parent::process_admin_options();
-
-				$service_code = Settings::get_value($this->options, 'posti_wh_field_service');
+				
+				$service_code = Posti_Warehouse_Settings::get_value($this->options, 'posti_wh_field_service');
 				if (!empty($service_code) && $this->delivery_service != $service_code) {
 					$this->delivery_service = $service_code;
 					delete_transient('posti_warehouse_shipping_methods');
 				}
 			}
-
+			
 			public function validate_pickuppoints_field( $key, $value) {
 				$values = wp_json_encode($value);
 				return $values;
 			}
-
+			
 			public function generate_pickuppoints_html( $key, $value) {
 				$field_key = $this->get_field_key($key);
 				if ($this->get_option($key) !== '') {
 					$values = $this->get_option($key);
-
+					
 					if (is_string($values)) {
 						$values = json_decode($this->get_option($key), true);
 					}
 				} else {
 					$values = array();
 				}
-
+				
 				$all_shipping_methods = $this->services();
 				$user_lang = $this->get_user_language();
-
+				
 				if (empty($all_shipping_methods)) {
 					$all_shipping_methods = array();
 				}
-
+				
 				ob_start();
 				?>
 				<script>
-					function pkChangeOptions(elem, methodId) {
+					function posti_warehouse_shippingChangeOptionVisibility(elCheckbox) {
+						var elSection = document.getElementById(elCheckbox.name + '[options]');
+						if (elSection) {
+							elSection.style.display = (elCheckbox.checked == true) ? "block" : "none";
+						}
+					}
+
+					function posti_warehouse_shippingChangeOptions(elem, methodId) {
 
 						var strUser = elem.options[elem.selectedIndex].value;
 						var elements = document.getElementsByClassName('pk-services-' + methodId);
@@ -124,6 +131,11 @@ function warehouse_shipping_method() {
 							if (elem.options[elem.selectedIndex].getAttribute('data-hassp') == 'true')
 								servicePickupstoresElement.style.display = "block";
 						}
+						
+						var ppOptions = document.getElementsByClassName('posti-warehouse-pickup-point-checkbox');
+						for (var i = 0; i < ppOptions.length; ++i) {
+							posti_warehouse_shippingChangeOptionVisibility(ppOptions[i]);
+						}
 					}
 				</script>
 				<tr>
@@ -133,12 +145,12 @@ function warehouse_shipping_method() {
 							<hr>
 							<?php $zone = new \WC_Shipping_Zone($zone_raw['zone_id']); ?>
 							<h3>
-								<?php echo esc_html(Text::zone_name()); ?>: <?php echo esc_html($zone->get_zone_name()); ?>
+								<?php echo esc_html(Posti_Warehouse_Text::zone_name()); ?>: <?php echo esc_html($zone->get_zone_name()); ?>
 							</h3>
 							<p>
-								<?php echo esc_html(Text::zone_regions()); ?>: <?php echo esc_html($zone->get_formatted_location()); ?>
+								<?php echo esc_html(Posti_Warehouse_Text::zone_regions()); ?>: <?php echo esc_html($zone->get_formatted_location()); ?>
 							</p>
-							<h4><?php echo esc_html(Text::zone_shipping()); ?></h4>
+							<h4><?php echo esc_html(Posti_Warehouse_Text::zone_shipping()); ?></h4>
 							<?php foreach ($zone->get_shipping_methods() as $method_id => $shipping_method) : ?>
 								<?php if ('yes' === $shipping_method->enabled && 'posti_warehouse' !== $shipping_method->id && 'local_pickup' !== $shipping_method->id) : ?>
 									<?php
@@ -150,7 +162,7 @@ function warehouse_shipping_method() {
 									<table style="border-collapse: collapse;" border="0">
 										<th><?php echo esc_html($shipping_method->title); ?></th>
 										<td style="vertical-align: top;">
-											<select id="<?php echo esc_attr($method_id); ?>-select" name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][service]'; ?>" onchange="pkChangeOptions(this, '<?php echo esc_attr($method_id); ?>');">
+											<select id="<?php echo esc_attr($method_id); ?>-select" name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][service]'; ?>" onchange="posti_warehouse_shippingChangeOptions(this, '<?php echo esc_attr($method_id); ?>');">
 												<option value="__NULL__"><?php echo 'No shipping'; ?></option>  <?php //Issue: #171, was no echo ?>
 												<?php foreach ($all_shipping_methods as $service_id => $service_name) : ?>
 													<?php $has_pp = ( $this->service_has_pickup_points($service_id) ) ? true : false; ?>
@@ -176,14 +188,14 @@ function warehouse_shipping_method() {
 													<?php foreach ($additional_services as $additional_service) : ?>
 														<?php if (empty($additional_service->specifiers) || in_array($additional_service->code, array('3102'), true)) : ?>
 															<input type="hidden"
-																   name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($method_code) . '][additional_services][' . esc_attr($additional_service->code) . ']'; ?>"
-																   value="no">
+																	name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($method_code) . '][additional_services][' . esc_attr($additional_service->code) . ']'; ?>"
+																	value="no">
 															<p>
 																<label>
 																	<input type="checkbox"
-																		   name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($method_code) . '][additional_services][' . esc_attr($additional_service->code) . ']'; ?>"
-																		   value="yes" <?php echo ( !empty($values[$method_id][$method_code]['additional_services'][$additional_service->code]) && 'yes' === $values[$method_id][$method_code]['additional_services'][$additional_service->code] ) ? 'checked' : ''; ?>>
-																		   <?php echo esc_html(isset($additional_service->description[$user_lang]) ? $additional_service->description[$user_lang] : $additional_service->description['en']); ?>
+																			name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($method_code) . '][additional_services][' . esc_attr($additional_service->code) . ']'; ?>"
+																			value="yes" <?php echo ( !empty($values[$method_id][$method_code]['additional_services'][$additional_service->code]) && 'yes' === $values[$method_id][$method_code]['additional_services'][$additional_service->code] ) ? 'checked' : ''; ?>>
+																			<?php echo esc_html(isset($additional_service->description[$user_lang]) ? $additional_service->description[$user_lang] : $additional_service->description['en']); ?>
 																</label>
 															</p>
 														<?php endif; ?>
@@ -194,14 +206,24 @@ function warehouse_shipping_method() {
 												<?php if ($this->service_has_pickup_points($service_id)) : ?>
 													<div id="service-<?php echo esc_attr($method_id); ?>-<?php echo esc_attr($service_id); ?>-pickuppoints" class="pk-services-<?php echo esc_attr($method_id); ?>" style="display: none;">
 														<input type="hidden"
-															   name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($service_id) . '][pickuppoints]'; ?>" value="no">
+																name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($service_id) . '][pickuppoints]'; ?>" value="no">
 														<p>
 															<label>
-																<input type="checkbox"
-																	   name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($service_id) . '][pickuppoints]'; ?>"
-																	   value="yes" <?php echo ( ( !empty($values[$method_id][$service_id]['pickuppoints']) && 'yes' === $values[$method_id][$service_id]['pickuppoints'] ) || empty($values[$method_id][$service_id]['pickuppoints']) ) ? 'checked' : ''; ?>>
-																	   <?php echo esc_html(Text::pickup_points_title()); ?>
+																<input class="posti-warehouse-pickup-point-checkbox"
+																		type="checkbox"
+																		name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($service_id) . '][pickuppoints]'; ?>"
+																		value="yes" <?php echo ( ( !empty($values[$method_id][$service_id]['pickuppoints']) && 'yes' === $values[$method_id][$service_id]['pickuppoints'] ) || empty($values[$method_id][$service_id]['pickuppoints']) ) ? 'checked' : ''; ?>
+																		onclick="posti_warehouse_shippingChangeOptionVisibility(this)">
+																		<?php echo esc_html(Posti_Warehouse_Text::pickup_points_title()); ?>
 															</label>
+															<div id="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($service_id) . '][pickuppoints][options]'; ?>">
+																<label> - 
+																	<input type="checkbox"
+																			name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($service_id) . '][pickuppoints_hideoutdoors]'; ?>"
+																			value="yes" <?php echo ( ( !empty($values[$method_id][$service_id]['pickuppoints_hideoutdoors']) && 'yes' === $values[$method_id][$service_id]['pickuppoints_hideoutdoors'] )) ? 'checked' : ''; ?>>
+																			<?php echo esc_html(Posti_Warehouse_Text::pickup_points_hide_outdoor()); ?>
+																</label>
+															</div>
 														</p>
 													</div>
 												<?php endif; ?>
@@ -210,13 +232,13 @@ function warehouse_shipping_method() {
 												<?php if ($this->service_has_store_pickup($service_id)) : ?>
 													<div id="service-<?php echo esc_attr($method_id); ?>-<?php echo esc_attr($service_id); ?>-pickupstores" class="pk-services-<?php echo esc_attr($method_id); ?>" style="display: none;">
 														<input type="hidden"
-															   name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($service_id) . '][storepoints]'; ?>" value="no">
+																name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($service_id) . '][storepoints]'; ?>" value="no">
 														<p>
 															<label>
 																<input type="checkbox"
-																	   name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($service_id) . '][storepoints]'; ?>"
-																	   value="yes" <?php echo ( ( !empty($values[$method_id][$service_id]['storepoints']) && 'yes' === $values[$method_id][$service_id]['storepoints'] ) ) ? 'checked' : ''; ?>>
-																	   <?php echo esc_html(Text::store_pickup_title()); ?>
+																		name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($service_id) . '][storepoints]'; ?>"
+																		value="yes" <?php echo ( ( !empty($values[$method_id][$service_id]['storepoints']) && 'yes' === $values[$method_id][$service_id]['storepoints'] ) ) ? 'checked' : ''; ?>>
+																		<?php echo esc_html(Posti_Warehouse_Text::store_pickup_title()); ?>
 															</label>
 														</p>
 													</div>
@@ -224,7 +246,7 @@ function warehouse_shipping_method() {
 											<?php endforeach; ?>
 										</td>
 									</table>
-									<script>pkChangeOptions(document.getElementById("<?php echo esc_attr($method_id); ?>-select"), '<?php echo esc_attr($method_id); ?>');</script>
+									<script>posti_warehouse_shippingChangeOptions(document.getElementById("<?php echo esc_attr($method_id); ?>-select"), '<?php echo esc_attr($method_id); ?>');</script>
 								<?php endif; ?>
 							<?php endforeach; ?>
 						<?php endforeach; ?>
@@ -368,11 +390,11 @@ function warehouse_shipping_method() {
 	}
 }
 
-add_action('woocommerce_shipping_init', '\Woo_Posti_Warehouse\warehouse_shipping_method');
+add_action('woocommerce_shipping_init', '\Posti_Warehouse\posti_warehouse_define_shipping_method');
 
-function add_warehouse_shipping_method( $methods) {
-	$methods[] = '\Woo_Posti_Warehouse\WarehouseShipping';
+function posti_warehouse_add_shipping_method( $methods) {
+	$methods[] = '\Posti_Warehouse\Posti_Warehouse_Shipping';
 	return $methods;
 }
 
-add_filter('woocommerce_shipping_methods', '\Woo_Posti_Warehouse\add_warehouse_shipping_method');
+add_filter('woocommerce_shipping_methods', '\Posti_Warehouse\posti_warehouse_add_shipping_method');

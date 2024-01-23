@@ -1,10 +1,10 @@
 <?php
 
-namespace Woo_Posti_Warehouse;
+namespace Posti_Warehouse;
 
 defined('ABSPATH') || exit;
 
-class Api {
+class Posti_Warehouse_Api {
 
 	private $username = null;
 	private $password = null;
@@ -13,18 +13,18 @@ class Api {
 	private $logger;
 	private $last_status = false;
 	private $token_option = 'posti_wh_api_auth';
-	private $user_agent = 'woo-wh-client/2.2.3';
+	private $user_agent = 'woo-wh-client/2.2.4';
 
-	public function __construct( Logger $logger, array &$options) {
+	public function __construct(Posti_Warehouse_Logger $logger, array &$options) {
 		$this->logger = $logger;
-		$this->test = Settings::is_test($options);
+		$this->test = Posti_Warehouse_Settings::is_test($options);
 
 		if ($this->test) {
-			$this->username = Settings::get_value($options, 'posti_wh_field_username_test');
-			$this->password = Settings::get_value($options, 'posti_wh_field_password_test');
+			$this->username = Posti_Warehouse_Settings::get_value($options, 'posti_wh_field_username_test');
+			$this->password = Posti_Warehouse_Settings::get_value($options, 'posti_wh_field_password_test');
 		} else {
-			$this->username = Settings::get_value($options, 'posti_wh_field_username');
-			$this->password = Settings::get_value($options, 'posti_wh_field_password');
+			$this->username = Posti_Warehouse_Settings::get_value($options, 'posti_wh_field_username');
+			$this->password = Posti_Warehouse_Settings::get_value($options, 'posti_wh_field_password');
 		}
 	}
 	
@@ -89,7 +89,7 @@ class Api {
 			$headers['Content-Length'] = strlen($request_body);
 
 		} elseif ('GET' == $method && is_array($data)) {
-		    $url = $url . '?' . http_build_query($data);
+			$url = $url . '?' . http_build_query($data);
 		}
 		$request_args['headers'] = $headers;
 
@@ -199,7 +199,7 @@ class Api {
 		return $products;
 	}
 	
-	public function getPickupPoints( $postcode = null, $street_address = null, $country = null, $city = null, $service_code = null, $type = null) {
+	public function getPickupPoints($postcode = null, $street_address = null, $country = null, $city = null, $service_code = null, $type = null, $capability = null) {
 		if ((null == $postcode && null == $street_address)
 			|| ('' == trim($postcode) && '' == trim($street_address))) {
 			return array();
@@ -211,10 +211,11 @@ class Api {
 				. '&postOffice=' . urlencode($city)
 				. '&streetAddress=' . urlencode($street_address)
 				. '&country=' . urlencode($country)
-				. '&type=' . urlencode($type), '', 'GET');
+				. '&type=' . urlencode($type)
+				. '&capability=' . urlencode($capability), '', 'GET');
 	}
 
-	public function getPickupPointsByText( $query_text, $country, $service_code, $type = null) {
+	public function getPickupPointsByText($query_text, $country, $service_code, $type = null, $capability = null) {
 		if (null == $query_text || '' == trim($query_text)) {
 			return array();
 		}
@@ -223,7 +224,8 @@ class Api {
 				. '?serviceCode=' . urlencode($service_code)
 				. '&search=' . urlencode($query_text)
 				. '&country=' . urlencode($country)
-				. '&type=' . urlencode($type), '', 'GET');
+				. '&type=' . urlencode($type)
+				. '&capability=' . urlencode($capability), '', 'GET');
 	}
 	
 	public function migrate() {

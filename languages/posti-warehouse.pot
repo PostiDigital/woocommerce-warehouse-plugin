@@ -193,6 +193,9 @@ msgstr ""
 msgid "Pickup points"
 msgstr ""
 
+msgid "Hide outdoor pickup points"
+msgstr ""
+
 #: classes/class-text.php:40
 msgid "Place Order"
 msgstr ""

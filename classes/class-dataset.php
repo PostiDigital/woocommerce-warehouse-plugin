@@ -1,31 +1,31 @@
 <?php
 
-namespace Woo_Posti_Warehouse;
+namespace Posti_Warehouse;
 
 defined('ABSPATH') || exit;
 
-class Dataset {
+class Posti_Warehouse_Dataset {
 	public static function getStoreTypes() {
 		return array(
-			'Store' => Text::type_store(),
-			'Posti' => Text::type_warehouse(),
-			'Not_in_stock' => Text::type_none(),
-			'Catalog' => Text::type_dropshipping(),
+			'Store' => Posti_Warehouse_Text::type_store(),
+			'Posti' => Posti_Warehouse_Text::type_warehouse(),
+			'Not_in_stock' => Posti_Warehouse_Text::type_none(),
+			'Catalog' => Posti_Warehouse_Text::type_dropshipping(),
 		);
 	}
 
 	public static function getDeliveryTypes() {
 		return array(
-			'WAREHOUSE' => Text::type_warehouse(),
-			'DROPSHIPPING' => Text::type_dropshipping(),
+			'WAREHOUSE' => Posti_Warehouse_Text::type_warehouse(),
+			'DROPSHIPPING' => Posti_Warehouse_Text::type_dropshipping(),
 		);
 	}
 	
 	public static function getServicesTypes() {
 		return array(
-			'_posti_lq' => Text::feature_lq(),
-			'_posti_large' => Text::feature_large(),
-			'_posti_fragile' => Text::feature_fragile(),
+			'_posti_lq' => Posti_Warehouse_Text::feature_lq(),
+			'_posti_large' => Posti_Warehouse_Text::feature_large(),
+			'_posti_fragile' => Posti_Warehouse_Text::feature_fragile(),
 		);
 	}
 }

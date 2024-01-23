@@ -102,14 +102,14 @@ jQuery(function ($) {
     };
     attach_action_bulk_publish();
 
-    var attach_action_warehouse_products_migrate = function(){
+    var attach_action_migrate = function(){
         $(document).ready(function() {
             $('#posti_wh_migration_submit').on('click', function(e) {
                 var $this = $(this);
                 $this.prop('disabled', true);
                 $('#posti_wh_migration_test_mode_notice').hide();
                 var data = {
-                    action: 'warehouse_products_migrate',
+                    action: 'posti_warehouse_products_migrate',
                     security: $('#posti_migration_metabox_nonce').val(),
                 };
                 
@@ -134,5 +134,5 @@ jQuery(function ($) {
             }); 
         });
     };
-    attach_action_warehouse_products_migrate();
+    attach_action_migrate();
 });

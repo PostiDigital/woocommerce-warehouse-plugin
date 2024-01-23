@@ -1,15 +1,15 @@
 <?php
 
-namespace Woo_Posti_Warehouse;
+namespace Posti_Warehouse;
 
 defined('ABSPATH') || exit;
 
-class Product {
+class Posti_Warehouse_Product {
 	
 	private $api;
 	private $logger;
 	
-	public function __construct( Api $api, Logger $logger) {
+	public function __construct(Posti_Warehouse_Api $api, Posti_Warehouse_Logger $logger) {
 		
 		$this->api = $api;
 		$this->logger = $logger;
@@ -37,7 +37,7 @@ class Product {
 	}
 	
 	public function custom_columns_register( $columns) {
-		$columns['warehouse'] = Text::column_warehouse();
+		$columns['warehouse'] = Posti_Warehouse_Text::column_warehouse();
 		
 		return $columns;
 	}
@@ -56,8 +56,8 @@ class Product {
 	}
 	
 	public function bulk_actions_warehouse_products( $bulk_actions) {
-		$bulk_actions['_posti_wh_bulk_actions_publish_products'] = Text::action_publish_to_warehouse();
-		$bulk_actions['_posti_wh_bulk_actions_remove_products'] = Text::action_remove_from_warehouse();
+		$bulk_actions['_posti_wh_bulk_actions_publish_products'] = Posti_Warehouse_Text::action_publish_to_warehouse();
+		$bulk_actions['_posti_wh_bulk_actions_remove_products'] = Posti_Warehouse_Text::action_remove_from_warehouse();
 		
 		return $bulk_actions;
 	}
@@ -97,10 +97,10 @@ class Product {
 		woocommerce_wp_text_input(
 			array(
 				'id' => '_ean',
-				'label' => Text::field_ean(),
+				'label' => Posti_Warehouse_Text::field_ean(),
 				'placeholder' => '',
 				'desc_tip' => 'true',
-				'description' => Text::field_ean_caption()
+				'description' => Posti_Warehouse_Text::field_ean_caption()
 			)
 			);
 		echo '</div>';
@@ -113,7 +113,7 @@ class Product {
 		woocommerce_wp_text_input(
 			array(
 				'id' => '_wholesale_price',
-				'label' => Text::field_price(),
+				'label' => Posti_Warehouse_Text::field_price(),
 				'placeholder' => '',
 				'desc_tip' => 'true',
 				'type' => 'number',
@@ -121,7 +121,7 @@ class Product {
 					'step' => '0.01',
 					'min' => '0'
 				),
-				'description' => Text::field_price_caption()
+				'description' => Posti_Warehouse_Text::field_price_caption()
 			)
 			);
 		echo '</div>';
@@ -131,10 +131,10 @@ class Product {
 		woocommerce_wp_text_input(
 			array(
 				'id' => '_ean[' . $variation->ID . ']',
-				'label' => Text::field_ean(),
+				'label' => Posti_Warehouse_Text::field_ean(),
 				'placeholder' => '',
 				'desc_tip' => 'true',
-				'description' => Text::field_ean_caption(),
+				'description' => Posti_Warehouse_Text::field_ean_caption(),
 				'value' => get_post_meta($variation->ID, '_ean', true)
 			)
 			);
@@ -158,7 +158,7 @@ class Product {
 	
 	public function posti_wh_product_tab( $product_data_tabs) {
 		$product_data_tabs['posti-tab'] = array(
-			'label' => Text::company(),
+			'label' => Posti_Warehouse_Text::company(),
 			'target' => 'posti_wh_tab',
 		);
 		return $product_data_tabs;
@@ -196,8 +196,8 @@ class Product {
 			$product_warehouse = get_post_meta($post->ID, '_posti_wh_warehouse', true);
 			$type = $this->get_stock_type($warehouses, $product_warehouse);
 			if (!$type) {
-				$options = Settings::get();
-				$type = Settings::get_value($options, 'posti_wh_field_type');
+				$options = Posti_Warehouse_Settings::get();
+				$type = Posti_Warehouse_Settings::get_value($options, 'posti_wh_field_type');
 			}
 
 			$warehouses_options = array('' => 'Select warehouse');
@@ -212,8 +212,8 @@ class Product {
 					array(
 						'id' => '_posti_wh_stock_type',
 						'class' => 'select short posti-wh-select2',
-						'label' => Text::field_stock_type(),
-						'options' => Dataset::getSToreTypes(),
+						'label' => Posti_Warehouse_Text::field_stock_type(),
+					    'options' => Posti_Warehouse_Dataset::getSToreTypes(),
 						'value' => $type
 					)
 			);
@@ -222,7 +222,7 @@ class Product {
 					array(
 						'id' => '_posti_wh_warehouse',
 						'class' => 'select short posti-wh-select2',
-						'label' => Text::field_warehouse(),
+						'label' => Posti_Warehouse_Text::field_warehouse(),
 						'options' => $warehouses_options,
 						'value' => $product_warehouse
 					)
@@ -231,13 +231,13 @@ class Product {
 			woocommerce_wp_text_input(
 					array(
 						'id' => '_posti_wh_distribution',
-						'label' => Text::field_distributor(),
+						'label' => Posti_Warehouse_Text::field_distributor(),
 						'placeholder' => '',
 						'type' => 'text',
 					)
 			);
 
-			foreach (Dataset::getServicesTypes() as $id => $name) {
+			foreach (Posti_Warehouse_Dataset::getServicesTypes() as $id => $name) {
 				woocommerce_wp_checkbox(
 						array(
 							'id' => $id,
@@ -262,7 +262,7 @@ class Product {
 		$this->save_form_field('_ean', $post_id);
 		$this->save_form_field('_wholesale_price', $post_id);
 
-		foreach (Dataset::getServicesTypes() as $id => $name) {
+		foreach (Posti_Warehouse_Dataset::getServicesTypes() as $id => $name) {
 			$this->save_form_field($id, $post_id);
 		}
 		
@@ -666,7 +666,7 @@ class Product {
 			$last_sync = get_post_meta($post->ID, '_posti_last_sync', true);
 			if (isset($last_sync) && 0 == $last_sync) {
 				$class = 'notice notice-error';
-				$message = Text::error_product_update();
+				$message = Posti_Warehouse_Text::error_product_update();
 				printf('<div class="%1$s"><p>%2$s</p></div>', esc_attr($class), esc_html($message));
 
 				delete_post_meta($post->ID, '_posti_last_sync', '');

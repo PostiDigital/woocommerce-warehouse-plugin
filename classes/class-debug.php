@@ -1,23 +1,23 @@
 <?php
 
-namespace Woo_Posti_Warehouse;
+namespace Posti_Warehouse;
 
 defined('ABSPATH') || exit;
 
-class Debug {
+class Posti_Warehouse_Debug {
 	
 	private $is_test = false;
 	
 	public function __construct( array &$options) {
-		$this->is_test = Settings::is_test($options);
+		$this->is_test = Posti_Warehouse_Settings::is_test($options);
 		add_action('admin_menu', array($this, 'posti_wh_debug_page'));
 	}
 	
 	public function posti_wh_debug_page() {
 		add_submenu_page(
 				'options-general.php',
-				Text::field_warehouse_debug(),
-				Text::field_warehouse_debug(),
+				Posti_Warehouse_Text::field_warehouse_debug(),
+				Posti_Warehouse_Text::field_warehouse_debug(),
 				'manage_options',
 				'posti_wh_debug',
 				array($this, 'posti_wh_debug_page_html')
@@ -34,22 +34,22 @@ class Debug {
 			<?php $token_data = get_option('posti_wh_api_auth'); ?>
 			<?php if (is_array($token_data)) : ?>
 				<div class="notice notice-info">
-					<p style = "word-break: break-all;"><strong><?php echo esc_html(Text::logs_token_data()); ?><br/> </strong> <?php echo esc_html($token_data['token']); ?></p>
-					<p><strong><?php echo esc_html(Text::logs_token_expiration()); ?> </strong> <?php echo esc_html(date('Y-m-d H:i:s'), esc_html($token_data['expires'])); ?></p>
+					<p style = "word-break: break-all;"><strong><?php echo esc_html(Posti_Warehouse_Text::logs_token_data()); ?><br/> </strong> <?php echo esc_html($token_data['token']); ?></p>
+					<p><strong><?php echo esc_html(Posti_Warehouse_Text::logs_token_expiration()); ?> </strong> <?php echo esc_html(date('Y-m-d H:i:s'), esc_html($token_data['expires'])); ?></p>
 				</div>
 			<?php endif; ?>
 			<?php
-			$logger = new Logger();
+			$logger = new Posti_Warehouse_Logger();
 			$logs = $logger->getLogs();
 			?>
 			<?php if (count($logs)) : ?>
-				<h3><?php echo esc_html(Text::logs_title()); ?></h3>
+				<h3><?php echo esc_html(Posti_Warehouse_Text::logs_title()); ?></h3>
 				<table class="widefat fixed" cellspacing="0">
 					<thead>
 						<tr>
-							<th class="manage-column column-columnname " style = "width: 150px" scope="col"><?php echo esc_html(Text::column_created_date()); ?></th> 
-							<th class="manage-column column-columnname" style = "width: 80px" scope="col"><?php echo esc_html(Text::column_type()); ?></th>
-							<th class="manage-column column-columnname " scope="col"><?php echo esc_html(Text::column_message()); ?></th> 
+							<th class="manage-column column-columnname " style = "width: 150px" scope="col"><?php echo esc_html(Posti_Warehouse_Text::column_created_date()); ?></th> 
+							<th class="manage-column column-columnname" style = "width: 80px" scope="col"><?php echo esc_html(Posti_Warehouse_Text::column_type()); ?></th>
+							<th class="manage-column column-columnname " scope="col"><?php echo esc_html(Posti_Warehouse_Text::column_message()); ?></th> 
 						</tr>
 					</thead>
 					<tbody>
@@ -63,7 +63,7 @@ class Debug {
 					</tbody>
 				</table>
 			<?php else : ?>
-				<h3><?php echo esc_html(Text::logs_empty()); ?></h3>
+				<h3><?php echo esc_html(Posti_Warehouse_Text::logs_empty()); ?></h3>
 			<?php endif; ?>
 		</div>
 		<?php

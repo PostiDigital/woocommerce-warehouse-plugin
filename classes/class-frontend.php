@@ -1,20 +1,20 @@
 <?php
 
-namespace Woo_Posti_Warehouse;
+namespace Posti_Warehouse;
 
 // Prevent direct access to this script
 defined('ABSPATH') || exit;
 
-if (!class_exists(__NAMESPACE__ . '\Frontend')) {
+if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 
-	class Frontend {
+	class Posti_Warehouse_Frontend {
 		public $core = null;
 		
 		public $api = null;
 		
 		private $errors = array();
 
-		public function __construct( Core $plugin) {
+		public function __construct(Posti_Warehouse_Core $plugin) {
 			$this->core = $plugin;
 			$this->api = $this->core->getApi();
 		}
@@ -41,10 +41,10 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			?>
 			<div style="clear: both;">
 				<p>
-			<?php echo esc_html(Text::field_phone()); ?>
+			<?php echo esc_html(Posti_Warehouse_Text::field_phone()); ?>
 					: <?php echo esc_html(get_post_meta($order->get_id(), '_shipping_phone', true)); ?>
 					<br>
-			<?php echo esc_html(Text::field_email()); ?>
+			<?php echo esc_html(Posti_Warehouse_Text::field_email()); ?>
 					: <?php echo esc_html(get_post_meta($order->get_id(), '_shipping_email', true)); ?>
 			</div>
 			<?php
@@ -119,7 +119,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 					)
 			);
 
-			// Rest is handled in Frontend\fetch_pickup_point_options
+			// Rest is handled in Posti_Warehouse_Frontend\fetch_pickup_point_options
 		}
 
 		/**
@@ -138,7 +138,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 		 */
 		public function display_error( $error = null) {
 			if (!$error) {
-				$error = Text::error_generic();
+				$error = Posti_Warehouse_Text::error_generic();
 			}
 
 			wc_add_notice($error, 'error');
@@ -159,7 +159,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 					$this->core->prefix . '_js',
 					'pakettikauppaData',
 					array(
-						'privatePickupPointConfirm' => Text::confirm_selection(),
+						'privatePickupPointConfirm' => Posti_Warehouse_Text::confirm_selection(),
 					)
 			);
 		}
@@ -228,7 +228,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			$point_types = array();
 			$shipment_meta_data = $shipping_rate->get_meta_data();
 
-			$settings = Settings::get_shipping_settings();
+			$settings = Posti_Warehouse_Settings::get_shipping_settings();
 			$pickup_points = isset($settings['pickup_points']) ? json_decode($settings['pickup_points'], true) : array();
 			if (isset($shipment_meta_data['service_code'])) {
 				$shipping_method_id = $shipment_meta_data['service_code'];
@@ -264,6 +264,10 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 						if (isset($pickup_points[$instance_id][$service]['storepoints']) && 'yes' === $pickup_points[$instance_id][$service]['storepoints']) {
 							$shipping_method_providers[] = $service;
 							$point_types['store_points'] = true;
+						}
+						
+						if (isset($pickup_points[$instance_id][$service]['pickuppoints_hideoutdoors']) && 'yes' === $pickup_points[$instance_id][$service]['pickuppoints_hideoutdoors']) {
+							$point_types['hideoutdoors'] = true;
 						}
 					}
 				}
@@ -342,9 +346,9 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 
 			// Return if the customer has not yet chosen a postcode
 			if (empty($shipping_postcode)) {
-				$error_msg = Text::error_empty_postcode();
+				$error_msg = Posti_Warehouse_Text::error_empty_postcode();
 			} else if (!is_numeric($shipping_postcode)) {
-				$error_msg = Text::error_invalid_postcode($shipping_postcode);
+				$error_msg = Posti_Warehouse_Text::error_invalid_postcode($shipping_postcode);
 			} else {
 				try {
 					$options_array = $this->fetch_pickup_point_options(
@@ -472,29 +476,30 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			else if (isset($types['pickup_points']) && !isset($types['store_points'])) {
 				$type = '!STORE';
 			}
-
+			
 			$pickup_point = WC()->session->get(str_replace('wc_', 'woo_', $this->core->prefix) . '_pickup_point');
 			$custom_address = isset($pickup_point) && isset($pickup_point['custom_address']) ? $pickup_point['custom_address'] : false;
+			$capability = isset($types['hideoutdoors']) ? '!outdoors' : '';
 
 			$pickup_point_data = $this->fetch_pickup_point_option_array(
 				$shipping_postcode, $shipping_address,
 				$shipping_country, $shipping_city,
 				$shipping_method_provider, $type,
-				$custom_address);
+				$capability, $custom_address);
 			if (empty($pickup_point_data) && !empty($shipping_city) && 'STORE' === $type) {
 				$pickup_point_data = $this->fetch_pickup_point_option_array(
 					$shipping_postcode, $shipping_address,
 					$shipping_country, null,
 					$shipping_method_provider, $type,
-					$custom_address);
+					$capability, $custom_address);
 			}
 
 			if (false === $pickup_point_data) {
-				throw new \Exception(Text::error_pickup_point_generic());
+				throw new \Exception(Posti_Warehouse_Text::error_pickup_point_generic());
 			}
 			
 			if (empty($pickup_point_data)) {
-				throw new \Exception(Text::error_pickup_point_not_found());
+				throw new \Exception(Posti_Warehouse_Text::error_pickup_point_not_found());
 			}
 
 			return $this->process_pickup_points_to_option_array($pickup_point_data);
@@ -504,21 +509,21 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			$shipping_postcode, $shipping_address,
 			$shipping_country, $shipping_city,
 			$shipping_method_provider, $type,
-			$custom_address) {
+			$capability, $custom_address) {
 
 			if ($custom_address) {
 				return $this->get_pickup_points_by_free_input(
-					$custom_address, $shipping_country, $shipping_method_provider, $type);
+					$custom_address, $shipping_country, $shipping_method_provider, $type, $capability);
 			} else {
 				return $this->get_pickup_points(
 					$shipping_postcode, $shipping_address,
 					$shipping_country, $shipping_city,
-					$shipping_method_provider, $type);
+					$shipping_method_provider, $type, $capability);
 			}
 		}
 
 		private function process_pickup_points_to_option_array( $pickup_points) {
-			$options_array = array('' => array('text' => '- ' . Text::pickup_point_select() . ' -'));
+			$options_array = array('' => array('text' => '- ' . Posti_Warehouse_Text::pickup_point_select() . ' -'));
 			if (!empty($pickup_points)) {
 				foreach ($pickup_points as $pickup_point) {
 					$serviceProvider = isset($pickup_point['serviceProvider']) ? $pickup_point['serviceProvider'] : null;
@@ -546,7 +551,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			}
 
 			$options_array['other'] = array(
-				'text' => Text::pickup_point_other(),
+				'text' => Posti_Warehouse_Text::pickup_point_other(),
 			);
 
 			return $options_array;
@@ -584,7 +589,7 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 				$shipping_needs_pickup_points = isset($_POST[$key]) ? 'true' === $_POST[$key] : false;
 
 				if ($shipping_needs_pickup_points) {
-					$this->add_error(Text::error_pickup_point_not_provided());
+					$this->add_error(Posti_Warehouse_Text::error_pickup_point_not_provided());
 				}
 
 				foreach ($this->errors as $error) {
@@ -606,12 +611,12 @@ if (!class_exists(__NAMESPACE__ . '\Frontend')) {
 			}
 		}
 
-		public function get_pickup_points( $postcode, $street_address = null, $country = null, $city = null, $service_provider = null, $type = null) {
-			return $this->api->getPickupPoints(trim($postcode), trim($street_address), trim($country), trim($city), $service_provider, $type);
+		public function get_pickup_points( $postcode, $street_address = null, $country = null, $city = null, $service_provider = null, $type = null, $capability = null) {
+			return $this->api->getPickupPoints(trim($postcode), trim($street_address), trim($country), trim($city), $service_provider, $type, $capability);
 		}
 
-		public function get_pickup_points_by_free_input( $input, $shipping_country, $service_provider = null, $type = null) {
-			return $this->api->getPickupPointsByText(trim($input), trim($shipping_country), $service_provider, $type);
+		public function get_pickup_points_by_free_input( $input, $shipping_country, $service_provider = null, $type = null, $capability = null) {
+			return $this->api->getPickupPointsByText(trim($input), trim($shipping_country), $service_provider, $type, $capability);
 		}
 
 		private function add_prefix( $name) {

@@ -1,10 +1,10 @@
 <?php
 
-namespace Woo_Posti_Warehouse;
+namespace Posti_Warehouse;
 
 defined('ABSPATH') || exit;
 
-class Core {
+class Posti_Warehouse_Core {
 
 	private $settings = null;
 	private $api = null;
@@ -24,7 +24,7 @@ class Core {
 
 	public function __construct() {
 
-		$this->templates_dir = plugin_dir_path(__POSTI_WH_FILE__) . 'templates/';
+		$this->templates_dir = plugin_dir_path(POSTI_WH_FILE__) . 'templates/';
 		$this->templates = array(
 		  'checkout_pickup' => 'checkout-pickup.php',
 		  'account_order' => 'myaccount-order.php',
@@ -34,8 +34,8 @@ class Core {
 		add_action('admin_enqueue_scripts', array($this, 'posti_wh_admin_styles'));
 		$this->WC_hooks();
 
-		register_activation_hook(__POSTI_WH_FILE__, array($this, 'install'));
-		register_deactivation_hook(__POSTI_WH_FILE__, array($this, 'uninstall'));
+		register_activation_hook(POSTI_WH_FILE__, array($this, 'install'));
+		register_deactivation_hook(POSTI_WH_FILE__, array($this, 'uninstall'));
 
 		add_action('updated_option', array($this, 'after_settings_update'), 10, 3);
 		add_action('admin_notices', array($this, 'render_messages'));
@@ -48,16 +48,16 @@ class Core {
 	}
 
 	public function install() {
-		Settings::install();
-		Api::install();
-		Logger::install();
+		Posti_Warehouse_Settings::install();
+		Posti_Warehouse_Api::install();
+		Posti_Warehouse_Logger::install();
 		delete_transient('posti_warehouse_shipping_methods');
 	}
 
 	public function uninstall() {
-		Settings::uninstall();
-		Api::uninstall();
-		Logger::uninstall();
+		Posti_Warehouse_Settings::uninstall();
+		Posti_Warehouse_Api::uninstall();
+		Posti_Warehouse_Logger::uninstall();
 		delete_transient('posti_warehouse_shipping_methods');
 	}
 
@@ -80,11 +80,11 @@ class Core {
 
 	public function after_settings_update( $option, $old_value, $value) {
 		if ('posti_wh_options' == $option) {
-			if (Settings::is_changed($old_value, $value, 'posti_wh_field_username')
-				|| Settings::is_changed($old_value, $value, 'posti_wh_field_password')
-				|| Settings::is_changed($old_value, $value, 'posti_wh_field_username_test')
-				|| Settings::is_changed($old_value, $value, 'posti_wh_field_password_test')
-				|| Settings::is_changed($old_value, $value, 'posti_wh_field_test_mode')) {
+			if (Posti_Warehouse_Settings::is_changed($old_value, $value, 'posti_wh_field_username')
+				|| Posti_Warehouse_Settings::is_changed($old_value, $value, 'posti_wh_field_password')
+				|| Posti_Warehouse_Settings::is_changed($old_value, $value, 'posti_wh_field_username_test')
+				|| Posti_Warehouse_Settings::is_changed($old_value, $value, 'posti_wh_field_password_test')
+				|| Posti_Warehouse_Settings::is_changed($old_value, $value, 'posti_wh_field_test_mode')) {
 				//login info changed, try to get token
 				delete_option('posti_wh_api_auth');
 				delete_option('posti_wh_api_warehouses');
@@ -120,7 +120,7 @@ class Core {
 	public function token_error() {
 		?>
 		<div class="error notice">
-			<p><?php echo esc_html(Text::error_api_credentials_wrong()); ?></p>
+			<p><?php echo esc_html(Posti_Warehouse_Text::error_api_credentials_wrong()); ?></p>
 		</div>
 		<?php
 	}
@@ -128,7 +128,7 @@ class Core {
 	public function token_success() {
 		?>
 		<div class="updated notice">
-			<p><?php echo esc_html(Text::api_credentials_correct()); ?></p>
+			<p><?php echo esc_html(Posti_Warehouse_Text::api_credentials_correct()); ?></p>
 		</div>
 		<?php
 	}
@@ -157,7 +157,7 @@ class Core {
 	public function posti_interval( $schedules) {
 		$schedules['posti_wh_time'] = array(
 			'interval' => $this->cron_time,
-			'display' => Text::interval_every($this->cron_time));
+			'display' => Posti_Warehouse_Text::interval_every($this->cron_time));
 		return $schedules;
 	}
 
@@ -166,12 +166,12 @@ class Core {
 	 */
 
 	public function posti_cronjob_callback() {
-		$options = Settings::get();
+		$options = Posti_Warehouse_Settings::get();
 		$nextStockSyncDttm = $this->posti_cronjob_sync_stock($options);
 		$nextOrderSyncDttm = $this->posti_cronjob_sync_orders($options);
 
 		if (false !== $nextStockSyncDttm || false !== $nextOrderSyncDttm) {
-			$new_options = Settings::get();
+			$new_options = Posti_Warehouse_Settings::get();
 			if (false !== $nextStockSyncDttm) {
 				$new_options['posti_wh_field_stock_sync_dttm'] = $nextStockSyncDttm;
 			}
@@ -180,7 +180,7 @@ class Core {
 				$new_options['posti_wh_field_order_sync_dttm'] = $nextOrderSyncDttm;
 			}
 
-			Settings::update($new_options);
+			Posti_Warehouse_Settings::update($new_options);
 		}
 	}
 
@@ -242,7 +242,7 @@ class Core {
 	}
 
 	private function get_option_datetime_sync( $options, $option) {
-		$value = Settings::get_value($options, $option);
+		$value = Posti_Warehouse_Settings::get_value($options, $option);
 		if (!isset($value) || empty($value)) {
 			$now = new \DateTime('now -7 day');
 			$value = $now->format(\DateTimeInterface::RFC3339_EXTENDED);
@@ -252,25 +252,25 @@ class Core {
 	}
 	
 	private function load_options() {
-		$options = Settings::get();
-		$this->is_test = Settings::is_test($options);
-		$this->debug = Settings::is_debug($options);
-		$this->add_tracking = Settings::is_add_tracking($options);
+		$options = Posti_Warehouse_Settings::get();
+		$this->is_test = Posti_Warehouse_Settings::is_test($options);
+		$this->debug = Posti_Warehouse_Settings::is_debug($options);
+		$this->add_tracking = Posti_Warehouse_Settings::is_add_tracking($options);
 
 		if (isset($options['posti_wh_field_crontime']) && $options['posti_wh_field_crontime']) {
 			$this->cron_time = (int) $options['posti_wh_field_crontime'];
 		}
 
-		$this->logger = new Logger();
+		$this->logger = new Posti_Warehouse_Logger();
 		$this->logger->setDebug($this->debug);
 		
-		$this->api = new Api($this->logger, $options, $this->is_test);
-		$this->product = new Product($this->api, $this->logger);
-		$this->order = new Order($this->api, $this->logger, $this->product, $this->add_tracking);
-		$this->metabox = new Metabox($this->order);
-		$this->debug = new Debug($options);
-		$this->frontend = new Frontend($this);
-		$this->settings = new Settings($this->api, $this->logger);
+		$this->api = new Posti_Warehouse_Api($this->logger, $options, $this->is_test);
+		$this->product = new Posti_Warehouse_Product($this->api, $this->logger);
+		$this->order = new Posti_Warehouse_Order($this->api, $this->logger, $this->product, $this->add_tracking);
+		$this->metabox = new Posti_Warehouse_Metabox($this->order);
+		$this->debug = new Posti_Warehouse_Debug($options);
+		$this->frontend = new Posti_Warehouse_Frontend($this);
+		$this->settings = new Posti_Warehouse_Settings($this->api, $this->logger);
 		$this->frontend->load();
 	}
 }

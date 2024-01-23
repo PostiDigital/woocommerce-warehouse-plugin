@@ -1,10 +1,10 @@
 <?php
 
-namespace Woo_Posti_Warehouse;
+namespace Posti_Warehouse;
 
 defined('ABSPATH') || exit;
 
-class Logger {
+class Posti_Warehouse_Logger {
 
 	const DB_VERSION = '1.0';
 	const TABLE_NAME = 'posti_warehouse_logs';

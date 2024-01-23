@@ -1,10 +1,10 @@
 <?php
 
-namespace Woo_Posti_Warehouse;
+namespace Posti_Warehouse;
 
 defined('ABSPATH') || exit;
 
-class Text {
+class Posti_Warehouse_Text {
 
 	public static $namespace = 'posti-warehouse';
 
@@ -18,6 +18,10 @@ class Text {
 	
 	public static function pickup_points_title() {
 		return __('Pickup points', 'posti-warehouse');
+	}
+	
+	public static function pickup_points_hide_outdoor() {
+	    return __('Hide outdoor pickup points', 'posti-warehouse');
 	}
 	
 	public static function pickup_point_select() {

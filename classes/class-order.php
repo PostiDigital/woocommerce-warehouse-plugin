@@ -1,10 +1,10 @@
 <?php
 
-namespace Woo_Posti_Warehouse;
+namespace Posti_Warehouse;
 
 defined('ABSPATH') || exit;
 
-class Order {
+class Posti_Warehouse_Order {
     
     private $orderStatus = false;
     private $addTracking = false;
@@ -13,7 +13,7 @@ class Order {
     private $product;
     private $status_mapping;
     
-    public function __construct( Api $api, Logger $logger, Product $product, $addTracking = false) {
+    public function __construct(Posti_Warehouse_Api $api, Posti_Warehouse_Logger $logger, Posti_Warehouse_Product $product, $addTracking = false) {
         $this->api = $api;
         $this->logger = $logger;
         $this->product = $product;
@@ -43,7 +43,7 @@ class Order {
     
     public function change_metadata_title_for_order_shipping_method( $key, $meta, $item) {
         if ('warehouse_pickup_point' === $meta->key) {
-            $key = Text::pickup_point_title();
+            $key = Posti_Warehouse_Text::pickup_point_title();
         }
         
         return $key;
@@ -52,7 +52,7 @@ class Order {
     public function getOrderStatus( $order_id) {
         $order_data = $this->getOrder($order_id);
         if (!$order_data) {
-            return Text::order_not_placed();
+            return Posti_Warehouse_Text::order_not_placed();
         }
         $this->orderStatus = $order_data['status']['value'];
         return $order_data['status']['value'];
@@ -61,7 +61,7 @@ class Order {
     public function getOrderActionButton() {
         if (!$this->orderStatus) {
             ?>
-			<button type = "button" class="button button-posti" id = "posti-order-btn" name="posti_order_action"  onclick="posti_order_change(this);" value="place_order"><?php echo esc_html(Text::order_place()); ?></button>
+			<button type = "button" class="button button-posti" id = "posti-order-btn" name="posti_order_action"  onclick="posti_order_change(this);" value="place_order"><?php echo esc_html(Posti_Warehouse_Text::order_place()); ?></button>
 			<?php
 		}
 	}
@@ -100,7 +100,7 @@ class Order {
 
 		$order_services = $this->get_additional_services($order);
 		if (!isset($order_services['service']) || empty($order_services['service'])) {
-			$order->update_status('on-hold', Text::error_order_failed_no_shipping(), true);
+			$order->update_status('on-hold', Posti_Warehouse_Text::error_order_failed_no_shipping(), true);
 			return [ 'error' => 'ERROR: Shipping method not configured.' ];
 		}
 
@@ -130,10 +130,10 @@ class Order {
 		if ($status >= 200 && $status < 300) {
 			update_post_meta($order_id, '_posti_id', (string) $order->get_id());
 		} else {
-			$order->update_status('failed', Text::order_failed(), true);
+			$order->update_status('failed', Posti_Warehouse_Text::order_failed(), true);
 		}
 
-		return false === $result ? [ 'error' => Text::error_order_not_placed() ] : [];
+		return false === $result ? [ 'error' => Posti_Warehouse_Text::error_order_not_placed() ] : [];
 	}
 	
 	public function sync( $datetime) {
@@ -196,8 +196,8 @@ class Order {
 			}
 		}
 		
-		$options = Settings::get();
-		$autocomplete = Settings::get_value($options, 'posti_wh_field_autocomplete');
+		$options = Posti_Warehouse_Settings::get();
+		$autocomplete = Posti_Warehouse_Settings::get_value($options, 'posti_wh_field_autocomplete');
 		foreach ($orders as $order) {
 			$order_id = $order['externalId'];
 			if (isset($post_by_order_id[$order_id]) && !empty($post_by_order_id[$order_id])) {
@@ -246,7 +246,7 @@ class Order {
 	private function get_additional_services( &$order) {
 		$additional_services = array();
 		$shipping_service = '';
-		$settings = Settings::get_shipping_settings();
+		$settings = Posti_Warehouse_Settings::get_shipping_settings();
 		$shipping_methods = $order->get_shipping_methods();
 		$chosen_shipping_method = array_pop($shipping_methods);
 		$add_cod_to_additional_services = 'cod' === $order->get_payment_method();
@@ -445,7 +445,7 @@ class Order {
 
 	public function posti_check_order( $order_id, $old_status, $new_status) {
 		if ('processing' === $new_status) {
-			$options = Settings::get();
+			$options = Posti_Warehouse_Settings::get();
 			if (isset($options['posti_wh_field_autoorder'])) {
 				$order = wc_get_order($order_id);
 				$is_posti_order = $this->hasPostiProducts($order);
@@ -466,7 +466,7 @@ class Order {
 		foreach ($columns as $key => $name) {
 			$new_columns[$key] = $name;
 			if ('order_status' === $key) {
-				$new_columns['posti_api_tracking'] = Text::tracking_title();
+				$new_columns['posti_api_tracking'] = Posti_Warehouse_Text::tracking_title();
 			}
 		}
 		return $new_columns;
@@ -482,7 +482,7 @@ class Order {
 	public function addTrackingToEmail( $order, $sent_to_admin, $plain_text, $email) {
 		$tracking = get_post_meta($order->get_id(), '_posti_api_tracking', true);
 		if ($tracking) {
-			echo esc_html(Text::tracking_number($tracking));
+			echo esc_html(Posti_Warehouse_Text::tracking_number($tracking));
 		}
 	}
 

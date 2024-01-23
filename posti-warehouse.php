@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name: Posti Warehouse
- * Version: 2.2.3
+ * Version: 2.2.4
  * Description: Provides integration to Posti warehouse and dropshipping services.
  * Author: Posti
  * Author URI: https://www.posti.fi/
@@ -17,12 +17,12 @@
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  */
 
-namespace Woo_Posti_Warehouse;
+namespace Posti_Warehouse;
 
 // Prevent direct access to this script
 defined('ABSPATH') || exit;
 
-define( '__POSTI_WH_FILE__', __FILE__ );
+define( 'POSTI_WH_FILE__', __FILE__ );
 
 require_once __DIR__ . '/classes/class-text.php';
 require_once __DIR__ . '/classes/class-settings.php';
@@ -37,6 +37,6 @@ require_once __DIR__ . '/classes/class-dataset.php';
 require_once __DIR__ . '/classes/class-shipping.php';
 require_once __DIR__ . '/classes/class-frontend.php';
 
-use Woo_Posti_Warehouse\Core;
+use Posti_Warehouse\Posti_Warehouse_Core;
 
-new Core();
+new Posti_Warehouse_Core();

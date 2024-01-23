@@ -1,21 +1,21 @@
 <?php
 
-namespace Woo_Posti_Warehouse;
+namespace Posti_Warehouse;
 
 defined('ABSPATH') || exit;
 
-class Settings {
+class Posti_Warehouse_Settings {
 	
 	private $api;
 	private $logger;
 	
-	public function __construct( Api $api, Logger $logger) {
+	public function __construct(Posti_Warehouse_Api $api, Posti_Warehouse_Logger $logger) {
 		$this->api = $api;
 		$this->logger = $logger;
 		register_setting('posti_wh', 'posti_wh_options');
 		add_action('admin_init', array($this, 'posti_wh_settings_init'));
 		add_action('admin_menu', array($this, 'posti_wh_options_page'));
-		add_action('wp_ajax_warehouse_products_migrate', array($this, 'warehouse_products_migrate'));
+		add_action('wp_ajax_posti_warehouse_products_migrate', array($this, 'posti_warehouse_products_migrate'));
 	}
 
 	public static function get() {
@@ -112,14 +112,14 @@ class Settings {
 		$developer_fields_class = $is_developer ? 'posti_wh_row' : 'hidden';
 		add_settings_section(
 			'posti_wh_options',
-			'<span class="dashicons dashicons-admin-generic" style="padding-right: 2pt"></span>' . Text::field_warehouse_settings(),
+			'<span class="dashicons dashicons-admin-generic" style="padding-right: 2pt"></span>' . Posti_Warehouse_Text::field_warehouse_settings(),
 				array($this, 'posti_wh_section_developers_cb'),
 				'posti_wh'
 		);
 
 		add_settings_field(
 				'posti_wh_field_username',
-				Text::field_username(),
+				Posti_Warehouse_Text::field_username(),
 				array($this, 'posti_wh_field_string_cb'),
 				'posti_wh',
 				'posti_wh_options',
@@ -132,7 +132,7 @@ class Settings {
 
 		add_settings_field(
 				'posti_wh_field_password',
-				Text::field_password(),
+				Posti_Warehouse_Text::field_password(),
 				array($this, 'posti_wh_field_string_cb'),
 				'posti_wh',
 				'posti_wh_options',
@@ -145,7 +145,7 @@ class Settings {
 
 		add_settings_field(
 				'posti_wh_field_username_test',
-				Text::field_username_test(),
+				Posti_Warehouse_Text::field_username_test(),
 				array($this, 'posti_wh_field_string_cb'),
 				'posti_wh',
 				'posti_wh_options',
@@ -158,7 +158,7 @@ class Settings {
 
 		add_settings_field(
 				'posti_wh_field_password_test',
-				Text::field_password_test(),
+				Posti_Warehouse_Text::field_password_test(),
 				array($this, 'posti_wh_field_string_cb'),
 				'posti_wh',
 				'posti_wh_options',
@@ -171,7 +171,7 @@ class Settings {
 
 		add_settings_field(
 			'posti_wh_field_business_id',
-			Text::field_business_id(),
+			Posti_Warehouse_Text::field_business_id(),
 			array($this, 'posti_wh_field_string_cb'),
 			'posti_wh',
 			'posti_wh_options',
@@ -184,7 +184,7 @@ class Settings {
 
 		add_settings_field(
 				'posti_wh_field_service',
-				Text::field_service(),
+				Posti_Warehouse_Text::field_service(),
 				array($this, 'posti_wh_field_service_cb'),
 				'posti_wh',
 				'posti_wh_options',
@@ -197,7 +197,7 @@ class Settings {
 
 		add_settings_field(
 				'posti_wh_field_contract',
-				Text::field_contract(),
+				Posti_Warehouse_Text::field_contract(),
 				array($this, 'posti_wh_field_string_cb'),
 				'posti_wh',
 				'posti_wh_options',
@@ -210,7 +210,7 @@ class Settings {
 
 		add_settings_field(
 				'posti_wh_field_type',
-				Text::field_type(),
+				Posti_Warehouse_Text::field_type(),
 				array($this, 'posti_wh_field_type_cb'),
 				'posti_wh',
 				'posti_wh_options',
@@ -223,7 +223,7 @@ class Settings {
 
 		add_settings_field(
 				'posti_wh_field_autoorder',
-				Text::field_autoorder(),
+				Posti_Warehouse_Text::field_autoorder(),
 				array($this, 'posti_wh_field_checkbox_cb'),
 				'posti_wh',
 				'posti_wh_options',
@@ -236,7 +236,7 @@ class Settings {
 
 		add_settings_field(
 				'posti_wh_field_autocomplete',
-				Text::field_autocomplete(),
+				Posti_Warehouse_Text::field_autocomplete(),
 				array($this, 'posti_wh_field_checkbox_cb'),
 				'posti_wh',
 				'posti_wh_options',
@@ -249,7 +249,7 @@ class Settings {
 
 		add_settings_field(
 				'posti_wh_field_addtracking',
-				Text::field_addtracking(),
+				Posti_Warehouse_Text::field_addtracking(),
 				array($this, 'posti_wh_field_checkbox_cb'),
 				'posti_wh',
 				'posti_wh_options',
@@ -262,7 +262,7 @@ class Settings {
 
 		add_settings_field(
 				'posti_wh_field_crontime',
-				Text::field_crontime(),
+				Posti_Warehouse_Text::field_crontime(),
 				array($this, 'posti_wh_field_string_cb'),
 				'posti_wh',
 				'posti_wh_options',
@@ -277,7 +277,7 @@ class Settings {
 
 		add_settings_field(
 				'posti_wh_field_test_mode',
-				Text::field_test_mode(),
+				Posti_Warehouse_Text::field_test_mode(),
 				array($this, 'posti_wh_field_checkbox_cb'),
 				'posti_wh',
 				'posti_wh_options',
@@ -290,7 +290,7 @@ class Settings {
 
 		add_settings_field(
 				'posti_wh_field_debug',
-				Text::field_field_debug(),
+				Posti_Warehouse_Text::field_field_debug(),
 				array($this, 'posti_wh_field_checkbox_cb'),
 				'posti_wh',
 				'posti_wh_options',
@@ -303,7 +303,7 @@ class Settings {
 
 		add_settings_field(
 				'posti_wh_field_stock_sync_dttm',
-				Text::field_stock_sync_dttm(),
+				Posti_Warehouse_Text::field_stock_sync_dttm(),
 				array($this, 'posti_wh_field_string_cb'),
 				'posti_wh',
 				'posti_wh_options',
@@ -316,7 +316,7 @@ class Settings {
 		
 		add_settings_field(
 				'posti_wh_field_order_sync_dttm',
-				Text::field_order_sync_dttm(),
+				Posti_Warehouse_Text::field_order_sync_dttm(),
 				array($this, 'posti_wh_field_string_cb'),
 				'posti_wh',
 				'posti_wh_options',
@@ -366,7 +366,7 @@ class Settings {
 				data-custom="<?php echo esc_attr($args['posti_wh_custom_data']); ?>"
 				name="posti_wh_options[<?php echo esc_attr($args['label_for']); ?>]"
 				>
-		<?php foreach (Dataset::getSToreTypes() as $val => $type) : ?>
+		<?php foreach (Posti_Warehouse_Dataset::getSToreTypes() as $val => $type) : ?>
 				<option value="<?php echo esc_attr($val); ?>" <?php echo isset($options[$args['label_for']]) ? ( selected($options[$args['label_for']], $val, false) ) : ( '' ); ?>>
 						<?php
 						echo esc_html($type);
@@ -385,7 +385,7 @@ class Settings {
 				data-custom="<?php echo esc_attr($args['posti_wh_custom_data']); ?>"
 				name="posti_wh_options[<?php echo esc_attr($args['label_for']); ?>]"
 				>
-		<?php foreach (Dataset::getDeliveryTypes() as $val => $type) : ?>
+		<?php foreach (Posti_Warehouse_Dataset::getDeliveryTypes() as $val => $type) : ?>
 				<option value="<?php echo esc_attr($val); ?>" <?php echo isset($options[$args['label_for']]) ? ( selected($options[$args['label_for']], $val, false) ) : ( '' ); ?>>
 						<?php
 						echo esc_html($type);
@@ -463,7 +463,7 @@ class Settings {
 			}}
 	}
 	
-	public function warehouse_products_migrate() {
+	public function posti_warehouse_products_migrate() {
 		if (!isset($_POST['security'])
 			|| !wp_verify_nonce(sanitize_key($_POST['security']), 'posti-migration')) {
 			$this->logger->log('error', 'Unable to migrate products: nonce check failed');

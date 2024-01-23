@@ -191,6 +191,9 @@ msgstr "Noutopiste"
 msgid "Pickup points"
 msgstr "Noutopisteet"
 
+msgid "Hide outdoor pickup points"
+msgstr "Älä näytä ulkona olevia noutopisteitä"
+
 #: classes/class-text.php:40
 msgid "Place Order"
 msgstr "Lähetä tilaus"

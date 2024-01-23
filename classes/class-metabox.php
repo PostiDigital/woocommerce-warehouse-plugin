@@ -1,15 +1,15 @@
 <?php
-namespace Woo_Posti_Warehouse;
+namespace Posti_Warehouse;
 
 defined('ABSPATH') || exit;
 
-class Metabox {
+class Posti_Warehouse_Metabox {
 
 	private $postiOrder = false;
 	
 	private $error = '';
 
-	public function __construct( Order $order) {
+	public function __construct(Posti_Warehouse_Order $order) {
 		$this->postiOrder = $order;
 		add_action('add_meta_boxes', array($this, 'add_order_meta_box'), 10, 2);
 		add_action('wp_ajax_posti_order_meta_box', array($this, 'parse_ajax_meta_box'));
@@ -34,7 +34,7 @@ class Metabox {
 		<div id ="posti-order-metabox">
 			<input type="hidden" name="posti_order_metabox_nonce" value="<?php echo esc_attr(wp_create_nonce(str_replace('wc_', '', 'posti-order') . '-meta-box')); ?>" id="posti_order_metabox_nonce" />
 			<img src ="<?php echo esc_attr(plugins_url('assets/img/posti-orange.png', dirname(__FILE__))); ?>"/>
-			<label><?php echo esc_html(Text::order_status()); ?> </label>
+			<label><?php echo esc_html(Posti_Warehouse_Text::order_status()); ?> </label>
 			<strong id = "posti-order-status"><?php echo esc_html($this->postiOrder->getOrderStatus($post->ID)); ?></strong>
 			<br/>
 			<div id = "posti-order-action">
@@ -66,7 +66,7 @@ class Metabox {
 			wp_die('', '', 200);
 		}
 
-		$this->error = Text::error_generic();
+		$this->error = Posti_Warehouse_Text::error_generic();
 		$this->add_order_meta_box_html($post);
 		wp_die('', '', 200);
 	}
