@@ -95,7 +95,7 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile addtional service is added to order/delivery. 
 
 ## Version history
-- 2.2.4: Added "Hide outdoor pickup points" option to Shipping tab.
+- 2.3.0: Added "Hide outdoor pickup points" option to Shipping tab.
 - 2.2.3: internal: json_encode replaced with wp_json_encode function.
 - 2.2.2: internal: curl dependency replaced with wp_remote_* functions.
 - 2.2.1: Update product status to EOS ("End Of Sale") when removing from warehouse.
