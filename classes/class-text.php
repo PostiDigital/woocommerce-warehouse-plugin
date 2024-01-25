@@ -20,8 +20,28 @@ class Posti_Warehouse_Text {
 		return __('Pickup points', 'posti-warehouse');
 	}
 	
+	public static function pickup_points_instruction() {
+		return __('Choose one of pickup points close to the address you entered:', 'posti-warehouse');
+	}
+	
+	public static function pickup_address() {
+		return __('Pickup address', 'posti-warehouse');
+	}
+
+	public static function pickup_address_custom() {
+		return __('Custom pickup address', 'posti-warehouse');
+	}
+	
+	public static function pickup_points_search_instruction1() {
+	    return __('Search pickup points near you by typing your address above.', 'posti-warehouse');
+	}
+	
+	public static function pickup_points_search_instruction2() {
+	    return __('If none of your preferred pickup points are listed, fill in a custom address above and select another pickup point.', 'posti-warehouse');
+	}
+	
 	public static function pickup_points_hide_outdoor() {
-	    return __('Hide outdoor pickup points', 'posti-warehouse');
+		return __('Hide outdoor pickup points', 'posti-warehouse');
 	}
 	
 	public static function pickup_point_select() {
@@ -33,7 +53,7 @@ class Posti_Warehouse_Text {
 	}
 	
 	public static function store_pickup_title() {
-	    return __('Store pickup', 'posti-warehouse');
+		return __('Store pickup', 'posti-warehouse');
 	}
 	
 	public static function order_not_placed() {

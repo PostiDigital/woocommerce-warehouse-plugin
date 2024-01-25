@@ -8,5 +8,5 @@
 defined('ABSPATH') || exit;
 ?>
 
-<h2><?php esc_attr_e('Pickup point', 'posti-warehouse'); ?></h2>
+<h2><?php esc_html($texts['title']); ?></h2>
 <p><?php echo esc_html($pickup_point); ?></p>

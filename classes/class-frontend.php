@@ -27,11 +27,11 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 			add_action('woocommerce_checkout_process', array($this, 'validate_checkout'));
 			add_action('woocommerce_checkout_create_order_shipping_item', array($this, 'add_metadata_to_order_shipping_method'), 10, 4);
 
-			add_action('wp_ajax_pakettikauppa_save_pickup_point_info_to_session', array($this, 'save_pickup_point_info_to_session'), 10);
-			add_action('wp_ajax_nopriv_pakettikauppa_save_pickup_point_info_to_session', array($this, 'save_pickup_point_info_to_session'), 10);
+			add_action('wp_ajax_posti_warehouse_save_pickup_point_info_to_session', array($this, 'save_pickup_point_info_to_session'), 10);
+			add_action('wp_ajax_nopriv_posti_warehouse_save_pickup_point_info_to_session', array($this, 'save_pickup_point_info_to_session'), 10);
 
-			add_action('wp_ajax_pakettikauppa_use_custom_address_for_pickup_point', array($this, 'use_custom_address_for_pickup_point'), 10);
-			add_action('wp_ajax_nopriv_pakettikauppa_use_custom_address_for_pickup_point', array($this, 'use_custom_address_for_pickup_point'), 10);
+			add_action('wp_ajax_posti_warehouse_use_custom_address_for_pickup_point', array($this, 'use_custom_address_for_pickup_point'), 10);
+			add_action('wp_ajax_nopriv_posti_warehouse_use_custom_address_for_pickup_point', array($this, 'use_custom_address_for_pickup_point'), 10);
 
 			add_filter('woocommerce_checkout_fields', array($this, 'add_checkout_fields'));
 			add_filter('woocommerce_admin_order_data_after_shipping_address', array($this, 'render_checkout_fields'));
@@ -157,7 +157,7 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 			wp_enqueue_script($this->core->prefix . '_js', plugins_url('assets/js/frontend.js', dirname(__FILE__)), array('jquery'), $this->core->version, true);
 			wp_localize_script(
 					$this->core->prefix . '_js',
-					'pakettikauppaData',
+					'posti_warehouseData',
 					array(
 						'privatePickupPointConfirm' => Posti_Warehouse_Text::confirm_selection(),
 					)
@@ -165,7 +165,7 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 		}
 
 		/**
-		 * Update the order meta with pakettikauppa_pickup_point field value
+		 * Update the order meta with posti_warehouse_pickup_point field value
 		 * Example value from checkout page: "DB Schenker: R-KIOSKI TRE AMURI (#6681)"
 		 *
 		 * @param int $order_id The id of the order to update
@@ -424,20 +424,19 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 				}
 
 				if ('other' === $selected_point || $is_klarna || !$options_array) {
-				  $custom_field_title = $is_klarna ? 'Pickup address' : 'Custom pickup address';
+					$custom_field_title = $is_klarna ? Posti_Warehouse_Text::pickup_address() : Posti_Warehouse_Text::pickup_address_custom();
+					$custom_field = array(
+						'name' => 'posti_warehousecustom_pickup_point',
+						'data' => array(
+							'type' => 'textarea',
+							'custom_attributes' => array(
+							'onchange' => 'warehouse_custom_pickup_point_change(this)',
+							),
+						),
+						'value' => $session['custom_address'],
+					);
 
-				  $custom_field = array(
-					'name' => 'pakettikauppacustom_pickup_point',
-					'data' => array(
-					  'type' => 'textarea',
-					  'custom_attributes' => array(
-						'onchange' => 'warehouse_custom_pickup_point_change(this)',
-					  ),
-					),
-					'value' => $session['custom_address'],
-				  );
-
-				  $custom_field_desc = ( $is_klarna ) ? 'Search pickup points near you by typing your address above.': 'If none of your preferred pickup points are listed, fill in a custom address above and select another pickup point.';
+					$custom_field_desc = $is_klarna ? Posti_Warehouse_Text::pickup_points_search_instruction1() : Posti_Warehouse_Text::pickup_points_search_instruction2();
 				}
 				
 			}
@@ -453,6 +452,8 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 						'pickup' => array(
 							'show' => ( $select_field ) ? true : false,
 							'field' => $select_field,
+							'title' => Posti_Warehouse_Text::pickup_point_title(),
+							'desc' => Posti_Warehouse_Text::pickup_points_instruction()
 						),
 						'custom' => array(
 							'show' => ( $custom_field ) ? true : false,
@@ -566,7 +567,16 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 			$pickup_point = $order->get_meta('_' . $this->add_prefix('_pickup_point'));
 
 			if (!empty($pickup_point)) {
-				wc_get_template($this->core->templates['account_order'], array('pickup_point' => esc_attr($pickup_point)), '', $this->core->templates_dir);
+				wc_get_template(
+					$this->core->templates['account_order'],
+					array(
+						'pickup_point' => esc_attr($pickup_point),
+						'texts' => array(
+							'title' => Posti_Warehouse_Text::pickup_point_title()
+						)
+					),
+					'',
+					$this->core->templates_dir);
 			}
 		}
 

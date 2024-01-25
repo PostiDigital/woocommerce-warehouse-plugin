@@ -40,6 +40,18 @@ msgstr ""
 msgid "Choose one of pickup points close to the address you entered:"
 msgstr ""
 
+msgid "Pickup address"
+msgstr ""
+
+msgid "Custom pickup address"
+msgstr ""
+
+msgid "Search pickup points near you by typing your address above."
+msgstr ""
+
+msgid "If none of your preferred pickup points are listed, fill in a custom address above and select another pickup point."
+msgstr ""
+
 #: classes/class-text.php:101
 msgid "Confirm selection"
 msgstr ""
