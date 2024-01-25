@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Posti Warehouse\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-22 16:19+0000\n"
+"POT-Creation-Date: 2024-01-25 12:14+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: \n"
@@ -16,188 +16,193 @@ msgstr ""
 "X-Loco-Version: 2.6.4; wp-6.2.2\n"
 "X-Domain: posti-warehouse"
 
-#: classes/class-text.php:192
+#: classes/class-text.php:216
 msgid "Add tracking to email"
 msgstr ""
 
-#: classes/class-text.php:117
+#: classes/class-text.php:141
 msgid "An error occurred. Please try again later."
 msgstr ""
 
-#: classes/class-text.php:188
+#: classes/class-text.php:212
 msgid "Auto mark orders as \"Completed\""
 msgstr ""
 
-#: classes/class-text.php:184
+#: classes/class-text.php:208
 msgid "Auto ordering"
 msgstr ""
 
-#: classes/class-text.php:168
+#: classes/class-text.php:192
 msgid "Business ID"
 msgstr ""
 
-#: templates/checkout-pickup.php:22
+#: classes/class-text.php:24
 msgid "Choose one of pickup points close to the address you entered:"
 msgstr ""
 
-msgid "Pickup address"
-msgstr ""
-
-msgid "Custom pickup address"
-msgstr ""
-
-msgid "Search pickup points near you by typing your address above."
-msgstr ""
-
-msgid "If none of your preferred pickup points are listed, fill in a custom address above and select another pickup point."
-msgstr ""
-
-#: classes/class-text.php:101
+#: classes/class-text.php:125
 msgid "Confirm selection"
 msgstr ""
 
-#: classes/class-text.php:176
+#: classes/class-text.php:200
 msgid "Contract number"
 msgstr ""
 
-#: classes/class-text.php:268
+#: classes/class-text.php:292
 msgid "Created"
 msgstr ""
 
-#: classes/class-text.php:148
+#: classes/class-text.php:172
 msgid "Credentials matched - access token received!"
 msgstr ""
 
-#: classes/class-text.php:260
+#: classes/class-text.php:284
 msgid "Current token:"
 msgstr ""
 
-#: classes/class-text.php:212
-msgid "Datetime of last order update"
-msgstr ""
-
-#: classes/class-text.php:208
-msgid "Datetime of last stock update"
-msgstr ""
-
-#: classes/class-text.php:204
-msgid "Debug"
-msgstr ""
-
-#: classes/class-text.php:180
-msgid "Default stock type"
-msgstr ""
-
-#: classes/class-text.php:172
-msgid "Delivery service"
-msgstr ""
-
-#: classes/class-text.php:97
-msgid "Distributor ID"
+#: classes/class-text.php:32
+msgid "Custom pickup address"
 msgstr ""
 
 #: classes/class-text.php:236
-msgid "Dropshipping"
+msgid "Datetime of last order update"
 msgstr ""
 
-#: classes/class-text.php:73
-msgid "EAN / ISBN / Barcode"
+#: classes/class-text.php:232
+msgid "Datetime of last stock update"
+msgstr ""
+
+#: classes/class-text.php:228
+msgid "Debug"
+msgstr ""
+
+#: classes/class-text.php:204
+msgid "Default stock type"
+msgstr ""
+
+#: classes/class-text.php:196
+msgid "Delivery service"
 msgstr ""
 
 #: classes/class-text.php:121
+msgid "Distributor ID"
+msgstr ""
+
+#: classes/class-text.php:260
+msgid "Dropshipping"
+msgstr ""
+
+#: classes/class-text.php:97
+msgid "EAN / ISBN / Barcode"
+msgstr ""
+
+#: classes/class-text.php:145
 msgid "Empty postcode. Please check your address information."
 msgstr ""
 
-#: classes/class-text.php:77
+#: classes/class-text.php:101
 msgid "Enter EAN / ISBN / Barcode"
 msgstr ""
 
-#: classes/class-text.php:85
+#: classes/class-text.php:109
 msgid "Enter wholesale price"
 msgstr ""
 
-#: classes/class-text.php:140
+#: classes/class-text.php:164
 msgid "Error while searching pickup points"
 msgstr ""
 
-#: classes/class-text.php:109
+#: classes/class-text.php:133
 msgid "ERROR: Unable to place order."
 msgstr ""
 
 #. $secs, not translatable
-#: classes/class-text.php:281
+#: classes/class-text.php:305
 #, php-format
 msgid "Every %1$s seconds"
 msgstr ""
 
-#: classes/class-text.php:44
+#: classes/class-text.php:68
 msgid "Failed to order."
 msgstr ""
 
-#: classes/class-text.php:113
+#: classes/class-text.php:137
 msgid "Failed to order: Shipping method not configured."
 msgstr ""
 
-#: classes/class-text.php:248
+#: classes/class-text.php:272
 msgid "Fragile"
+msgstr ""
+
+#: classes/class-text.php:44
+msgid "Hide outdoor pickup points"
 msgstr ""
 
 #. Author URI of the plugin
 msgid "https://www.posti.fi/"
 msgstr ""
 
+#: classes/class-text.php:40
+msgid ""
+"If none of your preferred pickup points are listed, fill in a custom address "
+"above and select another pickup point."
+msgstr ""
+
 #. $shipping_postcode, not translatable
-#: classes/class-text.php:127
+#: classes/class-text.php:151
 #, php-format
 msgid "Invalid postcode \"%1$s\". Please check your address information."
 msgstr ""
 
-#: classes/class-text.php:244
+#: classes/class-text.php:268
 msgid "Large"
 msgstr ""
 
-#: classes/class-text.php:256
+#: classes/class-text.php:280
 msgid "Logs"
 msgstr ""
 
-#: classes/class-text.php:240
+#: classes/class-text.php:264
 msgid "LQ Process permission"
 msgstr ""
 
-#: classes/class-text.php:276
+#: classes/class-text.php:300
 msgid "Message"
 msgstr ""
 
-#: classes/class-text.php:252
+#: classes/class-text.php:276
 msgid "No logs found"
 msgstr ""
 
-#: classes/class-text.php:136
+#: classes/class-text.php:160
 msgid "No pickup points found"
 msgstr ""
 
-#: classes/class-text.php:232
+#: classes/class-text.php:256
 msgid "Not in stock"
 msgstr ""
 
-#: classes/class-text.php:36
+#: classes/class-text.php:60
 msgid "Order not placed"
 msgstr ""
 
-#: classes/class-text.php:48
+#: classes/class-text.php:72
 msgid "Order status"
 msgstr ""
 
-#: classes/class-text.php:28
+#: classes/class-text.php:52
 msgid "Other"
 msgstr ""
 
-#: classes/class-text.php:156
+#: classes/class-text.php:180
 msgid "Password"
 msgstr ""
 
-#: classes/class-text.php:16 templates/checkout-pickup.php:14 
-#: templates/checkout-pickup.php:15 templates/myaccount-order.php:10
+#: classes/class-text.php:28
+msgid "Pickup address"
+msgstr ""
+
+#: classes/class-text.php:16
 msgid "Pickup point"
 msgstr ""
 
@@ -205,14 +210,11 @@ msgstr ""
 msgid "Pickup points"
 msgstr ""
 
-msgid "Hide outdoor pickup points"
-msgstr ""
-
-#: classes/class-text.php:40
+#: classes/class-text.php:64
 msgid "Place Order"
 msgstr ""
 
-#: classes/class-text.php:132
+#: classes/class-text.php:156
 msgid "Please choose a pickup point."
 msgstr ""
 
@@ -221,26 +223,26 @@ msgstr ""
 msgid "Posti"
 msgstr ""
 
-#: classes/class-text.php:52
+#: classes/class-text.php:76
 msgid "Posti API Tracking"
 msgstr ""
 
-#: classes/class-text.php:105
+#: classes/class-text.php:129
 msgid ""
 "Posti error: product sync not active. Please check product SKU, price or try "
 "resave."
 msgstr ""
 
 #. Name of the plugin
-#: classes/class-text.php:228
+#: classes/class-text.php:252
 msgid "Posti Warehouse"
 msgstr ""
 
-#: classes/class-text.php:220
+#: classes/class-text.php:244
 msgid "Posti Warehouse Debug"
 msgstr ""
 
-#: classes/class-text.php:216
+#: classes/class-text.php:240
 msgid "Posti Warehouse settings"
 msgstr ""
 
@@ -248,76 +250,80 @@ msgstr ""
 msgid "Provides integration to Posti warehouse and dropshipping services."
 msgstr ""
 
-#: classes/class-text.php:69
+#: classes/class-text.php:93
 msgid "Remove Posti warehouse/supplier"
 msgstr ""
 
-#: templates/checkout-pickup.php:32
+#: templates/checkout-pickup.php:33
 msgid "Search"
 msgstr ""
 
-#: classes/class-text.php:24
+#: classes/class-text.php:36
+msgid "Search pickup points near you by typing your address above."
+msgstr ""
+
+#: classes/class-text.php:48
 msgid "Select a pickup point"
 msgstr ""
 
-#: classes/class-text.php:65
+#: classes/class-text.php:89
 msgid "Select Posti warehouse/supplier"
 msgstr ""
 
-#: classes/class-text.php:196
+#: classes/class-text.php:220
 msgid "Stock and order update interval (in seconds)"
 msgstr ""
 
-#: classes/class-text.php:89
+#: classes/class-text.php:113
 msgid "Stock type"
 msgstr ""
 
-#: classes/class-text.php:224
+#: classes/class-text.php:248
 msgid "Store"
 msgstr ""
 
-#: classes/class-text.php:32
+#: classes/class-text.php:56
 msgid "Store pickup"
 msgstr ""
 
-#: classes/class-text.php:200
+#: classes/class-text.php:224
 msgid "Test mode"
 msgstr ""
 
-#: classes/class-text.php:164
+#: classes/class-text.php:188
 msgid "TEST Password"
 msgstr ""
 
-#: classes/class-text.php:160
+#: classes/class-text.php:184
 msgid "TEST Username"
 msgstr ""
 
-#: classes/class-text.php:264
+#: classes/class-text.php:288
 msgid "Token expiration:"
 msgstr ""
 
 #. $number, not translatable
-#: classes/class-text.php:57
+#: classes/class-text.php:81
 #, php-format
 msgid "Tracking number: %1$s"
 msgstr ""
 
-#: classes/class-text.php:272
+#: classes/class-text.php:296
 msgid "Type"
 msgstr ""
 
-#: classes/class-text.php:152
+#: classes/class-text.php:176
 msgid "Username"
 msgstr ""
 
-#: classes/class-text.php:61 classes/class-text.php:93
+#: classes/class-text.php:85 classes/class-text.php:117
 msgid "Warehouse"
 msgstr ""
 
-#: classes/class-text.php:81
+#: classes/class-text.php:105
 msgid "Wholesale price"
 msgstr ""
 
-#: classes/class-text.php:144
+#: classes/class-text.php:168
 msgid "Wrong credentials - access token not received!"
 msgstr ""

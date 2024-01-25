@@ -57,7 +57,7 @@ function posti_warehouse_define_shipping_method() {
 				$this->title = 'Warehouse shipping';
 				$this->init_settings();
 			}
-			
+
 			public function process_admin_options() {
 				parent::process_admin_options();
 				

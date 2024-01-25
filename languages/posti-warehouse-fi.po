@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Posti Warehouse\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-07-03 11:04+0000\n"
-"PO-Revision-Date: 2023-08-22 16:25+0000\n"
-"Language-Team: Finnish\n"
+"PO-Revision-Date: 2024-01-25 12:14+0000\n"
+"Language-Team: Suomi\n"
 "Language: fi\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "MIME-Version: 1.0\n"
@@ -14,188 +14,193 @@ msgstr ""
 "X-Loco-Version: 2.6.4; wp-6.2.2\n"
 "X-Domain: posti-warehouse"
 
-#: classes/class-text.php:192
+#: classes/class-text.php:216
 msgid "Add tracking to email"
 msgstr "Lisää lähetystunnus sähköpostiin"
 
-#: classes/class-text.php:117
+#: classes/class-text.php:141
 msgid "An error occurred. Please try again later."
 msgstr "Tapahtui virhe. Yritä hetken kuluttua uudelleen."
 
-#: classes/class-text.php:188
+#: classes/class-text.php:212
 msgid "Auto mark orders as \"Completed\""
 msgstr "Vaihda valmis tilaus automaattisesti \"Toimitettu\" tilaan. "
 
-#: classes/class-text.php:184
+#: classes/class-text.php:208
 msgid "Auto ordering"
 msgstr "Lähetä tilaus automaattisesti varastolle"
 
-#: classes/class-text.php:168
+#: classes/class-text.php:192
 msgid "Business ID"
 msgstr "Y-tunnus"
 
-#: templates/checkout-pickup.php:22
+#: classes/class-text.php:24
 msgid "Choose one of pickup points close to the address you entered:"
 msgstr "Valitse ilmoittamaasi osoitetta lähellä oleva noutopiste."
 
-msgid "Pickup address"
-msgstr ""
-
-msgid "Custom pickup address"
-msgstr ""
-
-msgid "Search pickup points near you by typing your address above."
-msgstr ""
-
-msgid "If none of your preferred pickup points are listed, fill in a custom address above and select another pickup point."
-msgstr ""
-
-#: classes/class-text.php:101
+#: classes/class-text.php:125
 msgid "Confirm selection"
 msgstr "Vahvista valinta"
 
-#: classes/class-text.php:176
+#: classes/class-text.php:200
 msgid "Contract number"
 msgstr "Sopimusnumero"
 
-#: classes/class-text.php:268
+#: classes/class-text.php:292
 msgid "Created"
 msgstr "Luotu"
 
-#: classes/class-text.php:148
+#: classes/class-text.php:172
 msgid "Credentials matched - access token received!"
 msgstr "Tunnukset ovat oikein!"
 
-#: classes/class-text.php:260
+#: classes/class-text.php:284
 msgid "Current token:"
 msgstr "Voimassa oleva valtuutus:"
 
-#: classes/class-text.php:212
+#: classes/class-text.php:32
+msgid "Custom pickup address"
+msgstr ""
+
+#: classes/class-text.php:236
 msgid "Datetime of last order update"
 msgstr "Viimeisin tilauspäivityksen päiväys:"
 
-#: classes/class-text.php:208
+#: classes/class-text.php:232
 msgid "Datetime of last stock update"
 msgstr "Viimeisimmän saldopäivityksen päiväys"
 
-#: classes/class-text.php:204
+#: classes/class-text.php:228
 msgid "Debug"
 msgstr "Ongelman paikantaminen"
 
-#: classes/class-text.php:180
+#: classes/class-text.php:204
 msgid "Default stock type"
 msgstr "Oletus varastointitapa"
 
-#: classes/class-text.php:172
+#: classes/class-text.php:196
 msgid "Delivery service"
 msgstr "Toimitustapa"
 
-#: classes/class-text.php:97
+#: classes/class-text.php:121
 msgid "Distributor ID"
 msgstr "Toimittajan tunnus"
 
-#: classes/class-text.php:236
+#: classes/class-text.php:260
 msgid "Dropshipping"
 msgstr "Suoratoimitus"
 
-#: classes/class-text.php:73
+#: classes/class-text.php:97
 msgid "EAN / ISBN / Barcode"
 msgstr "EAN / ISBN / Viivakoodi"
 
-#: classes/class-text.php:121
+#: classes/class-text.php:145
 msgid "Empty postcode. Please check your address information."
 msgstr "Tyhjä postinumero. Tarkasta osoitetiedot."
 
-#: classes/class-text.php:77
+#: classes/class-text.php:101
 msgid "Enter EAN / ISBN / Barcode"
 msgstr "Syötä EAN / ISBN / viivakoodi"
 
-#: classes/class-text.php:85
+#: classes/class-text.php:109
 msgid "Enter wholesale price"
 msgstr "Syötä tukkuhinta"
 
-#: classes/class-text.php:140
+#: classes/class-text.php:164
 msgid "Error while searching pickup points"
 msgstr "Virhe noutopisteitä haettaessa"
 
-#: classes/class-text.php:109
+#: classes/class-text.php:133
 msgid "ERROR: Unable to place order."
 msgstr "VIRHE: Tilauksen lähettäminen epäonnistui."
 
 #. $secs, not translatable
-#: classes/class-text.php:281
+#: classes/class-text.php:305
 #, php-format
 msgid "Every %1$s seconds"
 msgstr "Joks %1$s sekuntti"
 
-#: classes/class-text.php:44
+#: classes/class-text.php:68
 msgid "Failed to order."
 msgstr "Tilaus epäonnistui."
 
-#: classes/class-text.php:113
+#: classes/class-text.php:137
 msgid "Failed to order: Shipping method not configured."
 msgstr "Tilaus epäonnistui: Toimitustapaa ei ole asetettu."
 
-#: classes/class-text.php:248
+#: classes/class-text.php:272
 msgid "Fragile"
 msgstr "Särkyvä"
+
+#: classes/class-text.php:44
+msgid "Hide outdoor pickup points"
+msgstr "Älä näytä ulkona olevia noutopisteitä"
 
 #. Author URI of the plugin
 msgid "https://www.posti.fi/"
 msgstr "https://www.posti.fi/"
 
+#: classes/class-text.php:40
+msgid ""
+"If none of your preferred pickup points are listed, fill in a custom address "
+"above and select another pickup point."
+msgstr ""
+
 #. $shipping_postcode, not translatable
-#: classes/class-text.php:127
+#: classes/class-text.php:151
 #, php-format
 msgid "Invalid postcode \"%1$s\". Please check your address information."
 msgstr "Väärä postinumero \"%1$s\". Tarkasta osoitetiedot. "
 
-#: classes/class-text.php:244
+#: classes/class-text.php:268
 msgid "Large"
 msgstr "Suuri"
 
-#: classes/class-text.php:256
+#: classes/class-text.php:280
 msgid "Logs"
 msgstr "Lokitiedot"
 
-#: classes/class-text.php:240
+#: classes/class-text.php:264
 msgid "LQ Process permission"
 msgstr "LQ Prosessilupa"
 
-#: classes/class-text.php:276
+#: classes/class-text.php:300
 msgid "Message"
 msgstr "Viesti"
 
-#: classes/class-text.php:252
+#: classes/class-text.php:276
 msgid "No logs found"
 msgstr "Lokitietoja ei löytynyt"
 
-#: classes/class-text.php:136
+#: classes/class-text.php:160
 msgid "No pickup points found"
 msgstr "Noutopisteitä ei löytynyt"
 
-#: classes/class-text.php:232
+#: classes/class-text.php:256
 msgid "Not in stock"
 msgstr "Ei varastossa"
 
-#: classes/class-text.php:36
+#: classes/class-text.php:60
 msgid "Order not placed"
 msgstr "Tilausta ei ole lähetetty."
 
-#: classes/class-text.php:48
+#: classes/class-text.php:72
 msgid "Order status"
 msgstr "Tilauksen status"
 
-#: classes/class-text.php:28
+#: classes/class-text.php:52
 msgid "Other"
 msgstr "Muu"
 
-#: classes/class-text.php:156
+#: classes/class-text.php:180
 msgid "Password"
 msgstr "Salasana"
 
-#: classes/class-text.php:16 templates/checkout-pickup.php:14 
-#: templates/checkout-pickup.php:15 templates/myaccount-order.php:10
+#: classes/class-text.php:28
+msgid "Pickup address"
+msgstr ""
+
+#: classes/class-text.php:16
 msgid "Pickup point"
 msgstr "Noutopiste"
 
@@ -203,14 +208,11 @@ msgstr "Noutopiste"
 msgid "Pickup points"
 msgstr "Noutopisteet"
 
-msgid "Hide outdoor pickup points"
-msgstr "Älä näytä ulkona olevia noutopisteitä"
-
-#: classes/class-text.php:40
+#: classes/class-text.php:64
 msgid "Place Order"
 msgstr "Lähetä tilaus"
 
-#: classes/class-text.php:132
+#: classes/class-text.php:156
 msgid "Please choose a pickup point."
 msgstr "Valitse noutopiste."
 
@@ -219,11 +221,11 @@ msgstr "Valitse noutopiste."
 msgid "Posti"
 msgstr "Posti"
 
-#: classes/class-text.php:52
+#: classes/class-text.php:76
 msgid "Posti API Tracking"
 msgstr "Posti API Tracking"
 
-#: classes/class-text.php:105
+#: classes/class-text.php:129
 msgid ""
 "Posti error: product sync not active. Please check product SKU, price or try "
 "resave."
@@ -232,15 +234,15 @@ msgstr ""
 "hinta, tai yritä tallentaa uudelleen."
 
 #. Name of the plugin
-#: classes/class-text.php:228
+#: classes/class-text.php:252
 msgid "Posti Warehouse"
 msgstr "Posti Varastopalvelu"
 
-#: classes/class-text.php:220
+#: classes/class-text.php:244
 msgid "Posti Warehouse Debug"
 msgstr "Postin varastopalvelu Debug"
 
-#: classes/class-text.php:216
+#: classes/class-text.php:240
 msgid "Posti Warehouse settings"
 msgstr "Postin varastopalvelun asetukset"
 
@@ -248,76 +250,80 @@ msgstr "Postin varastopalvelun asetukset"
 msgid "Provides integration to Posti warehouse and dropshipping services."
 msgstr "Tarjoaa liittymän Postin varastopalveluun ja suoratoimituksiin"
 
-#: classes/class-text.php:69
+#: classes/class-text.php:93
 msgid "Remove Posti warehouse/supplier"
 msgstr "Poista varastosta (Posti)"
 
-#: templates/checkout-pickup.php:32
+#: templates/checkout-pickup.php:33
 msgid "Search"
 msgstr "Hae"
 
-#: classes/class-text.php:24
+#: classes/class-text.php:36
+msgid "Search pickup points near you by typing your address above."
+msgstr ""
+
+#: classes/class-text.php:48
 msgid "Select a pickup point"
 msgstr "Valitse noutopiste"
 
-#: classes/class-text.php:65
+#: classes/class-text.php:89
 msgid "Select Posti warehouse/supplier"
 msgstr "Julkaise varastoon (Posti)"
 
-#: classes/class-text.php:196
+#: classes/class-text.php:220
 msgid "Stock and order update interval (in seconds)"
 msgstr "Tuotemäärien ja tilaustietojen päivitysväli (sekunteja)"
 
-#: classes/class-text.php:89
+#: classes/class-text.php:113
 msgid "Stock type"
 msgstr "Varastointitapa"
 
-#: classes/class-text.php:224
+#: classes/class-text.php:248
 msgid "Store"
 msgstr "Myymälä"
 
-#: classes/class-text.php:32
+#: classes/class-text.php:56
 msgid "Store pickup"
 msgstr "Nouto myymälästä"
 
-#: classes/class-text.php:200
+#: classes/class-text.php:224
 msgid "Test mode"
 msgstr "Testitila"
 
-#: classes/class-text.php:164
+#: classes/class-text.php:188
 msgid "TEST Password"
 msgstr "TESTI Salasana"
 
-#: classes/class-text.php:160
+#: classes/class-text.php:184
 msgid "TEST Username"
 msgstr "TESTI Käyttäjätunnus"
 
-#: classes/class-text.php:264
+#: classes/class-text.php:288
 msgid "Token expiration:"
 msgstr "Valtuutuksen vanhentuminen:"
 
 #. $number, not translatable
-#: classes/class-text.php:57
+#: classes/class-text.php:81
 #, php-format
 msgid "Tracking number: %1$s"
 msgstr "Seurantatunnus: %1$s"
 
-#: classes/class-text.php:272
+#: classes/class-text.php:296
 msgid "Type"
 msgstr "Tyyppi"
 
-#: classes/class-text.php:152
+#: classes/class-text.php:176
 msgid "Username"
 msgstr "Käyttäjätunnus"
 
-#: classes/class-text.php:61 classes/class-text.php:93
+#: classes/class-text.php:85 classes/class-text.php:117
 msgid "Warehouse"
 msgstr "Varasto"
 
-#: classes/class-text.php:81
+#: classes/class-text.php:105
 msgid "Wholesale price"
 msgstr "Tukkuhinta"
 
-#: classes/class-text.php:144
+#: classes/class-text.php:168
 msgid "Wrong credentials - access token not received!"
 msgstr "Väärä käyttäjätunnus/salasana - käytön valtuutusta ei saatu!"
