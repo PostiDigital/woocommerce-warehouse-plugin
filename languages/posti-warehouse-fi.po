@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: Posti Warehouse\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-07-03 11:04+0000\n"
-"PO-Revision-Date: 2024-01-25 12:14+0000\n"
+"PO-Revision-Date: 2024-01-26 13:17+0000\n"
 "Language-Team: Suomi\n"
 "Language: fi\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
@@ -11,8 +11,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Loco https://localise.biz/\n"
-"X-Loco-Version: 2.6.4; wp-6.2.2\n"
-"X-Domain: posti-warehouse"
+"X-Loco-Version: 2.6.4; wp-6.4.2\n"
+"X-Domain: posti-warehouse\n"
+"Last-Translator: Mihhail Suhhoruki"
 
 #: classes/class-text.php:216
 msgid "Add tracking to email"
@@ -60,7 +61,7 @@ msgstr "Voimassa oleva valtuutus:"
 
 #: classes/class-text.php:32
 msgid "Custom pickup address"
-msgstr ""
+msgstr "Muun noutopisteen osoite"
 
 #: classes/class-text.php:236
 msgid "Datetime of last order update"
@@ -145,6 +146,8 @@ msgid ""
 "If none of your preferred pickup points are listed, fill in a custom address "
 "above and select another pickup point."
 msgstr ""
+"Jos et löytänyt sopivaa noutopistettä, syötä osoite hakeaksesi muita "
+"noutopisteitä."
 
 #. $shipping_postcode, not translatable
 #: classes/class-text.php:151
@@ -198,7 +201,7 @@ msgstr "Salasana"
 
 #: classes/class-text.php:28
 msgid "Pickup address"
-msgstr ""
+msgstr "Noutopiste"
 
 #: classes/class-text.php:16
 msgid "Pickup point"
@@ -260,7 +263,7 @@ msgstr "Hae"
 
 #: classes/class-text.php:36
 msgid "Search pickup points near you by typing your address above."
-msgstr ""
+msgstr "Syötä osoite hakeaksesi lähelläsi olevia noutopisteitä"
 
 #: classes/class-text.php:48
 msgid "Select a pickup point"
