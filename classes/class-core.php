@@ -68,7 +68,8 @@ class Posti_Warehouse_Core {
 	}
 
 	public function attach_plugin_links($actions, $file) {
-		if (strpos($file, 'posti-warehouse') !== false) {
+		if (strpos($file, 'posti-warehouse') !== false 
+			|| strpos($file, 'woocommerce-warehouse-plugin') !== false) { // installed from zip
 			$settings_link = sprintf('<a href="%s">%s</a>', admin_url('options-general.php?page=posti_wh'), 'Settings');
 			array_unshift($actions, $settings_link);
 		}
