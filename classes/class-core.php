@@ -43,14 +43,6 @@ class Posti_Warehouse_Core {
 		add_filter('plugin_action_links', array($this, 'attach_plugin_links'), 10, 2);
 		
 		add_action('plugins_loaded', array($this, 'load_textdomain'));
-/*		
-		add_action('plugins_loaded',
-			function() {
-				//$this->load();
-				$this->load_textdomain();
-			}
-		);
-*/
 	}
 	
 	public function getApi() {
@@ -75,8 +67,8 @@ class Posti_Warehouse_Core {
 		load_plugin_textdomain('posti-warehouse', false, basename(plugin_dir_path(POSTI_WH_FILE__)) . '/languages');
 	}
 
-	public function attach_plugin_links( $actions, $file) {
-		if (strpos($file, 'woocommerce-warehouse-plugin') !== false) {
+	public function attach_plugin_links($actions, $file) {
+		if (strpos($file, 'posti-warehouse') !== false) {
 			$settings_link = sprintf('<a href="%s">%s</a>', admin_url('options-general.php?page=posti_wh'), 'Settings');
 			array_unshift($actions, $settings_link);
 		}

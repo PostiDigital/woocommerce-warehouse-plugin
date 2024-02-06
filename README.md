@@ -95,6 +95,7 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile addtional service is added to order/delivery. 
 
 ## Version history
+- 2.3.3: Bug fix: Settings link not shown when plugin is installed from shop.
 - 2.3.2: Limit "Hide outdoor pickup points" option to Posti pickup points.
 - 2.3.1: Updated pickup point translations.
 - 2.3.0: Added "Hide outdoor pickup points" option to Shipping tab.
