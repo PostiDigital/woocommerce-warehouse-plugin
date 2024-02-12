@@ -196,10 +196,6 @@ class Posti_Warehouse_Text {
 		return __('Delivery service', 'posti-warehouse');
 	}
 	
-	public static function field_contract() {
-		return __('Contract number', 'posti-warehouse');
-	}
-	
 	public static function field_type() {
 		return __('Default stock type', 'posti-warehouse');
 	}

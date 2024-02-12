@@ -21,6 +21,8 @@ More information about warehouse service is available at [Posti.fi / verkkokaupa
 
 More information about Posti dropshipping service is available at [Posti.fi / Glue palvelun käyttäminen ](https://www.posti.fi/fi/asiakastuki/yrityksen-tiedot/yritysasiakkaan-asiointikanavat/glue-palvelun-kayttaminen) 
 
+When using the warehouse plug-in please note that there can be a 10 minute delay between dashboard information and real warehouse inventory quantity and order fulfillment status.
+
 ## Installation
 
 This plug-in has been tested with WooCommerce version 7.7.0/WordPress version 6.2.2/PHP 7&8. You should always test the plug-in in your environment to ensure compatibility with other plug-ins also.
@@ -53,7 +55,6 @@ Add information to configure the warehouse settings:
 - **TEST Username** -  this is API key for the test environment of the Glue, which is provided by Posti. 
 - **TEST Pasword**  – this is API password for the test environment of the Glue, which is provided by Posti.
 - **Delivery service** - Select either Posti Warehouse or Dropshipping, this determines which delivery methods are available when you map shipping options..
-- **Contract number** – your contract number for Posti parcel services (6-digit long number which starts with number 6 )
 - **Default stock type** - select service you are mainly using (warehouse or dropshipping). You can change the value when you add new products.
   - **Posti Warehouse** - product is stocked by Posti warehouse
   - **Dropshipping** - product is stocked and order is fulfilled by supplier. 
@@ -95,6 +96,7 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile addtional service is added to order/delivery. 
 
 ## Version history
+- 2.3.4: Remove contract number field from settings page.
 - 2.3.3: Bug fix: Settings link not shown when plugin is installed from shop.
 - 2.3.2: Limit "Hide outdoor pickup points" option to Posti pickup points.
 - 2.3.1: Updated pickup point translations.

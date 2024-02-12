@@ -55,7 +55,6 @@ class Posti_Warehouse_Settings {
 			'posti_wh_field_password_test',
 			'posti_wh_field_service',
 			'posti_wh_field_business_id',
-			'posti_wh_field_contract',
 			'posti_wh_field_type',
 			'posti_wh_field_autoorder',
 			'posti_wh_field_autocomplete',
@@ -190,19 +189,6 @@ class Posti_Warehouse_Settings {
 				'posti_wh_options',
 				[
 					'label_for' => 'posti_wh_field_service',
-					'class' => 'posti_wh_row',
-					'posti_wh_custom_data' => 'custom',
-				]
-		);
-
-		add_settings_field(
-				'posti_wh_field_contract',
-				Posti_Warehouse_Text::field_contract(),
-				array($this, 'posti_wh_field_string_cb'),
-				'posti_wh',
-				'posti_wh_options',
-				[
-					'label_for' => 'posti_wh_field_contract',
 					'class' => 'posti_wh_row',
 					'posti_wh_custom_data' => 'custom',
 				]

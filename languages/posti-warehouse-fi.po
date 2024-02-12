@@ -43,10 +43,6 @@ msgstr "Valitse ilmoittamaasi osoitetta lähellä oleva noutopiste."
 msgid "Confirm selection"
 msgstr "Vahvista valinta"
 
-#: classes/class-text.php:200
-msgid "Contract number"
-msgstr "Sopimusnumero"
-
 #: classes/class-text.php:292
 msgid "Created"
 msgstr "Luotu"
