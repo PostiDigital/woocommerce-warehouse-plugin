@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name: Posti Warehouse
- * Version: 2.3.4
+ * Version: 2.3.6
  * Description: Provides integration to Posti warehouse and dropshipping services.
  * Author: Posti
  * Author URI: https://www.posti.fi/

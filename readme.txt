@@ -4,7 +4,7 @@ Tags: woocommerce, warehouse, posti
 Requires at least: 5.0
 Tested up to: 6.4.2
 Requires PHP: 7.1
-Stable tag: 2.3.4
+Stable tag: 2.3.6
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 

@@ -96,7 +96,7 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile addtional service is added to order/delivery. 
 
 ## Version history
-- 2.3.5: Support email update. WP banner update.
+- 2.3.6: Support email update. WP banner update.
 - 2.3.4: Remove contract number field from settings page.
 - 2.3.3: Bug fix: Settings link not shown when plugin is installed from shop.
 - 2.3.2: Limit "Hide outdoor pickup points" option to Posti pickup points.
