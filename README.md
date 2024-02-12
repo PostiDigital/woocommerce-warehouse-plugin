@@ -53,7 +53,6 @@ Add information to configure the warehouse settings:
 - **TEST Username** -  this is API key for the test environment of the Glue, which is provided by Posti. 
 - **TEST Pasword**  – this is API password for the test environment of the Glue, which is provided by Posti.
 - **Delivery service** - Select either Posti Warehouse or Dropshipping, this determines which delivery methods are available when you map shipping options..
-- **Contract number** – your contract number for Posti parcel services (6-digit long number which starts with number 6 )
 - **Default stock type** - select service you are mainly using (warehouse or dropshipping). You can change the value when you add new products.
   - **Posti Warehouse** - product is stocked by Posti warehouse
   - **Dropshipping** - product is stocked and order is fulfilled by supplier. 
@@ -92,9 +91,10 @@ Select your existing product or create a new, and update the product information
 - **Posti > Distributor ID** - This is optional value used by the warehouse service. You can input here your supplier's business ID (or your own reference for the supplier) and Glue is using it when you place Purchse Order in Glue. This ensures that the Purchase Order does not have products from multiple suppliers, which would be error.  
 - **Posti > LQ Process permission** - if enabled then LQ addtional service is added to order/delivery.
 - **Posti > Large** - if enable then Large addtional servie is added to order/delivery.
-- **Posti > Fragile** - if enabled then Fragile addtional service is added to order/delivery. 
+- **Posti > Fragile** - if enabled then Fragile additional service is added to order/delivery. 
 
 ## Version history
+- 2.4.0: TODO
 - 2.3.3: Bug fix: Settings link not shown when plugin is installed from shop.
 - 2.3.2: Limit "Hide outdoor pickup points" option to Posti pickup points.
 - 2.3.1: Updated pickup point translations.

@@ -33,11 +33,11 @@ class Posti_Warehouse_Text {
 	}
 	
 	public static function pickup_points_search_instruction1() {
-	    return __('Search pickup points near you by typing your address above.', 'posti-warehouse');
+		return __('Search pickup points near you by typing your address above.', 'posti-warehouse');
 	}
 	
 	public static function pickup_points_search_instruction2() {
-	    return __('If none of your preferred pickup points are listed, fill in a custom address above and select another pickup point.', 'posti-warehouse');
+		return __('If none of your preferred pickup points are listed, fill in a custom address above and select another pickup point.', 'posti-warehouse');
 	}
 	
 	public static function pickup_points_hide_outdoor() {
@@ -198,6 +198,10 @@ class Posti_Warehouse_Text {
 	
 	public static function field_contract() {
 		return __('Contract number', 'posti-warehouse');
+	}
+	
+	public static function field_reject_partial_orders() {
+		return __('Reject partial orders', 'posti-warehouse');
 	}
 	
 	public static function field_type() {

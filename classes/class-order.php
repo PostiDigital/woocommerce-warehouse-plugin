@@ -5,62 +5,62 @@ namespace Posti_Warehouse;
 defined('ABSPATH') || exit;
 
 class Posti_Warehouse_Order {
-    
-    private $orderStatus = false;
-    private $addTracking = false;
-    private $api;
-    private $logger;
-    private $product;
-    private $status_mapping;
-    
-    public function __construct(Posti_Warehouse_Api $api, Posti_Warehouse_Logger $logger, Posti_Warehouse_Product $product, $addTracking = false) {
-        $this->api = $api;
-        $this->logger = $logger;
-        $this->product = $product;
-        $this->addTracking = $addTracking;
-        
-        $statuses = array();
-        $statuses['Delivered'] = 'completed';
-        $statuses['Accepted'] = 'processing';
-        $statuses['Submitted'] = 'processing';
-        $statuses['Error'] = 'failed';
-        $statuses['Cancelled'] = 'cancelled';
-        $this->status_mapping = $statuses;
-        
-        //on order status change
-        add_action('woocommerce_order_status_changed', array($this, 'posti_check_order'), 10, 3);
-        //api tracking columns
-        add_filter('manage_edit-shop_order_columns', array($this, 'posti_tracking_column'));
-        add_action('manage_posts_custom_column', array($this, 'posti_tracking_column_data'));
-        
-        add_filter( 'woocommerce_order_item_display_meta_key', array($this, 'change_metadata_title_for_order_shipping_method'), 20, 3 );
-        
-        if ($this->addTracking) {
-            add_action('woocommerce_email_order_meta', array($this, 'addTrackingToEmail'), 10, 4);
-        }
-        
-    }
-    
-    public function change_metadata_title_for_order_shipping_method( $key, $meta, $item) {
-        if ('warehouse_pickup_point' === $meta->key) {
-            $key = Posti_Warehouse_Text::pickup_point_title();
-        }
-        
-        return $key;
-    }
-    
-    public function getOrderStatus( $order_id) {
-        $order_data = $this->getOrder($order_id);
-        if (!$order_data) {
-            return Posti_Warehouse_Text::order_not_placed();
-        }
-        $this->orderStatus = $order_data['status']['value'];
-        return $order_data['status']['value'];
-    }
-    
-    public function getOrderActionButton() {
-        if (!$this->orderStatus) {
-            ?>
+	
+	private $orderStatus = false;
+	private $addTracking = false;
+	private $api;
+	private $logger;
+	private $product;
+	private $status_mapping;
+	
+	public function __construct(Posti_Warehouse_Api $api, Posti_Warehouse_Logger $logger, Posti_Warehouse_Product $product, $addTracking = false) {
+		$this->api = $api;
+		$this->logger = $logger;
+		$this->product = $product;
+		$this->addTracking = $addTracking;
+		
+		$statuses = array();
+		$statuses['Delivered'] = 'completed';
+		$statuses['Accepted'] = 'processing';
+		$statuses['Submitted'] = 'processing';
+		$statuses['Error'] = 'failed';
+		$statuses['Cancelled'] = 'cancelled';
+		$this->status_mapping = $statuses;
+		
+		//on order status change
+		add_action('woocommerce_order_status_changed', array($this, 'posti_check_order'), 10, 3);
+		//api tracking columns
+		add_filter('manage_edit-shop_order_columns', array($this, 'posti_tracking_column'));
+		add_action('manage_posts_custom_column', array($this, 'posti_tracking_column_data'));
+		
+		add_filter( 'woocommerce_order_item_display_meta_key', array($this, 'change_metadata_title_for_order_shipping_method'), 20, 3 );
+		
+		if ($this->addTracking) {
+			add_action('woocommerce_email_order_meta', array($this, 'addTrackingToEmail'), 10, 4);
+		}
+		
+	}
+	
+	public function change_metadata_title_for_order_shipping_method( $key, $meta, $item) {
+		if ('warehouse_pickup_point' === $meta->key) {
+			$key = Posti_Warehouse_Text::pickup_point_title();
+		}
+		
+		return $key;
+	}
+	
+	public function getOrderStatus( $order_id) {
+		$order_data = $this->getOrder($order_id);
+		if (!$order_data) {
+			return Posti_Warehouse_Text::order_not_placed();
+		}
+		$this->orderStatus = $order_data['status']['value'];
+		return $order_data['status']['value'];
+	}
+	
+	public function getOrderActionButton() {
+		if (!$this->orderStatus) {
+			?>
 			<button type = "button" class="button button-posti" id = "posti-order-btn" name="posti_order_action"  onclick="posti_order_change(this);" value="place_order"><?php echo esc_html(Posti_Warehouse_Text::order_place()); ?></button>
 			<?php
 		}
@@ -70,19 +70,46 @@ class Posti_Warehouse_Order {
 		if (!is_object($order)) {
 			$order = wc_get_order($order);
 		}
+
 		if (!$order) {
 			return false;
 		}
+
 		$items = $order->get_items();
+		if (count($items) == 0) {
+			return false;
+		}
+
 		foreach ($items as $item_id => $item) {
-			$product_warehouse = get_post_meta($item['product_id'], '_posti_wh_warehouse', true);
-			$type = $this->product->get_stock_type_by_warehouse($product_warehouse);
-			if ('Posti' === $type || 'Store' === $type || 'Catalog' === $type) {
+			if ($this->product->has_known_stock_type($item['product_id'])) {
 				return true;
 			}
 		}
 
 		return false;
+	}
+
+	public function hasPostiProductsOnly( $order) {
+		if (!is_object($order)) {
+			$order = wc_get_order($order);
+		}
+
+		if (!$order) {
+			return false;
+		}
+
+		$items = $order->get_items();
+		if (count($items) == 0) {
+			return false;
+		}
+
+		foreach ($items as $item_id => $item) {
+			if (!$this->product->has_known_stock_type($item['product_id'])) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	public function getOrder( $order_id) {
@@ -94,8 +121,17 @@ class Posti_Warehouse_Order {
 	}
 
 	public function addOrder( $order) {
+		$options = Posti_Warehouse_Settings::get();
+		return $this->addOrderWithOptions($order, $options);
+	}
+
+	public function addOrderWithOptions( $order, $options) {
 		if (!is_object($order)) {
 			$order = wc_get_order($order);
+		}
+		
+		if (Posti_Warehouse_Settings::is_reject_partial_orders($options) && !$this->hasPostiProductsOnly($order)) {
+			return [ 'error' => 'ERROR: Partial order not allowed.' ];
 		}
 
 		$order_services = $this->get_additional_services($order);
@@ -452,7 +488,7 @@ class Posti_Warehouse_Order {
 				$posti_order_id = get_post_meta($order_id, '_posti_id', true);
 				
 				if ($is_posti_order && empty($posti_order_id)) {
-					$this->addOrder($order);
+					$this->addOrderWithOptions($order, $options);
 
 				} else {
 					$this->logger->log('info', 'Order  ' . $order_id . ' is not posti');

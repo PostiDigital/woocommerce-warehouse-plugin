@@ -89,7 +89,13 @@ class Posti_Warehouse_Product {
 		
 		return $redirect_to;
 	}
-	
+
+	public function has_known_stock_type($product_id) {
+	    $product_warehouse = get_post_meta($product_id, '_posti_wh_warehouse', true);
+		$type = $this->get_stock_type_by_warehouse($product_warehouse);
+		return 'Posti' === $type || 'Store' === $type || 'Catalog' === $type;
+	}
+
 	public function woocom_simple_product_ean_field() {
 		global $woocommerce, $post;
 		$product = new \WC_Product(get_the_ID());
@@ -213,7 +219,7 @@ class Posti_Warehouse_Product {
 						'id' => '_posti_wh_stock_type',
 						'class' => 'select short posti-wh-select2',
 						'label' => Posti_Warehouse_Text::field_stock_type(),
-					    'options' => Posti_Warehouse_Dataset::getSToreTypes(),
+						'options' => Posti_Warehouse_Dataset::getSToreTypes(),
 						'value' => $type
 					)
 			);

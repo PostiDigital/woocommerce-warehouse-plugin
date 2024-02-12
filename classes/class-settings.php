@@ -55,7 +55,7 @@ class Posti_Warehouse_Settings {
 			'posti_wh_field_password_test',
 			'posti_wh_field_service',
 			'posti_wh_field_business_id',
-			'posti_wh_field_contract',
+			'posti_wh_field_reject_partial_order',
 			'posti_wh_field_type',
 			'posti_wh_field_autoorder',
 			'posti_wh_field_autocomplete',
@@ -97,7 +97,11 @@ class Posti_Warehouse_Settings {
 	public static function is_add_tracking( $options) {
 		return self::is_option_true($options, 'posti_wh_field_addtracking');
 	}
-	
+
+	public static function is_reject_partial_orders( $options) {
+		return self::is_option_true($options, 'posti_wh_field_reject_partial_order');
+	}
+
 	public static function is_changed( &$old_options, &$new_options, $option) {
 		return self::get_value($old_options, $option) != self::get_value($new_options, $option);
 	}
@@ -196,15 +200,15 @@ class Posti_Warehouse_Settings {
 		);
 
 		add_settings_field(
-				'posti_wh_field_contract',
-				Posti_Warehouse_Text::field_contract(),
-				array($this, 'posti_wh_field_string_cb'),
+				'posti_wh_field_reject_partial_order',
+				Posti_Warehouse_Text::field_reject_partial_orders(),
+				array($this, 'posti_wh_field_checkbox_cb'),
 				'posti_wh',
 				'posti_wh_options',
 				[
-					'label_for' => 'posti_wh_field_contract',
+					'label_for' => 'posti_wh_field_reject_partial_order',
 					'class' => 'posti_wh_row',
-					'posti_wh_custom_data' => 'custom',
+					'posti_wh_custom_data' => 'custom'
 				]
 		);
 
@@ -339,7 +343,7 @@ class Posti_Warehouse_Settings {
 			$checked = ' checked="checked" ';
 		}
 		?>
-		<input <?php echo esc_html($checked); ?> id = "<?php echo esc_attr($args['label_for']); ?>" name='posti_wh_options[<?php echo esc_attr($args['label_for']); ?>]' type='checkbox' value = "1"/>
+		<input <?php echo $checked; ?> id = "<?php echo esc_attr($args['label_for']); ?>" name='posti_wh_options[<?php echo esc_attr($args['label_for']); ?>]' type='checkbox' value = "1"/>
 		<?php
 	}
 	
