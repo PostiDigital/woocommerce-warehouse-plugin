@@ -96,6 +96,7 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile additional service is added to order/delivery. 
 
 ## Version history
+- 2.4.1: internal: Changed how plugin gets order status (WC_Order get_status)
 - 2.4.0:
     - Added "Reject partial order" setting.
     - Changed products quantity sync to allow products with duplicate SKUs.

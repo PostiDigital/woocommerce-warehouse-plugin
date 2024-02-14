@@ -192,11 +192,11 @@ class Posti_Warehouse_Api {
 			return [];
 		}
 		
-		$products = $this->ApiCall('/ecommerce/v3/orders'
+		$result = $this->ApiCall('/ecommerce/v3/orders'
 				. '?modifiedFromDate=' . urlencode($dttm_since)
 				. '&size=' . $size
 				. '&page=' . $page, '', 'GET');
-		return $products;
+		return $result;
 	}
 	
 	public function getPickupPoints($postcode = null, $street_address = null, $country = null, $city = null, $service_code = null, $type = null, $capability = null) {

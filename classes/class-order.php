@@ -201,14 +201,14 @@ class Posti_Warehouse_Order {
 		foreach ($orders as $order) {
 			$order_id = $order['externalId'];
 			if (isset($post_by_order_id[$order_id]) && !empty($post_by_order_id[$order_id])) {
-				$this->sync_order($post_by_order_id[$order_id], $order, $autocomplete);
+			    $this->sync_order($post_by_order_id[$order_id], $order_id, $order, $autocomplete);
 			}
 		}
 
 		return true;
 	}
 
-	public function sync_order( $id, $order, $autocomplete) {
+	public function sync_order( $id, $order_external_id, $order, $autocomplete) {
 		try {
 			$tracking = isset($order['trackingCodes']) ? $order['trackingCodes'] : '';
 			if (!empty($tracking)) {
@@ -232,9 +232,8 @@ class Posti_Warehouse_Order {
 			if (false === $_order) {
 				return;
 			}
-	
-			$data = $_order->get_data();
-			$status_old = false !== $data ? $data['status'] : '';
+
+			$status_old = $_order->get_status();
 			if ($status_old !== $status_new) {
 				if ('completed' === $status_new) {
 					if (isset($autocomplete)) {
@@ -250,6 +249,10 @@ class Posti_Warehouse_Order {
 					$this->logger->log('info', "Changed order $id status $status_old -> $status_new");
 				}
 			}
+			else if ('completed' === $status_old) {
+				$this->logger->log('info', "Order $id ($order_external_id) status is already completed");
+			}
+			
 		} catch (\Exception $e) {
 			$this->logger->log('error', $e->getMessage());
 		}
