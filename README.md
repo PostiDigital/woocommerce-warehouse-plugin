@@ -4,7 +4,7 @@
 
 Posti warehouse plug-in provides integration to Glue platform to enable **warehouse** and **dropshipping** services offered by Posti. Your company need service agreement with Posti to use the services. 
 
-If you have questions about the Posti warehouse service or dropshipping service, please contact kari.nykanen@posti.com. 
+If you have questions about the Posti warehouse service or dropshipping service, please contact asiakaspalvelu@transval.fi.
 
 ## Features
 
@@ -20,6 +20,8 @@ Main features of the plug-in are:
 More information about warehouse service is available at [Posti.fi / verkkokaupan varasto](https://www.posti.fi/fi/yrityksille/paketit-ja-logistiikka/verkkokaupoille/verkkokaupan-varasto) 
 
 More information about Posti dropshipping service is available at [Posti.fi / Glue palvelun käyttäminen ](https://www.posti.fi/fi/asiakastuki/yrityksen-tiedot/yritysasiakkaan-asiointikanavat/glue-palvelun-kayttaminen) 
+
+When using the warehouse plug-in please note that there can be a 10 minute delay between dashboard information and real warehouse inventory quantity and order fulfillment status.
 
 ## Installation
 
@@ -95,6 +97,8 @@ Select your existing product or create a new, and update the product information
 
 ## Version history
 - 2.4.0: TODO
+- 2.3.6: Support email update. WP banner update.
+- 2.3.4: Remove contract number field from settings page.
 - 2.3.3: Bug fix: Settings link not shown when plugin is installed from shop.
 - 2.3.2: Limit "Hide outdoor pickup points" option to Posti pickup points.
 - 2.3.1: Updated pickup point translations.

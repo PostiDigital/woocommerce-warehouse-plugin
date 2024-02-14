@@ -13,7 +13,7 @@ This plugin enables WooCommerce to integrate with Posti warehouse and dropshippi
 == Description ==
 
 [Posti](https://www.posti.fi/) warehouse plug-in provides integration to Glue platform to enable warehouse and dropshipping services offered by Posti. Your company need service agreement with Posti to use the services.
-If you have questions about the Posti warehouse service or dropshipping service, please contact kari.nykanen@posti.com.
+If you have questions about the Posti warehouse service or dropshipping service, please contact asiakaspalvelu@transval.fi.
 
 == Features ==
 

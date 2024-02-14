@@ -44,10 +44,6 @@ msgstr ""
 msgid "Confirm selection"
 msgstr ""
 
-#: classes/class-text.php:200
-msgid "Contract number"
-msgstr ""
-
 #: classes/class-text.php:292
 msgid "Created"
 msgstr ""
