@@ -37,8 +37,8 @@ class Posti_Warehouse_Product {
 	}
 	
 	public function custom_columns_register( $columns) {
-		$columns['warehouse'] = Posti_Warehouse_Text::column_warehouse();
-		
+		$columns['warehouse'] = '⛟';
+
 		return $columns;
 	}
 	
@@ -213,7 +213,7 @@ class Posti_Warehouse_Product {
 						'id' => '_posti_wh_stock_type',
 						'class' => 'select short posti-wh-select2',
 						'label' => Posti_Warehouse_Text::field_stock_type(),
-					    'options' => Posti_Warehouse_Dataset::getSToreTypes(),
+						'options' => Posti_Warehouse_Dataset::getSToreTypes(),
 						'value' => $type
 					)
 			);
@@ -761,14 +761,24 @@ class Posti_Warehouse_Product {
 		foreach ($posts as $post) {
 			$product_id = get_post_meta($post->ID, '_posti_id', true);
 			if (isset($product_id) && !empty($product_id)) {
-				$post_by_product_id[$product_id] = $post->ID;
+				if (isset($post_by_product_id[$product_id])) {
+					$post_ids = $post_by_product_id[$product_id];
+					array_push($post_ids, $post->ID);
+					$post_by_product_id[$product_id] = $post_ids;
+				}
+				else {
+					$post_by_product_id[$product_id] = array($post->ID);
+				}
 			}
 		}
 
 		foreach ($balances as $balance) {
 			$product_id = $balance['productExternalId'];
 			if (isset($post_by_product_id[$product_id]) && !empty($post_by_product_id[$product_id])) {
-				$this->sync_product($post_by_product_id[$product_id], $product_id, $balance);
+				$post_ids = $post_by_product_id[$product_id];
+				foreach ($post_ids as $post_id) {
+					$this->sync_product($post_id, $product_id, $balance);
+				}
 			}
 		}
 	}

@@ -67,7 +67,7 @@ class Posti_Warehouse_Logger {
 	   
 		$table_name = $wpdb->prefix . self::TABLE_NAME;
 
-		$results = $wpdb->get_results('SELECT * FROM `' . $table_name . '` order by created_at DESC, id DESC LIMIT 50');
+		$results = $wpdb->get_results('SELECT * FROM `' . $table_name . '` order by created_at DESC, id DESC LIMIT 100');
 		return $results;
 	}
 
