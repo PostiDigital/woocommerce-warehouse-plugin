@@ -91,7 +91,7 @@ class Posti_Warehouse_Product {
 	}
 
 	public function has_known_stock_type($product_id) {
-	    $product_warehouse = get_post_meta($product_id, '_posti_wh_warehouse', true);
+		$product_warehouse = get_post_meta($product_id, '_posti_wh_warehouse', true);
 		$type = $this->get_stock_type_by_warehouse($product_warehouse);
 		return 'Posti' === $type || 'Store' === $type || 'Catalog' === $type;
 	}
@@ -750,6 +750,7 @@ class Posti_Warehouse_Product {
 
 		$posts_query = array(
 			'post_type' => ['product', 'product_variation'],
+			'numberposts' => -1,
 			'meta_query' => array(
 				array(
 					'key' => '_posti_id',

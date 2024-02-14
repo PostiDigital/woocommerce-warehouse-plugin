@@ -180,6 +180,7 @@ class Posti_Warehouse_Order {
 		$posts_query = array(
 			'post_type' => 'shop_order',
 			'post_status' => 'any',
+			'numberposts' => -1,
 			'meta_query' => array(
 				'relation' => 'AND',
 				array(
