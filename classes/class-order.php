@@ -70,46 +70,19 @@ class Posti_Warehouse_Order {
 		if (!is_object($order)) {
 			$order = wc_get_order($order);
 		}
-
 		if (!$order) {
 			return false;
 		}
-
 		$items = $order->get_items();
-		if (count($items) == 0) {
-			return false;
-		}
-
 		foreach ($items as $item_id => $item) {
-			if ($this->product->has_known_stock_type($item['product_id'])) {
+			$product_warehouse = get_post_meta($item['product_id'], '_posti_wh_warehouse', true);
+			$type = $this->product->get_stock_type_by_warehouse($product_warehouse);
+			if ('Posti' === $type || 'Store' === $type || 'Catalog' === $type) {
 				return true;
 			}
 		}
 
 		return false;
-	}
-
-	public function hasPostiProductsOnly( $order) {
-		if (!is_object($order)) {
-			$order = wc_get_order($order);
-		}
-
-		if (!$order) {
-			return false;
-		}
-
-		$items = $order->get_items();
-		if (count($items) == 0) {
-			return false;
-		}
-
-		foreach ($items as $item_id => $item) {
-			if (!$this->product->has_known_stock_type($item['product_id'])) {
-				return false;
-			}
-		}
-
-		return true;
 	}
 
 	public function getOrder( $order_id) {
@@ -121,17 +94,8 @@ class Posti_Warehouse_Order {
 	}
 
 	public function addOrder( $order) {
-		$options = Posti_Warehouse_Settings::get();
-		return $this->addOrderWithOptions($order, $options);
-	}
-
-	public function addOrderWithOptions( $order, $options) {
 		if (!is_object($order)) {
 			$order = wc_get_order($order);
-		}
-		
-		if (Posti_Warehouse_Settings::is_reject_partial_orders($options) && !$this->hasPostiProductsOnly($order)) {
-			return [ 'error' => 'ERROR: Partial order not allowed.' ];
 		}
 
 		$order_services = $this->get_additional_services($order);
@@ -245,37 +209,49 @@ class Posti_Warehouse_Order {
 	}
 
 	public function sync_order( $id, $order, $autocomplete) {
-		$tracking = isset($order['trackingCodes']) ? $order['trackingCodes'] : '';
-		if (!empty($tracking)) {
-			if (is_array($tracking)) {
-				$tracking = implode(', ', $tracking);
+		try {
+			$tracking = isset($order['trackingCodes']) ? $order['trackingCodes'] : '';
+			if (!empty($tracking)) {
+				if (is_array($tracking)) {
+					$tracking = implode(', ', $tracking);
+				}
+				update_post_meta($id, '_posti_api_tracking', sanitize_text_field($tracking));
 			}
-			update_post_meta($id, '_posti_api_tracking', sanitize_text_field($tracking));
-		}
-
-		$status = $order['status']['value'];
-		if (!isset($this->status_mapping[$status])) {
-			return;
-		}
-		$status_new = $this->status_mapping[$status];
-
-		$_order = wc_get_order($id);
-		if (false === $_order) {
-			return;
-		}
-
-		$data = $_order->get_data();
-		$status_old = false !== $data ? $data['status'] : '';
-		if ($status_old !== $status_new) {
-			if ('completed' == $status_new) {
-				if (isset($autocomplete)) {
+	
+			$status = isset($order['status']) && isset($order['status']['value']) ? $order['status']['value'] : '';
+			if (empty($status)) {
+				return;
+			}
+	
+			$status_new = isset($this->status_mapping[$status]) ? $this->status_mapping[$status] : '';
+			if (empty($status_new)) {
+				return;
+			}
+	
+			$_order = wc_get_order($id);
+			if (false === $_order) {
+				return;
+			}
+	
+			$data = $_order->get_data();
+			$status_old = false !== $data ? $data['status'] : '';
+			if ($status_old !== $status_new) {
+				if ('completed' === $status_new) {
+					if (isset($autocomplete)) {
+						$_order->update_status($status_new, "Posti Glue: $status", true);
+						$this->logger->log('info', "Changed order $id status $status_old -> $status_new");
+					}
+					else {
+						$this->logger->log('info', "Order $id autocomplete disabled for status $status_new");
+					}
+	
+				} else {
 					$_order->update_status($status_new, "Posti Glue: $status", true);
 					$this->logger->log('info', "Changed order $id status $status_old -> $status_new");
 				}
-			} else {
-				$_order->update_status($status_new, "Posti Glue: $status", true);
-				$this->logger->log('info', "Changed order $id status $status_old -> $status_new");
 			}
+		} catch (\Exception $e) {
+			$this->logger->log('error', $e->getMessage());
 		}
 	}
 
@@ -486,9 +462,11 @@ class Posti_Warehouse_Order {
 				$order = wc_get_order($order_id);
 				$is_posti_order = $this->hasPostiProducts($order);
 				$posti_order_id = get_post_meta($order_id, '_posti_id', true);
-				
-				if ($is_posti_order && empty($posti_order_id)) {
-					$this->addOrderWithOptions($order, $options);
+
+				if ($is_posti_order) {
+					if (empty($posti_order_id)) {
+						$this->addOrder($order);
+					}
 
 				} else {
 					$this->logger->log('info', 'Order  ' . $order_id . ' is not posti');
