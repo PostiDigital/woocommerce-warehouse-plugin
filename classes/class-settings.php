@@ -63,6 +63,7 @@ class Posti_Warehouse_Settings {
 			'posti_wh_field_crontime',
 			'posti_wh_field_test_mode',
 			'posti_wh_field_debug',
+			'posti_wh_field_verbose_logging',
 			'posti_wh_field_stock_sync_dttm',
 			'posti_wh_field_order_sync_dttm'
 		];
@@ -84,6 +85,10 @@ class Posti_Warehouse_Settings {
 	
 	public static function is_debug( $options) {
 		return self::is_option_true($options, 'posti_wh_field_debug');
+	}
+	
+	public static function is_verbose_logging( $options) {
+		return self::is_option_true($options, 'posti_wh_field_verbose_logging');
 	}
 	
 	public static function is_test( $options) {
@@ -303,6 +308,19 @@ class Posti_Warehouse_Settings {
 					'class' => 'posti_wh_row',
 					'posti_wh_custom_data' => 'custom',
 				]
+		);
+
+		add_settings_field(
+			'posti_wh_field_verbose_logging',
+			Posti_Warehouse_Text::field_field_verbose_logging(),
+			array($this, 'posti_wh_field_checkbox_cb'),
+			'posti_wh',
+			'posti_wh_options',
+			[
+				'label_for' => 'posti_wh_field_verbose_logging',
+				'class' => 'posti_wh_row',
+				'posti_wh_custom_data' => 'custom',
+			]
 		);
 
 		add_settings_field(

@@ -171,6 +171,12 @@ class Posti_Warehouse_Order {
 			}
 		}
 		
+		$options = Posti_Warehouse_Settings::get();
+		$is_verbose = Posti_Warehouse_Settings::is_verbose_logging($options);
+		if ($is_verbose) {
+			$this->logger->log('info', "Got order statuses for: " . implode(', ', $order_ids));
+		}
+		
 		$posts_query = array(
 			'post_type' => 'shop_order',
 			'post_status' => 'any',
@@ -184,7 +190,19 @@ class Posti_Warehouse_Order {
 			)
 		);
 		$posts = get_posts($posts_query);
+		if ($is_verbose) {
+			$matched_post_ids = array();
+			foreach ($posts as $post) {
+				array_push($matched_post_ids, (string) $post->ID);
+			}
+			$this->logger->log('info', "Matched orders: " . implode(', ', $matched_post_ids));
+		}
+		
 		if (count($posts) == 0) {
+			if ($is_verbose) {
+				$this->logger->log('info', "No matched orders for status update");
+			}
+
 			return true;
 		}
 		
@@ -195,20 +213,19 @@ class Posti_Warehouse_Order {
 				$post_by_order_id[$order_id] = $post->ID;
 			}
 		}
-		
-		$options = Posti_Warehouse_Settings::get();
+
 		$autocomplete = Posti_Warehouse_Settings::get_value($options, 'posti_wh_field_autocomplete');
 		foreach ($orders as $order) {
 			$order_id = $order['externalId'];
 			if (isset($post_by_order_id[$order_id]) && !empty($post_by_order_id[$order_id])) {
-			    $this->sync_order($post_by_order_id[$order_id], $order_id, $order, $autocomplete);
+				$this->sync_order($post_by_order_id[$order_id], $order_id, $order, $autocomplete, $is_verbose);
 			}
 		}
 
 		return true;
 	}
 
-	public function sync_order( $id, $order_external_id, $order, $autocomplete) {
+	public function sync_order( $id, $order_external_id, $order, $autocomplete, $is_verbose) {
 		try {
 			$tracking = isset($order['trackingCodes']) ? $order['trackingCodes'] : '';
 			if (!empty($tracking)) {
@@ -251,6 +268,9 @@ class Posti_Warehouse_Order {
 			}
 			else if ('completed' === $status_old) {
 				$this->logger->log('info', "Order $id ($order_external_id) status is already completed");
+			}
+			else if ($is_verbose) {
+				$this->logger->log('info', "Order $id ($order_external_id) status is already $status_new");
 			}
 			
 		} catch (\Exception $e) {

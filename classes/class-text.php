@@ -228,6 +228,10 @@ class Posti_Warehouse_Text {
 		return __('Debug', 'posti-warehouse');
 	}
 	
+	public static function field_field_verbose_logging() {
+		return __('Verbose logging', 'posti-warehouse');
+	}
+	
 	public static function field_stock_sync_dttm() {
 		return __('Datetime of last stock update', 'posti-warehouse');
 	}
