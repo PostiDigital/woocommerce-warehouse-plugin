@@ -748,6 +748,12 @@ class Posti_Warehouse_Product {
 		}
 		$product_ids = array_unique($product_ids_tmp);
 
+		$options = Posti_Warehouse_Settings::get();
+		$is_verbose = Posti_Warehouse_Settings::is_verbose_logging($options);
+		if ($is_verbose) {
+			$this->logger->log('info', "Got inventory updates for: " . implode(', ', $product_ids_tmp));
+		}
+		
 		$posts_query = array(
 			'post_type' => ['product', 'product_variation'],
 			'numberposts' => -1,
@@ -761,7 +767,19 @@ class Posti_Warehouse_Product {
 		);
 		$posts = get_posts($posts_query);
 		if (0 == count($posts)) {
+			if ($is_verbose) {
+				$this->logger->log('info', "No matched products for inventory update");
+			}
+			
 			return;
+		}
+
+		if ($is_verbose) {
+			$matched_post_ids = array();
+			foreach ($posts as $post) {
+				array_push($matched_post_ids, (string) $post->ID);
+			}
+			$this->logger->log('info', "Matched products: " . implode(', ', $matched_post_ids));
 		}
 
 		$post_by_product_id = array();

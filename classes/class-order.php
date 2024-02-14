@@ -70,19 +70,46 @@ class Posti_Warehouse_Order {
 		if (!is_object($order)) {
 			$order = wc_get_order($order);
 		}
+		
 		if (!$order) {
 			return false;
 		}
+		
 		$items = $order->get_items();
+		if (count($items) == 0) {
+			return false;
+		}
+		
 		foreach ($items as $item_id => $item) {
-			$product_warehouse = get_post_meta($item['product_id'], '_posti_wh_warehouse', true);
-			$type = $this->product->get_stock_type_by_warehouse($product_warehouse);
-			if ('Posti' === $type || 'Store' === $type || 'Catalog' === $type) {
+			if ($this->product->has_known_stock_type($item['product_id'])) {
 				return true;
 			}
 		}
-
+		
 		return false;
+	}
+	
+	public function hasPostiProductsOnly( $order) {
+		if (!is_object($order)) {
+			$order = wc_get_order($order);
+		}
+		
+		if (!$order) {
+			return false;
+		}
+		
+		$items = $order->get_items();
+		if (count($items) == 0) {
+			return false;
+		}
+		
+		foreach ($items as $item_id => $item) {
+			if (!$this->product->has_known_stock_type($item['product_id'])) {
+				return false;
+			}
+		}
+		
+		return true;
 	}
 
 	public function getOrder( $order_id) {
@@ -94,8 +121,17 @@ class Posti_Warehouse_Order {
 	}
 
 	public function addOrder( $order) {
+		$options = Posti_Warehouse_Settings::get();
+		return $this->addOrderWithOptions($order, $options);
+	}
+	
+	public function addOrderWithOptions( $order, $options) {
 		if (!is_object($order)) {
 			$order = wc_get_order($order);
+		}
+		
+		if (Posti_Warehouse_Settings::is_reject_partial_orders($options) && !$this->hasPostiProductsOnly($order)) {
+			return [ 'error' => 'ERROR: Partial order not allowed.' ];
 		}
 
 		$order_services = $this->get_additional_services($order);
@@ -191,20 +227,20 @@ class Posti_Warehouse_Order {
 			)
 		);
 		$posts = get_posts($posts_query);
-		if ($is_verbose) {
-			$matched_post_ids = array();
-			foreach ($posts as $post) {
-				array_push($matched_post_ids, (string) $post->ID);
-			}
-			$this->logger->log('info', "Matched orders: " . implode(', ', $matched_post_ids));
-		}
-		
 		if (count($posts) == 0) {
 			if ($is_verbose) {
 				$this->logger->log('info', "No matched orders for status update");
 			}
 
 			return true;
+		}
+		
+		if ($is_verbose) {
+			$matched_post_ids = array();
+			foreach ($posts as $post) {
+				array_push($matched_post_ids, (string) $post->ID);
+			}
+			$this->logger->log('info', "Matched orders: " . implode(', ', $matched_post_ids));
 		}
 		
 		$post_by_order_id = array();

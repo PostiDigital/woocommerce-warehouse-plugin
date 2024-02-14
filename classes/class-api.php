@@ -13,7 +13,7 @@ class Posti_Warehouse_Api {
 	private $logger;
 	private $last_status = false;
 	private $token_option = 'posti_wh_api_auth';
-	private $user_agent = 'woo-wh-client/2.4.3';
+	private $user_agent = 'woo-wh-client/2.4.4';
 
 	public function __construct(Posti_Warehouse_Logger $logger, array &$options) {
 		$this->logger = $logger;
