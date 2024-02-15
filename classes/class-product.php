@@ -8,11 +8,13 @@ class Posti_Warehouse_Product {
 	
 	private $api;
 	private $logger;
+	private $assets_url;
 	
 	public function __construct(Posti_Warehouse_Api $api, Posti_Warehouse_Logger $logger) {
 		
 		$this->api = $api;
 		$this->logger = $logger;
+		$this->assets_url = plugins_url('assets', dirname(__FILE__));
 		
 		add_action('admin_notices', array($this, 'posti_notices'));
 		
@@ -37,8 +39,7 @@ class Posti_Warehouse_Product {
 	}
 	
 	public function custom_columns_register( $columns) {
-		$columns['warehouse'] = '⛟';
-
+		$columns['warehouse'] = '<span class="parent-tips" data-tip="' . esc_html(Posti_Warehouse_Text::column_warehouse()) . '"><img class="posti_wh-icon" src="' . $this->assets_url . '/img/warehouse.svg" /></span>';
 		return $columns;
 	}
 	
@@ -50,7 +51,8 @@ class Posti_Warehouse_Product {
 			}
 			else {
 				$warehouses = $this->api->getWarehouses();
-				echo esc_html($this->get_warehouse_name($warehouses, $externalId));
+				$warehouse = $this->get_warehouse_name($warehouses, $externalId);
+				echo '<span class="tips dashicons dashicons-saved" data-tip="' . esc_html($warehouse) . "\"> </span>";
 			}
 		}
 	}

@@ -96,6 +96,7 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile additional service is added to order/delivery. 
 
 ## Version history
+- 2.4.5: Updated Warehouse column to show icons instead of text.
 - 2.4.4: Bug fix: re-merge Reject partial order.
 - 2.4.3: Bug fix: Some quantity and order status updates were being skipped because get_posts is implicitly limited to 5 results by default.
 - 2.4.2: Added "Verbose logging" setting. 

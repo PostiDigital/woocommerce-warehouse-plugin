@@ -1,51 +1,59 @@
 body.settings_page_posti_wh form {
-    background: #FFFFFF;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 30px;
-    border: 1px solid #CCC;
-    border-radius: 5px;
+  background: #FFFFFF;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 30px;
+  border: 1px solid #CCC;
+  border-radius: 5px;
 }
 
 body.settings_page_posti_wh form p.submit {
-    text-align: center;
+  text-align: center;
 }
 
 body.settings_page_posti_wh h1 {
-    background: #FFFFFF;
-    border: 1px solid #CCC;
-    margin-bottom: 30px!important;
-    padding: 10px!important;
+  background: #FFFFFF;
+  border: 1px solid #CCC;
+  margin-bottom: 30px!important;
+  padding: 10px!important;
 }
 
 .button.button-posti {
-    width: 100%;
-    display: block;
-    color: #FFFFFF;
-    border-color: #ff7f00;
-    background: #ff7f00;
+  width: 100%;
+  display: block;
+  color: #FFFFFF;
+  border-color: #ff7f00;
+  background: #ff7f00;
 }
 
 #posti-order-metabox {
-    text-align: center;
+  text-align: center;
 }
 #posti-order-metabox label {
-    display: block;
+  display: block;
 }
 #posti-order-metabox img {
-    width: 100%;
-    max-width: 150px;
+  width: 100%;
+  max-width: 150px;
 }
 #posti_wh_tab.loading::after,
 #posti-order-metabox.loading::after {
-    content: " ";
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background-color: #000;
-    opacity: 0.2;
-    z-index: 10;
-    left: 0;
-    top: 0;
+  content: " ";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  opacity: 0.2;
+  z-index: 10;
+  left: 0;
+  top: 0;
 }
 
+.posti_wh-icon {
+  height: 16px;
+}
+
+.column-warehouse {
+  width: 24px;
+  text-align: center!important;
+}
