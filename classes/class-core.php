@@ -135,7 +135,7 @@ class Posti_Warehouse_Core {
 	public function posti_wh_admin_styles( $hook) {
 		wp_enqueue_style('select2-css', plugins_url('assets/css/select2.min.css', dirname(__FILE__)), [], '4.1.0-rc.0');
 		wp_enqueue_script('select2-js', plugins_url('assets/js/select2.min.js', dirname(__FILE__)), 'jquery', '4.1.0-rc.0');
-		wp_enqueue_style('posti_wh_admin_style', plugins_url('assets/css/admin-warehouse-settings.css', dirname(__FILE__)), [], '1.0');
+		wp_enqueue_style('posti_wh_admin_style', plugins_url('assets/css/admin-warehouse-settings.css', dirname(__FILE__)), [], '2.4.5');
 		wp_enqueue_script('posti_wh_admin_script', plugins_url('assets/js/admin-warehouse.js', dirname(__FILE__)), 'jquery', '1.2');
 	}
 
