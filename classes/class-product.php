@@ -472,7 +472,7 @@ class Posti_Warehouse_Product {
 			foreach ($variation['attributes'] as $attr_id => $attr) {
 				$options['properties'][] = [
 					'name' => (string) str_ireplace('attribute_', '', $attr_id),
-					'value' => (string) $attr,
+					'value' => (string) self::strip_html($attr),
 					'specifier' => '',
 					'description' => ''
 				];
@@ -484,8 +484,8 @@ class Posti_Warehouse_Product {
 				'externalId' => $variation_product_id,
 				'descriptions' => array(
 					'en' => array(
-						'name' => $variable_name,
-						'description' => $_product->get_description(),
+						'name' => self::strip_html($variable_name),
+						'description' => self::strip_html($_product->get_description()),
 						'specifications' => $specifications,
 					)
 				),
@@ -558,8 +558,8 @@ class Posti_Warehouse_Product {
 			'externalId' => $product_id,
 			'descriptions' => array(
 				'en' => array(
-					'name' => $_product->get_name(),
-					'description' => $_product->get_description()
+					'name' => self::strip_html($_product->get_name()),
+					'description' => self::strip_html($_product->get_description())
 				)
 			),
 			'eanCode' => $ean,
@@ -933,5 +933,9 @@ class Posti_Warehouse_Product {
 	
 	private function is_warehouse_supports_add_remove( $warehouses, $warehouse) {
 		return !empty($warehouse) && 'Catalog' !== $this->get_stock_type($warehouses, $warehouse);
+	}
+
+	private static function strip_html($text) {
+		return strip_tags(str_replace('<br>', "\n", $text));
 	}
 }
