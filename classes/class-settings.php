@@ -149,6 +149,7 @@ class Posti_Warehouse_Settings {
 					'label_for' => 'posti_wh_field_password',
 					'class' => 'posti_wh_row',
 					'posti_wh_custom_data' => 'custom',
+					'input_type' => 'password'
 				]
 		);
 
@@ -175,6 +176,7 @@ class Posti_Warehouse_Settings {
 					'label_for' => 'posti_wh_field_password_test',
 					'class' => 'posti_wh_row',
 					'posti_wh_custom_data' => 'custom',
+					'input_type' => 'password'
 				]
 		);
 
