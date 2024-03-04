@@ -216,16 +216,14 @@ function posti_warehouse_define_shipping_method() {
 																		onclick="posti_warehouse_shippingChangeOptionVisibility(this)">
 																		<?php echo esc_html(Posti_Warehouse_Text::pickup_points_title()); ?>
 															</label>
-															<?php if (substr($service_name, 0, strlen('Posti:')) === 'Posti:'): ?>
-    															<div id="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($service_id) . '][pickuppoints][options]'; ?>">
-    																<label> - 
-    																	<input type="checkbox"
-    																			name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($service_id) . '][pickuppoints_hideoutdoors]'; ?>"
-    																			value="yes" <?php echo ( ( !empty($values[$method_id][$service_id]['pickuppoints_hideoutdoors']) && 'yes' === $values[$method_id][$service_id]['pickuppoints_hideoutdoors'] )) ? 'checked' : ''; ?>>
-    																			<?php echo esc_html(Posti_Warehouse_Text::pickup_points_hide_outdoor()); ?>
-    																</label>
-    															</div>
-															<?php endif; ?>
+															<div id="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($service_id) . '][pickuppoints][options]'; ?>">
+																<label> - 
+																	<input type="checkbox"
+																			name="<?php echo esc_html($field_key) . '[' . esc_attr($method_id) . '][' . esc_attr($service_id) . '][pickuppoints_hideoutdoors]'; ?>"
+																			value="yes" <?php echo ( ( !empty($values[$method_id][$service_id]['pickuppoints_hideoutdoors']) && 'yes' === $values[$method_id][$service_id]['pickuppoints_hideoutdoors'] )) ? 'checked' : ''; ?>>
+																			<?php echo esc_html(Posti_Warehouse_Text::pickup_points_hide_outdoor()); ?>
+																</label>
+															</div>
 														</p>
 													</div>
 												<?php endif; ?>
@@ -293,10 +291,24 @@ function posti_warehouse_define_shipping_method() {
 
 				foreach ($all_shipping_methods as $shipping_method) {
 					$value = isset($shipping_method->description[$user_lang]) ? $shipping_method->description[$user_lang] : $shipping_method->description['en'];
-					$services[strval($shipping_method->id)] = sprintf('%1$s: %2$s', $shipping_method->deliveryOperator, $value); // note: condition on $service_name starting with 'Posti:'
+					$services[strval($shipping_method->id)] = sprintf('%1$s: %2$s', $shipping_method->deliveryOperator, $value);
 				}
 
-				ksort($services);
+				uasort($services, function ($a, $b) {
+				    $pa = substr($a, 0, 6) === 'Posti:';
+				    $ba = substr($b, 0, 6) === 'Posti:';
+				    if ($pa && $ba) {
+				        return strnatcmp($a, $b);
+				    }
+				    elseif ($pa) {
+				        return -1;
+				    }
+				    elseif ($ba) {
+				        return 1;
+				    }
+
+				    return strnatcmp($a, $b);
+				});
 
 				return $services;
 			}

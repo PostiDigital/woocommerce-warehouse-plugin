@@ -320,7 +320,7 @@ class Posti_Warehouse_Settings {
 			'posti_wh_options',
 			[
 				'label_for' => 'posti_wh_field_verbose_logging',
-				'class' => 'posti_wh_row',
+				'class' => $developer_fields_class,
 				'posti_wh_custom_data' => 'custom',
 			]
 		);

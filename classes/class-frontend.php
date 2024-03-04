@@ -551,10 +551,6 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 				}
 			}
 
-			$options_array['other'] = array(
-				'text' => Posti_Warehouse_Text::pickup_point_other(),
-			);
-
 			return $options_array;
 		}
 

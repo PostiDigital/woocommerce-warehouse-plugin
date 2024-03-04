@@ -96,6 +96,11 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile additional service is added to order/delivery. 
 
 ## Version history
+- 2.5.0:
+    - Changed "Hide outdoor pickup points" option to support non-Posti pickup points.
+    - Changed sorting in "Posti warehouse" to prefer Posti services.
+    - Removed "Other" pickup point option.
+    - "Verbose logging" setting moved to developer view.
 - 2.4.7: Changed product handling to strip HTML tags when sending product to warehouse.
 - 2.4.6:
     - Bug fix: Finnish translation MO file was corrupted.
@@ -110,7 +115,7 @@ Select your existing product or create a new, and update the product information
     - Changed products quantity sync to allow products with duplicate SKUs.
     - Changed number of log entries 50 -> 100.
 - 2.3.6: Support email update. WP banner update.
-- 2.3.4: Remove contract number field from settings page.
+- 2.3.4: Removed contract number field from settings page.
 - 2.3.3: Bug fix: Settings link not shown when plugin is installed from shop.
 - 2.3.2: Limit "Hide outdoor pickup points" option to Posti pickup points.
 - 2.3.1: Updated pickup point translations.

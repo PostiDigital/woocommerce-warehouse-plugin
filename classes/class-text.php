@@ -48,10 +48,6 @@ class Posti_Warehouse_Text {
 		return __('Select a pickup point', 'posti-warehouse');
 	}
 	
-	public static function pickup_point_other() {
-		return __('Other', 'posti-warehouse');
-	}
-	
 	public static function store_pickup_title() {
 		return __('Store pickup', 'posti-warehouse');
 	}
