@@ -326,3 +326,6 @@ msgstr "Tukkuhinta"
 #: classes/class-text.php:168
 msgid "Wrong credentials - access token not received!"
 msgstr "Väärä käyttäjätunnus/salasana - käytön valtuutusta ei saatu!"
+
+msgid "Estimated delivery %1$s"
+msgstr "Toimitusaika-arvio %1$s"

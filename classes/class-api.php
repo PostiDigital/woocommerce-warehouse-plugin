@@ -13,7 +13,7 @@ class Posti_Warehouse_Api {
 	private $logger;
 	private $last_status = false;
 	private $token_option = 'posti_wh_api_auth';
-	private $user_agent = 'woo-wh-client/2.5.1';
+	private $user_agent = 'woo-wh-client/2.5.2';
 
 	public function __construct(Posti_Warehouse_Logger $logger, array &$options) {
 		$this->logger = $logger;
@@ -199,7 +199,8 @@ class Posti_Warehouse_Api {
 		return $result;
 	}
 	
-	public function getPickupPoints($postcode = null, $street_address = null, $country = null, $city = null, $service_code = null, $type = null, $capability = null) {
+	public function getPickupPoints($postcode = null, $street_address = null, $country = null, $city = null,
+			$service_code = null, $type = null, $capability = null, $from_country = null, $from_postal_code = null) {
 		if ((null == $postcode && null == $street_address)
 			|| ('' == trim($postcode) && '' == trim($street_address))) {
 			return array();
@@ -212,7 +213,9 @@ class Posti_Warehouse_Api {
 				. '&streetAddress=' . urlencode($street_address)
 				. '&country=' . urlencode($country)
 				. '&type=' . urlencode($type)
-				. '&capability=' . urlencode($capability), '', 'GET');
+				. '&capability=' . urlencode($capability)
+				. '&countryFrom=' . urlencode($from_country)
+				. '&postalCodeFrom=' . urlencode($from_postal_code), '', 'GET');
 	}
 
 	public function getPickupPointsByText($query_text, $country, $service_code, $type = null, $capability = null) {
