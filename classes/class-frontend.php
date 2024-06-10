@@ -311,6 +311,8 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 			$shipping_address = WC()->customer->get_shipping_address();
 			$shipping_country = WC()->customer->get_shipping_country();
 			$shipping_city = WC()->customer->get_shipping_city();
+			$store_country_code = get_option('woocommerce_default_country');
+			$store_postal_code = get_option('woocommerce_store_postcode');
 
 			$session = $this->get_pickup_point_session_data();
 			$stale_items = array_filter(
@@ -349,7 +351,8 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 				try {
 					$options_array = $this->fetch_pickup_point_options(
 						$shipping_postcode, $shipping_address,
-						$shipping_country, $shipping_city, $shipping_method_providers);
+						$shipping_country, $shipping_city, $shipping_method_providers,
+						$store_country_code, $store_postal_code);
 				} catch (\Exception $e) {
 					$options_array = false;
 
@@ -463,7 +466,7 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 			);
 		}
 
-		private function fetch_pickup_point_options( $shipping_postcode, $shipping_address, $shipping_country, $shipping_city, $shipping_method_providers) {
+		private function fetch_pickup_point_options( $shipping_postcode, $shipping_address, $shipping_country, $shipping_city, $shipping_method_providers, $from_country_code, $from_postal_code) {
 			$shipping_method_provider = implode(',', $shipping_method_providers['services']);
 			$types = $shipping_method_providers['types'];
 			$type = '';
@@ -482,13 +485,15 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 				$shipping_postcode, $shipping_address,
 				$shipping_country, $shipping_city,
 				$shipping_method_provider, $type,
-				$capability, $custom_address);
+				$capability, $custom_address,
+				$from_country_code, $from_postal_code);
 			if (empty($pickup_point_data) && !empty($shipping_city) && 'STORE' === $type) {
 				$pickup_point_data = $this->fetch_pickup_point_option_array(
 					$shipping_postcode, $shipping_address,
 					$shipping_country, null,
 					$shipping_method_provider, $type,
-					$capability, $custom_address);
+					$capability, $custom_address,
+					$from_country_code, $from_postal_code);
 			}
 
 			if (false === $pickup_point_data) {
@@ -506,7 +511,8 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 			$shipping_postcode, $shipping_address,
 			$shipping_country, $shipping_city,
 			$shipping_method_provider, $type,
-			$capability, $custom_address) {
+			$capability, $custom_address,
+			$from_country_code, $from_postal_code) {
 
 			if ($custom_address) {
 				return $this->get_pickup_points_by_free_input(
@@ -515,7 +521,8 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 				return $this->get_pickup_points(
 					$shipping_postcode, $shipping_address,
 					$shipping_country, $shipping_city,
-					$shipping_method_provider, $type, $capability);
+					$shipping_method_provider, $type, $capability,
+					$from_country_code, $from_postal_code);
 			}
 		}
 
@@ -535,6 +542,11 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 							. ' (#' . $pickup_point['externalId'] . ')';
 					$pickup_point_value = $pickup_point['name']
 							. ' (' . $pickup_point['streetAddress'] . ')';
+
+					if (isset($pickup_point['estimation']) && !empty($pickup_point['estimation'])) {
+						$fmtDate = date("d.m", strtotime($pickup_point['estimation']));
+						$pickup_point_value .= ' - ' . Posti_Warehouse_Text::estimated_delivery($fmtDate);
+					}
 
 					if (!empty($serviceProvider)) {
 						$pickup_point_value = $serviceProvider . ': ' . $pickup_point_value;
@@ -599,8 +611,13 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 			}
 		}
 
-		public function get_pickup_points( $postcode, $street_address = null, $country = null, $city = null, $service_provider = null, $type = null, $capability = null) {
-			return $this->api->getPickupPoints(trim($postcode), trim($street_address), trim($country), trim($city), $service_provider, $type, $capability);
+		public function get_pickup_points(
+			$postcode, $street_address = null, $country = null, $city = null,
+			$service_provider = null, $type = null, $capability = null,
+			$from_country_code, $from_postal_code) {
+			return $this->api->getPickupPoints(
+				trim($postcode), trim($street_address), trim($country), trim($city),
+				$service_provider, $type, $capability, $from_country_code, $from_postal_code);
 		}
 
 		public function get_pickup_points_by_free_input( $input, $shipping_country, $service_provider = null, $type = null, $capability = null) {

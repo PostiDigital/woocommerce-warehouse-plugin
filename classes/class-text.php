@@ -52,6 +52,10 @@ class Posti_Warehouse_Text {
 		return __('Store pickup', 'posti-warehouse');
 	}
 	
+	public static function estimated_delivery($date) {
+		return sprintf(__('Estimated delivery %1$s', 'posti-warehouse'), \esc_html($date));
+	}
+	
 	public static function order_not_placed() {
 		return __('Order not placed', 'posti-warehouse');
 	}

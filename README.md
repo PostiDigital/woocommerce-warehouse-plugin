@@ -97,7 +97,9 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile additional service is added to order/delivery. 
 
 ## Version history
-- 2.6.0: Added 'Reserve quantity for "On-hold" orders' setting.
+- 2.6.0:
+    - Added 'Reserve quantity for "On-hold" orders' setting.
+    - Added estimation to pickup point description when available.
 - 2.5.1: Removed unnecessary nonce checks to fix "Checkout nonce failed to verify" when order is submitted by guest with "Create an account" enabled.
 - 2.5.0:
     - Changed "Hide outdoor pickup points" option to support non-Posti pickup points.

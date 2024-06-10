@@ -323,3 +323,9 @@ msgstr ""
 #: classes/class-text.php:168
 msgid "Wrong credentials - access token not received!"
 msgstr ""
+
+msgid "Estimated delivery %1$s"
+msgstr ""
+
+msgid "Reserve quantity for \"On-hold\" orders"
+msgstr ""

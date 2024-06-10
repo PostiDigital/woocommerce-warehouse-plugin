@@ -210,8 +210,9 @@ class Posti_Warehouse_Api {
 	public function updateOrderPreferences( $order_id, &$prefs) {
 		return $this->ApiCall('/ecommerce/v3/orders/' . urlencode($order_id) . "/preferences", $prefs, 'PATCH');
 	}
-	
-	public function getPickupPoints($postcode = null, $street_address = null, $country = null, $city = null, $service_code = null, $type = null, $capability = null) {
+
+	public function getPickupPoints($postcode = null, $street_address = null, $country = null, $city = null,
+			$service_code = null, $type = null, $capability = null, $from_country = null, $from_postal_code = null) {
 		if ((null == $postcode && null == $street_address)
 			|| ('' == trim($postcode) && '' == trim($street_address))) {
 			return array();
@@ -224,7 +225,9 @@ class Posti_Warehouse_Api {
 				. '&streetAddress=' . urlencode($street_address)
 				. '&country=' . urlencode($country)
 				. '&type=' . urlencode($type)
-				. '&capability=' . urlencode($capability), '', 'GET');
+				. '&capability=' . urlencode($capability)
+				. '&countryFrom=' . urlencode($from_country)
+				. '&postalCodeFrom=' . urlencode($from_postal_code), '', 'GET');
 	}
 
 	public function getPickupPointsByText($query_text, $country, $service_code, $type = null, $capability = null) {
