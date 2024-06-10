@@ -208,6 +208,10 @@ class Posti_Warehouse_Text {
 		return __('Auto mark orders as "Completed"', 'posti-warehouse');
 	}
 	
+	public static function field_reserve_onhold() {
+		return __('Reserve quantity for "On-hold" orders', 'posti-warehouse');
+	}
+	
 	public static function field_addtracking() {
 		return __('Add tracking to email', 'posti-warehouse');
 	}

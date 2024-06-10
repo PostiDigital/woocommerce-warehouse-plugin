@@ -59,6 +59,7 @@ class Posti_Warehouse_Settings {
 			'posti_wh_field_type',
 			'posti_wh_field_autoorder',
 			'posti_wh_field_autocomplete',
+			'posti_wh_field_reserve_onhold',
 			'posti_wh_field_addtracking',
 			'posti_wh_field_crontime',
 			'posti_wh_field_test_mode',
@@ -256,6 +257,19 @@ class Posti_Warehouse_Settings {
 					'class' => 'posti_wh_row',
 					'posti_wh_custom_data' => 'custom',
 				]
+		);
+
+		add_settings_field(
+			'posti_wh_field_reserve_onhold',
+			Posti_Warehouse_Text::field_reserve_onhold(),
+			array($this, 'posti_wh_field_checkbox_cb'),
+			'posti_wh',
+			'posti_wh_options',
+			[
+				'label_for' => 'posti_wh_field_reserve_onhold',
+				'class' => 'posti_wh_row',
+				'posti_wh_custom_data' => 'custom',
+			]
 		);
 
 		add_settings_field(

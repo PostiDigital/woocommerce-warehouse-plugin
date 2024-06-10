@@ -35,11 +35,29 @@ class Posti_Warehouse_Metabox {
 			<input type="hidden" name="posti_order_metabox_nonce" value="<?php echo esc_attr(wp_create_nonce(str_replace('wc_', '', 'posti-order') . '-meta-box')); ?>" id="posti_order_metabox_nonce" />
 			<img src ="<?php echo esc_attr(plugins_url('assets/img/posti-orange.png', dirname(__FILE__))); ?>"/>
 			<label><?php echo esc_html(Posti_Warehouse_Text::order_status()); ?> </label>
-			<strong id = "posti-order-status"><?php echo esc_html($this->postiOrder->getOrderStatus($post->ID)); ?></strong>
-			<br/>
-			<div id = "posti-order-action">
-				<?php $this->postiOrder->getOrderActionButton($post->ID); ?>
-			</div>
+
+			<?php
+				$status = Posti_Warehouse_Text::order_not_placed();
+				$order = $this->postiOrder->getOrder($post->ID);
+				if ($order) {
+					$status = isset($order['status']['value']) ? $order['status']['value'] : '';
+					$autoSubmit = isset($order['preferences']['autoSubmit']) ? $order['preferences']['autoSubmit'] : true;
+
+					// Special review case, parallel to main order status
+					if ($autoSubmit === false && in_array($status, ["Created", "Viewed"], true)) {
+						$status = "Review";
+					}
+				}
+
+				echo '<strong id = "posti-order-status">' . esc_html($status) . "</strong><br/>";
+				if (!$order || $status === 'Cancelled') {
+					echo '<button type = "button" class="button button-posti" id = "posti-order-btn" name="posti_order_action"  onclick="posti_order_change(this);" value="place_order">' . esc_html(Posti_Warehouse_Text::order_place()) . "</button>";
+				}
+				elseif ($status === 'Review') {
+					echo '<button type = "button" class="button button-posti" id = "posti-order-btn" name="posti_order_action"  onclick="posti_order_change(this);" value="submit_order">' . esc_html(Posti_Warehouse_Text::order_place()) . "</button>";
+				}
+			?>
+
 			<?php if ($this->error) : ?>
 			<div>
 				<b style="color: red"><?php echo esc_html($this->error); ?></b>
@@ -58,14 +76,21 @@ class Posti_Warehouse_Metabox {
 		}
 		
 		$post_id = sanitize_key($_POST['post_id']);
+		$post_action = isset($_POST['order_action']) ? sanitize_key($_POST['order_action']) : '';
 		$post = get_post($post_id);
-		if (isset($_POST['order_action']) && 'place_order' == $_POST['order_action']) {
-			$result = $this->postiOrder->addOrder($post_id); 
+		if (!empty($post_action)) {
+			$result = null;
+			if ('place_order' === $post_action) {
+				$result = $this->postiOrder->addOrder($post_id);
+			}
+			elseif ('submit_order' === $post_action) {
+				$result = $this->postiOrder->submitOrder($post_id, true);
+			}
+
 			$this->error = isset($result['error']) ? $result['error'] : '';
 			$this->add_order_meta_box_html($post);
 			wp_die('', '', 200);
 		}
-
 		$this->error = Posti_Warehouse_Text::error_generic();
 		$this->add_order_meta_box_html($post);
 		wp_die('', '', 200);

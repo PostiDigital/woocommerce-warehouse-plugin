@@ -13,7 +13,7 @@ class Posti_Warehouse_Api {
 	private $logger;
 	private $last_status = false;
 	private $token_option = 'posti_wh_api_auth';
-	private $user_agent = 'woo-wh-client/2.5.1';
+	private $user_agent = 'woo-wh-client/2.6.0';
 
 	public function __construct(Posti_Warehouse_Logger $logger, array &$options) {
 		$this->logger = $logger;
@@ -82,7 +82,7 @@ class Posti_Warehouse_Api {
 		);
 
 		$request_body = null;
-		if ('POST' == $method || 'PUT' == $method || 'DELETE' == $method) {
+		if ('POST' == $method || 'PUT' == $method || 'PATCH' == $method || 'DELETE' == $method) {
 			$request_body = wp_json_encode($data);
 			$request_args['body'] = $request_body;
 			$headers['Content-Type'] = 'application/json';
@@ -187,6 +187,14 @@ class Posti_Warehouse_Api {
 		return $status;
 	}
 	
+	public function updateOrder( $order_id, &$order) {
+		return $this->ApiCall('/ecommerce/v3/orders/' . urlencode($order_id), $order, 'PUT');
+	}
+	
+	public function reopenOrder( $order_id, &$order) {
+		return $this->ApiCall('/ecommerce/v3/orders/' . urlencode($order_id), $order, 'POST');
+	}
+	
 	public function getOrdersUpdatedSince( $dttm_since, $size, $page = 0) {
 		if (!isset($dttm_since)) {
 			return [];
@@ -197,6 +205,10 @@ class Posti_Warehouse_Api {
 				. '&size=' . $size
 				. '&page=' . $page, '', 'GET');
 		return $result;
+	}
+	
+	public function updateOrderPreferences( $order_id, &$prefs) {
+		return $this->ApiCall('/ecommerce/v3/orders/' . urlencode($order_id) . "/preferences", $prefs, 'PATCH');
 	}
 	
 	public function getPickupPoints($postcode = null, $street_address = null, $country = null, $city = null, $service_code = null, $type = null, $capability = null) {

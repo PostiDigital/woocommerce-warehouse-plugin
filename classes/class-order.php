@@ -48,23 +48,6 @@ class Posti_Warehouse_Order {
 		
 		return $key;
 	}
-	
-	public function getOrderStatus( $order_id) {
-		$order_data = $this->getOrder($order_id);
-		if (!$order_data) {
-			return Posti_Warehouse_Text::order_not_placed();
-		}
-		$this->orderStatus = $order_data['status']['value'];
-		return $order_data['status']['value'];
-	}
-	
-	public function getOrderActionButton() {
-		if (!$this->orderStatus) {
-			?>
-			<button type = "button" class="button button-posti" id = "posti-order-btn" name="posti_order_action"  onclick="posti_order_change(this);" value="place_order"><?php echo esc_html(Posti_Warehouse_Text::order_place()); ?></button>
-			<?php
-		}
-	}
 
 	public function hasPostiProducts( $order) {
 		if (!is_object($order)) {
@@ -113,7 +96,7 @@ class Posti_Warehouse_Order {
 	}
 
 	public function getOrder( $order_id) {
-		$posti_order_id = get_post_meta($order_id, '_posti_id', true);
+		$posti_order_id = $this->get_order_external_id($order_id);
 		if ($posti_order_id) {
 			return $this->api->getOrder($posti_order_id);
 		}
@@ -122,10 +105,10 @@ class Posti_Warehouse_Order {
 
 	public function addOrder( $order) {
 		$options = Posti_Warehouse_Settings::get();
-		return $this->addOrderWithOptions($order, $options);
+		return $this->addOrderWithOptions($order, $options, null);
 	}
 	
-	public function addOrderWithOptions( $order, $options) {
+	public function addOrderWithOptions( $order, $options, $order_status) {
 		if (!is_object($order)) {
 			$order = wc_get_order($order);
 		}
@@ -136,22 +119,41 @@ class Posti_Warehouse_Order {
 
 		$order_services = $this->get_additional_services($order);
 		if (!isset($order_services['service']) || empty($order_services['service'])) {
-			$order->update_status('on-hold', Posti_Warehouse_Text::error_order_failed_no_shipping(), true);
+			$order->update_status('failed', Posti_Warehouse_Text::error_order_failed_no_shipping(), true);
 			return [ 'error' => 'ERROR: Shipping method not configured.' ];
 		}
 
-		$data = null;
 		$order_id = (string) $order->get_id();
+		$existing_order_id = $this->get_order_external_id($order->get_id());
+		if (!empty($existing_order_id)) {
+			$existing_order = $this->api->getOrder($existing_order_id);
+			if ($existing_order) {
+				$status = isset($existing_order['status']) && isset($existing_order['status']['value']) ? $existing_order['status']['value'] : '';
+				if ('Cancelled' !== $status && 'Delivered' !== $status) {
+					return [ 'error' => 'ERROR: Already ordered.' ];
+				}
+			}
+		}
+
+		$external_id = empty($existing_order_id) ? $order_id : $existing_order_id;
+		$data = null;
 		try {
-			$data = $this->prepare_posti_order($order_id, $order, $order_services);
+			$preferences = ['autoSubmit' => ($order_status !== 'on-hold')];
+			$data = $this->prepare_posti_order($external_id, $order, $order_services, $preferences);
+
 		} catch (\Exception $e) {
 			$this->logger->log('error', $e->getMessage());
 			return [ 'error' => $e->getMessage() ];
 		}
-		
-		$result = $this->api->addOrder($data);
-		$status = $this->api->getLastStatus();
 
+		if (empty($existing_order_id)) {
+			$result = $this->api->addOrder($data);
+		}
+		else {
+			$result = $this->api->reopenOrder($existing_order_id, $data);
+		}
+
+		$status = $this->api->getLastStatus();
 		if (502 == $status || 503 == $status) {
 			for ($i = 0; $i < 3; $i++) {
 				sleep(1);
@@ -169,7 +171,60 @@ class Posti_Warehouse_Order {
 			$order->update_status('failed', Posti_Warehouse_Text::order_failed(), true);
 		}
 
-		return false === $result ? [ 'error' => Posti_Warehouse_Text::error_order_not_placed() ] : [];
+		if (false === $result) {
+	        return [ 'error' => Posti_Warehouse_Text::error_order_not_placed() ];
+		}
+
+		$this->trigger_sync_order($order_id, $existing_order_id);
+
+		return [];
+	}
+	
+	public function submitDelayedOrder( $order_external_id, $order, $options, $order_status) {
+		$order = $this->api->getOrder($order_external_id);
+		if ($order) {
+			$autoSubmit = $this->get_order_autosubmit_preference($order);
+			// check if order is actually delayed
+			if ($autoSubmit === false) {
+				$this->update_order_autosubmit_preference($order_external_id, true);
+			}
+		}
+	}
+	
+	public function submitOrder( $order_id, $sync = false) {
+		$order_external_id = $this->get_order_external_id($order_id);
+		$result = $this->update_order_autosubmit_preference($order_external_id, true);
+		if (!$result) {
+			return [ 'error' => 'ERROR: Technical error.' ];
+		}
+
+		$this->trigger_sync_order($order_id, $order_external_id);
+
+		return [];
+	}
+
+	public function cancelOrder( $order_id) {
+		$order_external_id = $this->get_order_external_id($order_id);
+		if (empty($order_external_id)) {
+			return [];
+		}
+
+		$existing_order = $this->api->getOrder($order_external_id);
+		if (!$existing_order) {
+			return [];
+		}
+
+		$status = isset($existing_order['status']['value']) ? $existing_order['status']['value'] : null;
+		if ('Cancelled' !== $status && 'Delivered' !== $status) {
+			$order = array();
+			$order['status'] = ['value' => 'Cancelled'];
+			$result = $this->api->updateOrder($order_external_id, $order);
+			if (!$result) {
+				return [ 'error' => 'ERROR: Technical error.' ];
+			}
+		}
+
+		return [];
 	}
 	
 	public function sync( $datetime) {
@@ -245,7 +300,7 @@ class Posti_Warehouse_Order {
 		
 		$post_by_order_id = array();
 		foreach ($posts as $post) {
-			$order_id = get_post_meta($post->ID, '_posti_id', true);
+			$order_id = $this->get_order_external_id($post->ID);
 			if (isset($order_id) && strlen($order_id) > 0) {
 				$post_by_order_id[$order_id] = $post->ID;
 			}
@@ -287,19 +342,31 @@ class Posti_Warehouse_Order {
 				return;
 			}
 
+			$status_updated = false;
 			$status_old = $_order->get_status();
 			if ($status_old !== $status_new) {
 				if ('completed' === $status_new) {
 					if (isset($autocomplete)) {
-						$_order->update_status($status_new, "Posti Glue: $status", true);
-						$this->logger->log('info', "Changed order $id status $status_old -> $status_new");
+						$_order->update_status($status_new, "Posti Warehouse: $status", true);
+						$status_updated = true;
 					}
 					else {
 						$this->logger->log('info', "Order $id autocomplete disabled for status $status_new");
 					}
-	
-				} else {
-					$_order->update_status($status_new, "Posti Glue: $status", true);
+
+				} elseif ('cancelled' === $status_new || 'cancelled'  === $status_old) {
+					$_order->update_status($status_new, "Posti Warehouse: $status", true);
+					$status_updated = true;
+
+				} elseif ('on-hold' === $status_old) {
+					$autoSubmit = $this->get_order_autosubmit_preference($order);
+					if ($autoSubmit === true) { // prevent updating status when order is registered (qty reserved) but is not yet submitted to warehouse
+						$_order->update_status($status_new, "Posti Warehouse: $status", true);
+						$status_updated = true;
+					}
+				}
+
+				if ($status_updated) {
 					$this->logger->log('info', "Changed order $id status $status_old -> $status_new");
 				}
 			}
@@ -315,6 +382,18 @@ class Posti_Warehouse_Order {
 		}
 	}
 
+	private function trigger_sync_order( $order_id, $order_external_id) {
+		if ($order_external_id) {
+			$order = $this->api->getOrder($order_external_id);
+			$this->sync_order( $order_id, $order_external_id, $order, false, false);
+		}
+	}
+
+	private function update_order_autosubmit_preference( $order_external_id, $value) {
+		$prefs = ['autoSubmit' => $value];
+		return $this->api->updateOrderPreferences($order_external_id, $prefs);
+	}
+	
 	private function get_additional_services( &$order) {
 		$additional_services = array();
 		$shipping_service = '';
@@ -387,7 +466,15 @@ class Posti_Warehouse_Order {
 		return $reference;
 	}
 
-	private function prepare_posti_order($posti_order_id, &$_order, &$order_services) {
+	private function get_order_external_id($order_id) {
+		return get_post_meta($order_id, '_posti_id', true);
+	}
+
+	private function get_order_autosubmit_preference(&$order) {
+		return isset($order['preferences']['autoSubmit']) ? $order['preferences']['autoSubmit'] : true;
+	}
+
+	private function prepare_posti_order($posti_order_id, &$_order, &$order_services, $preferences) {
 		$shipping_phone = $_order->get_shipping_phone();
 		$shipping_email = get_post_meta($_order->get_id(), '_shipping_email', true);
 		$phone = !empty($shipping_phone) ? $shipping_phone : $_order->get_billing_phone();
@@ -512,26 +599,44 @@ class Posti_Warehouse_Order {
 			$order['additionalServices'] = $additional_services;
 		}
 
+		$order['preferences'] = $preferences;
+
 		return $order;
 	}
 
 	public function posti_check_order( $order_id, $old_status, $new_status) {
-		if ('processing' === $new_status) {
-			$options = Posti_Warehouse_Settings::get();
-			if (isset($options['posti_wh_field_autoorder'])) {
-				$order = wc_get_order($order_id);
-				$is_posti_order = $this->hasPostiProducts($order);
-				$posti_order_id = get_post_meta($order_id, '_posti_id', true);
+		if ('processing' === $new_status || 'on-hold' === $new_status) {
+			$order = wc_get_order($order_id);
+			$is_posti_order = $this->hasPostiProducts($order);
+			$posti_order_id = $this->get_order_external_id($order_id);
 
-				if ($is_posti_order) {
+			$options = Posti_Warehouse_Settings::get();
+			if ('processing' === $new_status && isset($options['posti_wh_field_autoorder'])) {
+				if ('on-hold' === $old_status && !empty($posti_order_id)) {
+					$this->submitDelayedOrder($posti_order_id, $order, $options, $new_status);
+				}
+				else if ($is_posti_order) {
 					if (empty($posti_order_id)) {
-						$this->addOrder($order);
+						$this->addOrderWithOptions($order, $options, $new_status);
 					}
 
 				} else {
 					$this->logger->log('info', 'Order  ' . $order_id . ' is not posti');
 				}
 			}
+			elseif ('on-hold' === $new_status && isset($options['posti_wh_field_reserve_onhold'])) {
+				if ($is_posti_order) {
+					if (empty($posti_order_id)) {
+						$this->addOrderWithOptions($order, $options, $new_status);
+					}
+					
+				} else {
+					$this->logger->log('info', 'Order  ' . $order_id . ' is not posti');
+				}
+			}
+		}
+		elseif ('cancelled' === $new_status) {
+			$this->cancelOrder($order_id);
 		}
 	}
 

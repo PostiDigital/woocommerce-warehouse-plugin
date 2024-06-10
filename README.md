@@ -60,7 +60,8 @@ Add information to configure the warehouse settings:
   - **Dropshipping** - product is stocked and order is fulfilled by supplier. 
   - **Store** - product is stocked by yourself. You can use the Glue to print address label for the delivery. This feature requires separate activation in Glue. 
   - **Not in stock** - product is stocked by yourself. Use some other plugin or service for address label printing to fulfill orders. 
-- **Auto ordering** – if selected then new order is automatically sent to warehouse, which speed up the order processing. 
+- **Auto ordering** – if selected then new order is automatically sent to warehouse, which speed up the order processing.
+- **Reserve quantity for "On-hold" orders** - configure On Hold status to reserve quantity in warehouse. Order is registered but fulfillment is delayed until user confirms manually.
 - **Add tracking to email** – tracking ID of the delivery is added to the delivery confirmation.
 - **Test mode** – if selected then TEST username and TEST password is used to interface test environment of the Glue.
 - **Debug** – if selected then event log is available at “Settings” > “Posti Warehouse debug”. 
@@ -96,6 +97,7 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile additional service is added to order/delivery. 
 
 ## Version history
+- 2.6.0: Added 'Reserve quantity for "On-hold" orders' setting.
 - 2.5.1: Removed unnecessary nonce checks to fix "Checkout nonce failed to verify" when order is submitted by guest with "Create an account" enabled.
 - 2.5.0:
     - Changed "Hide outdoor pickup points" option to support non-Posti pickup points.
