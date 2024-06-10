@@ -614,7 +614,7 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 		public function get_pickup_points(
 			$postcode, $street_address = null, $country = null, $city = null,
 			$service_provider = null, $type = null, $capability = null,
-			$from_country_code, $from_postal_code) {
+		    $from_country_code = null, $from_postal_code = null) {
 			return $this->api->getPickupPoints(
 				trim($postcode), trim($street_address), trim($country), trim($city),
 				$service_provider, $type, $capability, $from_country_code, $from_postal_code);

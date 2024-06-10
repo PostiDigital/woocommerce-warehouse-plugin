@@ -172,7 +172,7 @@ class Posti_Warehouse_Order {
 		}
 
 		if (false === $result) {
-	        return [ 'error' => Posti_Warehouse_Text::error_order_not_placed() ];
+			return [ 'error' => Posti_Warehouse_Text::error_order_not_placed() ];
 		}
 
 		$this->trigger_sync_order($order_id, $existing_order_id);
@@ -418,7 +418,11 @@ class Posti_Warehouse_Order {
 
 				$service_id = $pickup_points[$instance_id]['service'];
 				$shipping_service = $service_id;
-				$services = array();
+
+				$hide_outdoors = $pickup_points[$instance_id][$service_id]['pickuppoints_hideoutdoors'] ?: 'no';
+				if ('yes' === $hide_outdoors) {
+					$additional_services['3376'] = array();
+				}
 
 				if (isset($pickup_points[$instance_id][$service_id])
 					&& !empty($pickup_points[$instance_id][$service_id])
