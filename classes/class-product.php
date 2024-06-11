@@ -438,7 +438,7 @@ class Posti_Warehouse_Product {
 	private function can_publish_product( $_product) {
 		$product_type = $_product->get_type();
 		if ('variable' == $product_type) {
-			$variations = $this->get_available_variations( $_product );
+			$variations = $this->get_available_variations($_product);
 			foreach ($variations as $variation) {
 				if (!isset($variation['sku']) || empty($variation['sku'])) {
 					return false;
@@ -456,7 +456,7 @@ class Posti_Warehouse_Product {
 	private function collect_products_variations($post_id, $retailerId,
 		$_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diffs, &$product_ids_map, $can_add_balances) {
 
-		$variations = $this->get_available_variations( $_product );
+		$variations = $this->get_available_variations($_product);
 		foreach ($variations as $variation) {
 			$variation_post_id = $variation['variation_id'];
 			$variation_product_id = $this->get_update_product_id($variation_post_id, $variation['sku'], $product_id_diffs);
@@ -649,7 +649,7 @@ class Posti_Warehouse_Product {
 					$_product = wc_get_product($diff['id']);
 					if (false !== $_product && 'variable' === $_product->get_type()) {
 						$retailer_id = $this->get_retailer_id($warehouses, $warehouse_from);
-						$variations = $this->get_available_variations( $_product );
+						$variations = $this->get_available_variations($_product);
 						foreach ($variations as $variation) {
 							$variation_product_id = get_post_meta($variation['variation_id'], '_posti_id', true);
 							$product_ids_map[$variation_product_id] = $diff['id'];
@@ -934,22 +934,25 @@ class Posti_Warehouse_Product {
 	private function is_warehouse_supports_add_remove( $warehouses, $warehouse) {
 		return !empty($warehouse) && 'Catalog' !== $this->get_stock_type($warehouses, $warehouse);
 	}
- 
-	private function get_available_variations( $product ) {
-		$variation_ids        = $product->get_children();
-		$available_variations = array();
-		
-		foreach ( $variation_ids as $variation_id ) {
-			$variation = wc_get_product( $variation_id );
-			
-			if ( ! $variation || ! $variation->exists() ) {
-				continue;
-			}
-			
-			$available_variations[] = $product->get_available_variation( $variation );
+
+	private function get_available_variations($product) {
+		$variation_ids = $product->get_children();
+
+		if (empty($variation_ids)) {
+			return [];
 		}
 
-		return array_values( array_filter( $available_variations ) );
+		$available_variations = array();
+
+		foreach ($variation_ids as $variation_id) {
+			$variation = wc_get_product($variation_id);
+
+			if ($variation && $variation->exists()) {
+				$available_variations[] = $product->get_available_variation($variation);
+			}
+		}
+
+		return array_values(array_filter($available_variations));
 	}
 
 	private static function strip_html($text) {
