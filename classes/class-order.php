@@ -419,7 +419,7 @@ class Posti_Warehouse_Order {
 				$service_id = $pickup_points[$instance_id]['service'];
 				$shipping_service = $service_id;
 
-				$hide_outdoors = $pickup_points[$instance_id][$service_id]['pickuppoints_hideoutdoors'] ?: 'no';
+				$hide_outdoors = isset($pickup_points[$instance_id][$service_id]['pickuppoints_hideoutdoors']) ? $pickup_points[$instance_id][$service_id]['pickuppoints_hideoutdoors'] : 'no';
 				if ('yes' === $hide_outdoors) {
 					$additional_services['3376'] = array();
 				}
@@ -430,11 +430,10 @@ class Posti_Warehouse_Order {
 					&& !empty($pickup_points[$instance_id][$service_id]['additional_services'])) {
 
 					$services = $pickup_points[$instance_id][$service_id]['additional_services'];
-					foreach ($services as $service_code => $service) {
-						if ('yes' === $service && '3101' !== $service_code) {
-							$additional_services[$service_code] = null;
-						} elseif ('yes' === $service && '3101' === $service_code) {
+					foreach ($services as $service_code => $value) {
+						if ('yes' === $value && '3101' === $service_code) {
 							$add_cod_to_additional_services = true;
+							break;
 						}
 					}
 				}
