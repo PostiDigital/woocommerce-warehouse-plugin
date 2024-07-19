@@ -11,12 +11,14 @@ class Posti_Warehouse_Order {
 	private $api;
 	private $logger;
 	private $product;
+	private $service;
 	private $status_mapping;
 	
 	public function __construct(Posti_Warehouse_Api $api, Posti_Warehouse_Logger $logger, Posti_Warehouse_Product $product, $addTracking = false) {
 		$this->api = $api;
 		$this->logger = $logger;
 		$this->product = $product;
+		$this->service = new Posti_Warehouse_Service($this->api, $this->logger);
 		$this->addTracking = $addTracking;
 		
 		$statuses = array();
@@ -32,15 +34,17 @@ class Posti_Warehouse_Order {
 		//api tracking columns
 		add_filter('manage_edit-shop_order_columns', array($this, 'posti_tracking_column'));
 		add_action('manage_posts_custom_column', array($this, 'posti_tracking_column_data'));
-		
-		add_filter( 'woocommerce_order_item_display_meta_key', array($this, 'change_metadata_title_for_order_shipping_method'), 20, 3 );
+		add_action('woocommerce_order_note_added', array($this, 'posti_comment_add'), 10, 2);
+		add_action('woocommerce_order_note_deleted', array($this, 'posti_comment_delete'), 10, 2);
+
+		add_filter('woocommerce_order_item_display_meta_key', array($this, 'change_metadata_title_for_order_shipping_method'), 20, 3 );
 		
 		if ($this->addTracking) {
 			add_action('woocommerce_email_order_meta', array($this, 'addTrackingToEmail'), 10, 4);
 		}
 		
 	}
-	
+
 	public function change_metadata_title_for_order_shipping_method( $key, $meta, $item) {
 		if ('warehouse_pickup_point' === $meta->key) {
 			$key = Posti_Warehouse_Text::pickup_point_title();
@@ -243,7 +247,30 @@ class Posti_Warehouse_Order {
 		
 		return true;
 	}
+
+	function posti_comment_add( $order_note_id, $order) {
+		$comment = get_comment($order_note_id);
+		$is_customer_note = get_comment_meta($order_note_id, 'is_customer_note', true);
+		$posti_order_id = $this->get_order_external_id($order->get_id());
+		if (!empty($posti_order_id)) {
+			$posti_comment = array(
+				'externalId' => (string) $order_note_id,
+				'author' => $comment->comment_author_email,
+				'value' => (string) $comment->comment_content,
+				'type' => ($is_customer_note == 1 ? 'pickingNote' : 'passThrough'),
+				'origin' => 'WOOCOMMERCE'
+			);
+			$this->api->addOrderComment($posti_order_id, $posti_comment);
+		}
+	}
 	
+	function posti_comment_delete( $order_note_id, $note) {
+		$posti_order_id = $this->get_order_external_id($note->order_id);
+		if (!empty($posti_order_id)) {
+			$this->api->deleteOrderComment($posti_order_id, $order_note_id);
+		}
+	}
+
 	private function sync_page( $page) {
 		if (!isset($page) || false === $page) {
 			return false;
@@ -421,7 +448,10 @@ class Posti_Warehouse_Order {
 
 				$hide_outdoors = isset($pickup_points[$instance_id][$service_id]['pickuppoints_hideoutdoors']) ? $pickup_points[$instance_id][$service_id]['pickuppoints_hideoutdoors'] : 'no';
 				if ('yes' === $hide_outdoors) {
-					$additional_services['3376'] = array();
+					$service = $this->service->get_service($service_id);
+					if (isset($service) && 'Posti' === $service['provider']) {
+						$additional_services['3376'] = array();
+					}
 				}
 
 				if (isset($pickup_points[$instance_id][$service_id])

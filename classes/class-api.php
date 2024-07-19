@@ -13,7 +13,7 @@ class Posti_Warehouse_Api {
 	private $logger;
 	private $last_status = false;
 	private $token_option = 'posti_wh_api_auth';
-	private $user_agent = 'woo-wh-client/2.6.0';
+	private $user_agent = 'woo-wh-client/2.7.0';
 
 	public function __construct(Posti_Warehouse_Logger $logger, array &$options) {
 		$this->logger = $logger;
@@ -209,6 +209,14 @@ class Posti_Warehouse_Api {
 	
 	public function updateOrderPreferences( $order_id, &$prefs) {
 		return $this->ApiCall('/ecommerce/v3/orders/' . urlencode($order_id) . "/preferences", $prefs, 'PATCH');
+	}
+	
+	public function addOrderComment( $order_id, &$comment) {
+		return $this->ApiCall('/ecommerce/v3/orders/' . urlencode($order_id) . "/comments", $comment, 'POST');
+	}
+	
+	public function deleteOrderComment( $order_id, $comment_id) {
+		return $this->ApiCall('/ecommerce/v3/orders/' . urlencode($order_id) . "/comments/" . urlencode($comment_id), null, 'DELETE');
 	}
 
 	public function getPickupPoints($postcode = null, $street_address = null, $country = null, $city = null,

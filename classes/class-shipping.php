@@ -16,6 +16,7 @@ function posti_warehouse_define_shipping_method() {
 			private $is_test = false;
 			private $debug = false;
 			private $api;
+			private $service;
 			private $delivery_service = 'WAREHOUSE';
 			private $logger;
 			private $options;
@@ -30,6 +31,7 @@ function posti_warehouse_define_shipping_method() {
 				$this->logger->setDebug($this->debug);
 				
 				$this->api = new Posti_Warehouse_Api($this->logger, $this->options);
+				$this->service = new Posti_Warehouse_Service($this->api, $this->logger);
 				
 				$this->load();
 			}
@@ -295,19 +297,19 @@ function posti_warehouse_define_shipping_method() {
 				}
 
 				uasort($services, function ($a, $b) {
-				    $pa = substr($a, 0, 6) === 'Posti:';
-				    $ba = substr($b, 0, 6) === 'Posti:';
-				    if ($pa && $ba) {
-				        return strnatcmp($a, $b);
-				    }
-				    elseif ($pa) {
-				        return -1;
-				    }
-				    elseif ($ba) {
-				        return 1;
-				    }
+					$pa = substr($a, 0, 6) === 'Posti:';
+					$ba = substr($b, 0, 6) === 'Posti:';
+					if ($pa && $ba) {
+						return strnatcmp($a, $b);
+					}
+					elseif ($pa) {
+						return -1;
+					}
+					elseif ($ba) {
+						return 1;
+					}
 
-				    return strnatcmp($a, $b);
+					return strnatcmp($a, $b);
 				});
 
 				return $services;
@@ -339,26 +341,7 @@ function posti_warehouse_define_shipping_method() {
 			}
 
 			private function get_shipping_methods() {
-				$transient_name = 'posti_warehouse_shipping_methods';
-				$transient_time = 86400; // 24 hours
-
-				$all_shipping_methods = get_transient($transient_name);
-				if (empty($all_shipping_methods)) {
-					try {
-						$all_shipping_methods = $this->api->getDeliveryServices($this->delivery_service);
-
-						$log_msg = ( empty($all_shipping_methods) ) ? 'An empty list was received' : 'List received successfully';
-						$this->logger->log('info', 'Trying to get list of shipping methods... ' . $log_msg);
-					} catch (\Exception $ex) {
-						$all_shipping_methods = null;
-						$this->logger->log('error', 'Failed to get list of shipping methods: ' . $ex->getMessage());
-					}
-
-					if (!empty($all_shipping_methods)) {
-						set_transient($transient_name, $all_shipping_methods, $transient_time);
-					}
-				}
-
+				$all_shipping_methods = $this->service->get_services();
 				if (empty($all_shipping_methods)) {
 					return null;
 				}
