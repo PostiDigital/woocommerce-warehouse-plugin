@@ -128,7 +128,7 @@ class Posti_Warehouse_Order {
 		}
 
 		$order_id = (string) $order->get_id();
-		$existing_order_id = $this->get_order_external_id($order->get_id());
+		$existing_order_id = $this->get_order_external_id_field($order);
 		if (!empty($existing_order_id)) {
 			$existing_order = $this->api->getOrder($existing_order_id);
 			if ($existing_order) {
@@ -195,20 +195,20 @@ class Posti_Warehouse_Order {
 		}
 	}
 	
-	public function submitOrder( $order_id, $sync = false) {
-		$order_external_id = $this->get_order_external_id($order_id);
+	public function submitOrder( $order, $sync = false) {
+		$order_external_id = $this->get_order_external_id_field($order);
 		$result = $this->update_order_autosubmit_preference($order_external_id, true);
 		if (!$result) {
 			return [ 'error' => 'ERROR: Technical error.' ];
 		}
 
-		$this->trigger_sync_order($order_id, $order_external_id);
+		$this->trigger_sync_order($order->id, $order_external_id);
 
 		return [];
 	}
 
-	public function cancelOrder( $order_id) {
-		$order_external_id = $this->get_order_external_id($order_id);
+	public function cancelOrder( $order) {
+		$order_external_id = $this->get_order_external_id_field($order);
 		if (empty($order_external_id)) {
 			return [];
 		}
@@ -220,9 +220,9 @@ class Posti_Warehouse_Order {
 
 		$status = isset($existing_order['status']['value']) ? $existing_order['status']['value'] : null;
 		if ('Cancelled' !== $status && 'Delivered' !== $status) {
-			$order = array();
-			$order['status'] = ['value' => 'Cancelled'];
-			$result = $this->api->updateOrder($order_external_id, $order);
+			$warehouse_order = array();
+			$warehouse_order['status'] = ['value' => 'Cancelled'];
+			$result = $this->api->updateOrder($order_external_id, $warehouse_order);
 			if (!$result) {
 				return [ 'error' => 'ERROR: Technical error.' ];
 			}
@@ -251,7 +251,7 @@ class Posti_Warehouse_Order {
 	function posti_comment_add( $order_note_id, $order) {
 		$comment = get_comment($order_note_id);
 		$is_customer_note = get_comment_meta($order_note_id, 'is_customer_note', true);
-		$posti_order_id = $this->get_order_external_id($order->get_id());
+		$posti_order_id = $this->get_order_external_id_field($order);
 		if (!empty($posti_order_id)) {
 			$posti_comment = array(
 				'externalId' => (string) $order_note_id,
@@ -308,7 +308,7 @@ class Posti_Warehouse_Order {
 				)
 			)
 		);
-		$posts = get_posts($posts_query);
+		$posts = wc_get_orders($posts_query);
 		if (count($posts) == 0) {
 			if ($is_verbose) {
 				$this->logger->log('info', "No matched orders for status update");
@@ -502,6 +502,10 @@ class Posti_Warehouse_Order {
 	private function get_order_external_id($order_id) {
 		return get_post_meta($order_id, '_posti_id', true);
 	}
+	
+	private function get_order_external_id_field($order) {
+		return $order->get_meta('_posti_id', true);
+	}
 
 	private function get_order_autosubmit_preference(&$order) {
 		return isset($order['preferences']['autoSubmit']) ? $order['preferences']['autoSubmit'] : true;
@@ -509,7 +513,7 @@ class Posti_Warehouse_Order {
 
 	private function prepare_posti_order($posti_order_id, &$_order, &$order_services, $preferences) {
 		$shipping_phone = $_order->get_shipping_phone();
-		$shipping_email = get_post_meta($_order->get_id(), '_shipping_email', true);
+		$shipping_email = $_order->get_meta('_shipping_email', true);
 		$phone = !empty($shipping_phone) ? $shipping_phone : $_order->get_billing_phone();
 		$email = !empty($shipping_email) ? $shipping_email : $_order->get_billing_email();
 		if (empty($phone) && empty($email)) {
@@ -527,7 +531,7 @@ class Posti_Warehouse_Order {
 		$items = $_order->get_items();
 		$item_counter = 1;
 		$service_code = $order_services['service'];
-		$pickup_point = get_post_meta($_order->get_id(), '_warehouse_pickup_point_id', true); //_woo_posti_shipping_pickup_point_id
+		$pickup_point = $_order->get_meta('_warehouse_pickup_point_id', true); //_woo_posti_shipping_pickup_point_id
 
 		foreach ($_order->get_items('shipping') as $item_id => $shipping_item_obj) {
 			$item_service_code = $shipping_item_obj->get_meta('service_code');
@@ -641,7 +645,7 @@ class Posti_Warehouse_Order {
 		if ('processing' === $new_status || 'on-hold' === $new_status) {
 			$order = wc_get_order($order_id);
 			$is_posti_order = $this->hasPostiProducts($order);
-			$posti_order_id = $this->get_order_external_id($order_id);
+			$posti_order_id = $this->get_order_external_id_field($order);
 
 			$options = Posti_Warehouse_Settings::get();
 			if ('processing' === $new_status && isset($options['posti_wh_field_autoorder'])) {
@@ -669,7 +673,8 @@ class Posti_Warehouse_Order {
 			}
 		}
 		elseif ('cancelled' === $new_status) {
-			$this->cancelOrder($order_id);
+			$order = wc_get_order($order_id);
+			$this->cancelOrder($order);
 		}
 	}
 

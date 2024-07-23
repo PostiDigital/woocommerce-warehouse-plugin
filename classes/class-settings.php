@@ -530,7 +530,7 @@ class Posti_Warehouse_Settings {
 			)
 		);
 		
-		$posts = get_posts($posts_query);
+		$posts = wc_get_orders($posts_query);
 		if (count($posts) > 0) {
 			foreach ($posts as $post) {
 				$product_id = get_post_meta($post->ID, '_posti_id', true);

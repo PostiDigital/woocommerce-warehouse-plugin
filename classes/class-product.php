@@ -767,7 +767,7 @@ class Posti_Warehouse_Product {
 				)
 			)
 		);
-		$posts = get_posts($posts_query);
+		$posts = wc_get_orders($posts_query);
 		if (0 == count($posts)) {
 			if ($is_verbose) {
 				$this->logger->log('info', "No matched products for inventory update");

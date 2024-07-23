@@ -77,14 +77,14 @@ class Posti_Warehouse_Metabox {
 		
 		$post_id = sanitize_key($_POST['post_id']);
 		$post_action = isset($_POST['order_action']) ? sanitize_key($_POST['order_action']) : '';
-		$post = get_post($post_id);
+		$post = wc_get_order($post_id);
 		if (!empty($post_action)) {
 			$result = null;
 			if ('place_order' === $post_action) {
-				$result = $this->postiOrder->addOrder($post_id);
+			    $result = $this->postiOrder->addOrder($post);
 			}
 			elseif ('submit_order' === $post_action) {
-				$result = $this->postiOrder->submitOrder($post_id, true);
+			    $result = $this->postiOrder->submitOrder($post, true);
 			}
 
 			$this->error = isset($result['error']) ? $result['error'] : '';

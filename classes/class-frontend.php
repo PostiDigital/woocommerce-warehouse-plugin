@@ -42,10 +42,10 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 			<div style="clear: both;">
 				<p>
 			<?php echo esc_html(Posti_Warehouse_Text::field_phone()); ?>
-					: <?php echo esc_html(get_post_meta($order->get_id(), '_shipping_phone', true)); ?>
+					: <?php echo esc_html($order->get_meta('_shipping_phone', true)); ?>
 					<br>
 			<?php echo esc_html(Posti_Warehouse_Text::field_email()); ?>
-					: <?php echo esc_html(get_post_meta($order->get_id(), '_shipping_email', true)); ?>
+					: <?php echo esc_html($order->get_meta('_shipping_email', true)); ?>
 			</div>
 			<?php
 		}
