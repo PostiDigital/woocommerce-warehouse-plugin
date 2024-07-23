@@ -292,7 +292,7 @@ class Posti_Warehouse_Product {
 		$product_whs_diffs = array();
 		$product_ids_map = array();
 		$warehouses = $this->api->getWarehouses();
-		$can_add_balances = $this->is_warehouse_supports_add_remove($warehouses, $product_warehouse_override);
+		$can_manage_inventory = $this->is_warehouse_supports_add_remove($warehouses, $product_warehouse_override);
 		$cnt_fail = 0;
 		foreach ($post_ids as $post_id) {
 			$product_warehouse = $this->get_update_warehouse_id($post_id, $product_warehouse_override, $product_whs_diffs);
@@ -312,17 +312,17 @@ class Posti_Warehouse_Product {
 			$product_type = $_product->get_type();
 			if ('variable' == $product_type) {
 				$this->collect_products_variations($post_id, $retailerId,
-					$_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs, $product_ids_map, $can_add_balances);
+				    $_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs, $product_ids_map);
 			} else {
 				$this->collect_products_simple($post_id, $retailerId,
-					$_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs, $product_ids_map, $can_add_balances);
+				    $_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs, $product_ids_map);
 			}
 		}
 		
 		if (count($product_whs_diffs) > 0 || count($product_id_diffs) > 0) {
 			$balances_obsolete = $this->get_balances_for_removal($product_whs_diffs, $product_ids_map, $warehouses);
 			if (count($balances_obsolete) > 0) {
-				$errors = $this->api->deleteInventoryBalances($balances_obsolete);
+			    $errors = $can_manage_inventory ? $this->api->deleteInventoryBalances($balances_obsolete) : array();
 				if (false !== $errors) {
 					$cnt = count($balances_obsolete);
 					for ($i = 0; $i < $cnt; $i++) {
@@ -363,7 +363,7 @@ class Posti_Warehouse_Product {
 		}
 
 		if (count($products) > 0) {
-			$errors = $this->api->putInventory($products);
+		    $errors = $can_manage_inventory ? $this->api->putInventory($products) : array();
 			if (false !== $errors) {
 				$cnt = count($products);
 				for ($i = 0; $i < $cnt; $i++) {
@@ -454,7 +454,7 @@ class Posti_Warehouse_Product {
 	}
 	
 	private function collect_products_variations($post_id, $retailerId,
-		$_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diffs, &$product_ids_map, $can_add_balances) {
+	    $_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diffs, &$product_ids_map) {
 
 		$variations = $this->get_available_variations($_product);
 		foreach ($variations as $variation) {
@@ -520,16 +520,14 @@ class Posti_Warehouse_Product {
 			$product_ids_map[$variation_product_id] = $post_id;
 			$product_ids_map['VAR-' . $variation_product_id] = $variation_post_id;
 			if (!empty($product_warehouse)) {
-				if ($can_add_balances) {
-					$balances = array(
-						array(
-							'retailerId' => $retailerId,
-							'catalogExternalId' => $product_warehouse,
-							'wholesalePrice' => $wholesale_price ? $wholesale_price : (float) $variation['display_regular_price'],
-							'currency' => get_woocommerce_currency()
-						)
-					);
-				}
+				$balances = array(
+					array(
+						'retailerId' => $retailerId,
+						'catalogExternalId' => $product_warehouse,
+						'wholesalePrice' => $wholesale_price ? $wholesale_price : (float) $variation['display_regular_price'],
+						'currency' => get_woocommerce_currency()
+					)
+				);
 			}
 			else {
 				$product['status'] = 'EOS';
@@ -546,7 +544,7 @@ class Posti_Warehouse_Product {
 	}
 	
 	private function collect_products_simple($post_id, $retailerId,
-		$_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diffs, &$product_ids_map, $can_add_balances) {
+	    $_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diffs, &$product_ids_map) {
 
 		$ean = get_post_meta($post_id, '_ean', true);
 		if (!$wholesale_price) {
@@ -592,16 +590,14 @@ class Posti_Warehouse_Product {
 
 		$product_ids_map[$product_id] = $post_id;
 		if (!empty($product_warehouse)) {
-			if ($can_add_balances) {
-				$balances = array(
-					array(
-						'retailerId' => $retailerId,
-						'catalogExternalId' => $product_warehouse,
-						'wholesalePrice' => $wholesale_price,
-						'currency' => get_woocommerce_currency()
-					)
-				);
-			}
+			$balances = array(
+				array(
+					'retailerId' => $retailerId,
+					'catalogExternalId' => $product_warehouse,
+					'wholesalePrice' => $wholesale_price,
+					'currency' => get_woocommerce_currency()
+				)
+			);
 		}
 		else {
 			$product['status'] = 'EOS';
