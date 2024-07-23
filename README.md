@@ -97,6 +97,7 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile additional service is added to order/delivery. 
 
 ## Version history
+- 2.6.1: Bug fix: do not publish product when Dropshipping is selected.
 - 2.6.0:
     - Added 'Reserve quantity for "On-hold" orders' setting.
     - Added estimation to pickup point description when available.
