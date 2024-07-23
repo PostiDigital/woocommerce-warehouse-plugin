@@ -99,8 +99,8 @@ class Posti_Warehouse_Order {
 		return true;
 	}
 
-	public function getOrder( $order_id) {
-		$posti_order_id = $this->get_order_external_id($order_id);
+	public function getOrder( $order) {
+		$posti_order_id = $this->get_order_external_id_field($order);
 		if ($posti_order_id) {
 			return $this->api->getOrder($posti_order_id);
 		}
@@ -327,7 +327,7 @@ class Posti_Warehouse_Order {
 		
 		$post_by_order_id = array();
 		foreach ($posts as $post) {
-			$order_id = $this->get_order_external_id($post->ID);
+			$order_id = $this->get_order_external_id_field($post);
 			if (isset($order_id) && strlen($order_id) > 0) {
 				$post_by_order_id[$order_id] = $post->ID;
 			}
@@ -500,7 +500,8 @@ class Posti_Warehouse_Order {
 	}
 
 	private function get_order_external_id($order_id) {
-		return get_post_meta($order_id, '_posti_id', true);
+		$order = wc_get_order($order_id);
+		return isset($order) ? $this->get_order_external_id_field($order) : null;
 	}
 	
 	private function get_order_external_id_field($order) {
@@ -553,8 +554,8 @@ class Posti_Warehouse_Order {
 					$_product = wc_get_product($item['product_id']);
 				}
 				
-				$external_id = get_post_meta($_product->get_id(), '_posti_id', true);
-				$ean = get_post_meta($_product->get_id(), '_ean', true);
+				$external_id = $_product->get_meta('_posti_id', true);
+				$ean = $_product->get_meta('_ean', true);
 				$order_items[] = [
 					'externalId' => (string) $item_counter,
 					'externalProductId' => $external_id,
@@ -691,13 +692,14 @@ class Posti_Warehouse_Order {
 
 	public function posti_tracking_column_data( $column_name) {
 		if ('posti_api_tracking' == $column_name) {
-			$tracking = get_post_meta(get_the_ID(), '_posti_api_tracking', true);
+			$order = wc_get_order(get_the_ID());
+			$tracking = $order->get_meta('_posti_api_tracking', true);
 			echo $tracking ? esc_html($tracking) : '–';
 		}
 	}
 
 	public function addTrackingToEmail( $order, $sent_to_admin, $plain_text, $email) {
-		$tracking = get_post_meta($order->get_id(), '_posti_api_tracking', true);
+		$tracking = $order->get_meta('_posti_api_tracking', true);
 		if ($tracking) {
 			echo esc_html(Posti_Warehouse_Text::tracking_number($tracking));
 		}

@@ -533,7 +533,7 @@ class Posti_Warehouse_Settings {
 		$posts = wc_get_orders($posts_query);
 		if (count($posts) > 0) {
 			foreach ($posts as $post) {
-				$product_id = get_post_meta($post->ID, '_posti_id', true);
+			    $product_id = $post->get_meta('_posti_id', true);
 				if (isset($product_id) && !empty($product_id)) {
 					if (substr_compare($product_id, $business_id, 0, strlen($business_id)) === 0) {
 						update_post_meta($post->ID, '_posti_id', sanitize_text_field(substr($product_id, strlen($business_id) + 1)));

@@ -201,7 +201,7 @@ class Posti_Warehouse_Product {
 		<div id="posti_wh_tab" class="panel woocommerce_options_panel">
 			<?php
 			$warehouses = $this->api->getWarehouses();
-			$product_warehouse = get_post_meta($post->ID, '_posti_wh_warehouse', true);
+			$product_warehouse = $post->get_meta('_posti_wh_warehouse', true);
 			$type = $this->get_stock_type($warehouses, $product_warehouse);
 			if (!$type) {
 				$options = Posti_Warehouse_Settings::get();
@@ -461,7 +461,7 @@ class Posti_Warehouse_Product {
 			$variation_post_id = $variation['variation_id'];
 			$variation_product_id = $this->get_update_product_id($variation_post_id, $variation['sku'], $product_id_diffs);
 			$variable_name = $_product->get_name();
-			$ean = get_post_meta($variation_post_id, '_ean', true);
+			$ean = $variation->get_meta('_ean', true);
 			$specifications = [];
 			$options = [
 				'type' => 'Options',
@@ -495,9 +495,9 @@ class Posti_Warehouse_Product {
 				'recommendedRetailPrice' => (float) $variation['display_regular_price'],
 				'currency' => get_woocommerce_currency(),
 				'distributor' => $product_distributor,
-				'isFragile' => get_post_meta($post_id, '_posti_fragile', true) ? true : false,
-				'isDangerousGoods' => get_post_meta($post_id, '_posti_lq', true) ? true : false,
-				'isOversized' => get_post_meta($post_id, '_posti_large', true) ? true : false,
+			    'isFragile' => $_product->get_meta('_posti_fragile', true) ? true : false,
+			    'isDangerousGoods' => $_product->get_meta('_posti_lq', true) ? true : false,
+			    'isOversized' => $_product->get_meta('_posti_large', true) ? true : false,
 			);
 
 			$weight = $variation['weight'] ? $variation['weight'] : 0;
@@ -548,7 +548,7 @@ class Posti_Warehouse_Product {
 	private function collect_products_simple($post_id, $retailerId,
 		$_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diffs, &$product_ids_map, $can_add_balances) {
 
-		$ean = get_post_meta($post_id, '_ean', true);
+		    $ean = $_product->get_meta('_ean', true);
 		if (!$wholesale_price) {
 			$wholesale_price = (float) $_product->get_price();
 		}
@@ -568,9 +568,9 @@ class Posti_Warehouse_Product {
 			'recommendedRetailPrice' => (float) $_product->get_price(),
 			'currency' => get_woocommerce_currency(),
 			'distributor' => $product_distributor,
-			'isFragile' => get_post_meta($post_id, '_posti_fragile', true) ? true : false,
-			'isDangerousGoods' => get_post_meta($post_id, '_posti_lq', true) ? true : false,
-			'isOversized' => get_post_meta($post_id, '_posti_large', true) ? true : false,
+		    'isFragile' => $_product->get_meta('_posti_fragile', true) ? true : false,
+		    'isDangerousGoods' => $_product->get_meta('_posti_lq', true) ? true : false,
+		    'isOversized' => $_product->get_meta('_posti_large', true) ? true : false,
 		);
 
 		$weight = $_product->get_weight();
@@ -767,7 +767,7 @@ class Posti_Warehouse_Product {
 				)
 			)
 		);
-		$posts = wc_get_orders($posts_query);
+		$posts = wc_get_products($posts_query);
 		if (0 == count($posts)) {
 			if ($is_verbose) {
 				$this->logger->log('info', "No matched products for inventory update");
@@ -786,7 +786,7 @@ class Posti_Warehouse_Product {
 
 		$post_by_product_id = array();
 		foreach ($posts as $post) {
-			$product_id = get_post_meta($post->ID, '_posti_id', true);
+		    $product_id = $post->get_meta('_posti_id', true);
 			if (isset($product_id) && !empty($product_id)) {
 				if (isset($post_by_product_id[$product_id])) {
 					$post_ids = $post_by_product_id[$product_id];

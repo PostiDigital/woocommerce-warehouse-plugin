@@ -38,7 +38,7 @@ class Posti_Warehouse_Metabox {
 
 			<?php
 				$status = Posti_Warehouse_Text::order_not_placed();
-				$order = $this->postiOrder->getOrder($post->ID);
+				$order = $this->postiOrder->getOrder($post);
 				if ($order) {
 					$status = isset($order['status']['value']) ? $order['status']['value'] : '';
 					$autoSubmit = isset($order['preferences']['autoSubmit']) ? $order['preferences']['autoSubmit'] : true;
