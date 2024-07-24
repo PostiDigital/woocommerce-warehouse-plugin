@@ -217,17 +217,16 @@ class Posti_Warehouse_Core {
 		global $woocommerce;
 		$hide_other = false;
 		$items = $woocommerce->cart->get_cart();
-
+		
 		foreach ($items as $item => $values) {
-			$order = wc_get_order($values['data']->get_id());
-			$product_warehouse = $order->get_meta('_posti_wh_warehouse', true);
+			$product_warehouse = get_post_meta($values['data']->get_id(), '_posti_wh_warehouse', true);
 			$type = $this->product->get_stock_type_by_warehouse($product_warehouse);
 			if (( 'Posti' == $type ) && $product_warehouse) {
 				$hide_other = true;
 				break;
 			}
 		}
-
+		
 		$posti_rates = array();
 		if ($hide_other) {
 			foreach ($rates as $rate_id => $rate) {

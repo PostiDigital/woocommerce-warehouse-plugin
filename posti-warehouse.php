@@ -38,6 +38,12 @@ require_once __DIR__ . '/classes/class-dataset.php';
 require_once __DIR__ . '/classes/class-shipping.php';
 require_once __DIR__ . '/classes/class-frontend.php';
 
+add_action( 'before_woocommerce_init', function() {
+	if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+	}
+});
+
 use Posti_Warehouse\Posti_Warehouse_Core;
 
 new Posti_Warehouse_Core();

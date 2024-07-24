@@ -32,8 +32,8 @@ class Posti_Warehouse_Order {
 		//on order status change
 		add_action('woocommerce_order_status_changed', array($this, 'posti_check_order'), 10, 3);
 		//api tracking columns
-		add_filter('manage_edit-shop_order_columns', array($this, 'posti_tracking_column'));
-		add_action('manage_posts_custom_column', array($this, 'posti_tracking_column_data'));
+		add_filter('manage_woocommerce_page_wc-orders_columns', array($this, 'posti_tracking_column'), 20);
+		add_action('manage_woocommerce_page_wc-orders_custom_column', array($this, 'posti_tracking_column_data'), 20, 2);
 		add_action('woocommerce_order_note_added', array($this, 'posti_comment_add'), 10, 2);
 		add_action('woocommerce_order_note_deleted', array($this, 'posti_comment_delete'), 10, 2);
 
@@ -101,6 +101,7 @@ class Posti_Warehouse_Order {
 
 	public function getOrder( $order) {
 		$posti_order_id = $this->get_order_external_id_field($order);
+		$this->logger->log('info', print_r($order, true));
 		if ($posti_order_id) {
 			return $this->api->getOrder($posti_order_id);
 		}
@@ -170,10 +171,11 @@ class Posti_Warehouse_Order {
 		}
 
 		if ($status >= 200 && $status < 300) {
-			update_post_meta($order_id, '_posti_id', (string) $order->get_id());
+			$order->update_meta_data('_posti_id', (string) $order->get_id());
 		} else {
 			$order->update_status('failed', Posti_Warehouse_Text::order_failed(), true);
 		}
+		$order->save();
 
 		if (false === $result) {
 			return [ 'error' => Posti_Warehouse_Text::error_order_not_placed() ];
@@ -276,14 +278,14 @@ class Posti_Warehouse_Order {
 			return false;
 		}
 
-		$orders = $page['content'];
-		if (!isset($orders) || !is_array($orders) || count($orders) == 0) {
+		$warehouse_orders = $page['content'];
+		if (!isset($warehouse_orders) || !is_array($warehouse_orders) || count($warehouse_orders) == 0) {
 			return false;
 		}
 
 		$order_ids = array();
-		foreach ($orders as $order) {
-			$order_id = $order['externalId'];
+		foreach ($warehouse_orders as $warehouse_order) {
+			$order_id = $warehouse_order['externalId'];
 			if (isset($order_id) && strlen($order_id) > 0) {
 				array_push($order_ids, (string) $order_id);
 			}
@@ -334,27 +336,19 @@ class Posti_Warehouse_Order {
 		}
 
 		$autocomplete = Posti_Warehouse_Settings::get_value($options, 'posti_wh_field_autocomplete');
-		foreach ($orders as $order) {
-			$order_id = $order['externalId'];
+		foreach ($warehouse_orders as $warehouse_order) {
+			$order_id = $warehouse_order['externalId'];
 			if (isset($post_by_order_id[$order_id]) && !empty($post_by_order_id[$order_id])) {
-				$this->sync_order($post_by_order_id[$order_id], $order_id, $order, $autocomplete, $is_verbose);
+				$this->sync_order($post_by_order_id[$order_id], $order_id, $warehouse_order, $autocomplete, $is_verbose);
 			}
 		}
 
 		return true;
 	}
 
-	public function sync_order( $id, $order_external_id, $order, $autocomplete, $is_verbose) {
+	public function sync_order( $id, $order_external_id, $warehouse_order, $autocomplete, $is_verbose) {
 		try {
-			$tracking = isset($order['trackingCodes']) ? $order['trackingCodes'] : '';
-			if (!empty($tracking)) {
-				if (is_array($tracking)) {
-					$tracking = implode(', ', $tracking);
-				}
-				update_post_meta($id, '_posti_api_tracking', sanitize_text_field($tracking));
-			}
-	
-			$status = isset($order['status']) && isset($order['status']['value']) ? $order['status']['value'] : '';
+			$status = isset($warehouse_order['status']) && isset($warehouse_order['status']['value']) ? $warehouse_order['status']['value'] : '';
 			if (empty($status)) {
 				return;
 			}
@@ -364,17 +358,27 @@ class Posti_Warehouse_Order {
 				return;
 			}
 	
-			$_order = wc_get_order($id);
-			if (false === $_order) {
+			$order = wc_get_order($id);
+			if (false === $order) {
 				return;
 			}
 
+			$order_updated = false;
+			$tracking = isset($warehouse_order['trackingCodes']) ? $warehouse_order['trackingCodes'] : '';
+			if (!empty($tracking)) {
+				if (is_array($tracking)) {
+					$tracking = implode(', ', $tracking);
+				}
+				$order->update_meta_data('_posti_api_tracking', sanitize_text_field($tracking));
+				$order_updated = true;
+			}
+
 			$status_updated = false;
-			$status_old = $_order->get_status();
+			$status_old = $order->get_status();
 			if ($status_old !== $status_new) {
 				if ('completed' === $status_new) {
 					if (isset($autocomplete)) {
-						$_order->update_status($status_new, "Posti Warehouse: $status", true);
+						$order->update_status($status_new, "Posti Warehouse: $status", true);
 						$status_updated = true;
 					}
 					else {
@@ -382,18 +386,19 @@ class Posti_Warehouse_Order {
 					}
 
 				} elseif ('cancelled' === $status_new || 'cancelled'  === $status_old) {
-					$_order->update_status($status_new, "Posti Warehouse: $status", true);
+					$order->update_status($status_new, "Posti Warehouse: $status", true);
 					$status_updated = true;
 
 				} elseif ('on-hold' === $status_old) {
-					$autoSubmit = $this->get_order_autosubmit_preference($order);
+					$autoSubmit = $this->get_order_autosubmit_preference($warehouse_order);
 					if ($autoSubmit === true) { // prevent updating status when order is registered (qty reserved) but is not yet submitted to warehouse
-						$_order->update_status($status_new, "Posti Warehouse: $status", true);
+						$order->update_status($status_new, "Posti Warehouse: $status", true);
 						$status_updated = true;
 					}
 				}
 
 				if ($status_updated) {
+					$order_updated = true;
 					$this->logger->log('info', "Changed order $id status $status_old -> $status_new");
 				}
 			}
@@ -402,6 +407,10 @@ class Posti_Warehouse_Order {
 			}
 			else if ($is_verbose) {
 				$this->logger->log('info', "Order $id ($order_external_id) status is already $status_new");
+			}
+			
+			if ($order_updated || $status_updated) {
+				$order->save();
 			}
 			
 		} catch (\Exception $e) {
@@ -690,10 +699,10 @@ class Posti_Warehouse_Order {
 		return $new_columns;
 	}
 
-	public function posti_tracking_column_data( $column_name) {
+	public function posti_tracking_column_data( $column_name, $order_id) {
 		if ('posti_api_tracking' == $column_name) {
-			$order = wc_get_order(get_the_ID());
-			$tracking = $order->get_meta('_posti_api_tracking', true);
+			$order = wc_get_order($order_id);
+			$tracking = $order ? $order->get_meta('_posti_api_tracking', true) : false;
 			echo $tracking ? esc_html($tracking) : '–';
 		}
 	}

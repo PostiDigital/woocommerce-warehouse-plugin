@@ -42,7 +42,7 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 			<div style="clear: both;">
 				<p>
 			<?php echo esc_html(Posti_Warehouse_Text::field_phone()); ?>
-					: <?php echo esc_html($order->get_meta('_shipping_phone', true)); ?>
+					: <?php echo esc_html($order->get_shipping_phone()); ?>
 					<br>
 			<?php echo esc_html(Posti_Warehouse_Text::field_email()); ?>
 					: <?php echo esc_html($order->get_meta('_shipping_email', true)); ?>
@@ -185,12 +185,14 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 			}
 
 			if (!empty($pickup_point)) {
-				update_post_meta($order_id, '_' . $key, sanitize_text_field($pickup_point));
+				$order = wc_get_order($order_id);
+				$order->update_meta_data('_' . $key, sanitize_text_field($pickup_point));
 				// Find string like '(#6681)'
 				preg_match('/\(#[A-Za-z0-9\-]+\)/', $pickup_point, $matches);
 				// Cut the number out from a string of the form '(#6681)'
 				$pickup_point_id = ( !empty($matches) ) ? substr($matches[0], 2, -1) : '';
-				update_post_meta($order_id, '_' . $key_id, sanitize_text_field($pickup_point_id));
+				$order->update_meta_data('_' . $key_id, sanitize_text_field($pickup_point_id));
+				$order->save();
 			}
 		}
 
@@ -614,7 +616,7 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 		public function get_pickup_points(
 			$postcode, $street_address = null, $country = null, $city = null,
 			$service_provider = null, $type = null, $capability = null,
-		    $from_country_code = null, $from_postal_code = null) {
+			$from_country_code = null, $from_postal_code = null) {
 			return $this->api->getPickupPoints(
 				trim($postcode), trim($street_address), trim($country), trim($city),
 				$service_provider, $type, $capability, $from_country_code, $from_postal_code);

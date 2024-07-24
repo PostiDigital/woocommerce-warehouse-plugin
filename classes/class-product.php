@@ -71,33 +71,33 @@ class Posti_Warehouse_Product {
 		
 		if ('_posti_wh_bulk_actions_publish_products' === $action
 			|| '_posti_wh_bulk_actions_remove_products' === $action) {
-
-			$cnt_fail = 0;
-			if ('_posti_wh_bulk_actions_publish_products' === $action) {
-				$warehouse = isset($_REQUEST['_posti_wh_warehouse_bulk_publish']) ? sanitize_text_field($_REQUEST['_posti_wh_warehouse_bulk_publish']) : null;
-				if (!empty($warehouse)) {
-					$cnt_fail = $this->handle_products($post_ids, $warehouse);
+				
+				$cnt_fail = 0;
+				if ('_posti_wh_bulk_actions_publish_products' === $action) {
+					$warehouse = isset($_REQUEST['_posti_wh_warehouse_bulk_publish']) ? sanitize_text_field($_REQUEST['_posti_wh_warehouse_bulk_publish']) : null;
+					if (!empty($warehouse)) {
+						$cnt_fail = $this->handle_products($post_ids, $warehouse);
+					}
+					
+				} elseif ('_posti_wh_bulk_actions_remove_products' === $action) {
+					$cnt_fail = $this->handle_products($post_ids, '--delete');
+					
 				}
 				
-			} elseif ('_posti_wh_bulk_actions_remove_products' === $action) {
-				$cnt_fail = $this->handle_products($post_ids, '--delete');
-				
+				$redirect_to = add_query_arg(array(
+					'products_total' => count($post_ids),
+					'products_fail' => $cnt_fail), $redirect_to);
 			}
 			
-			$redirect_to = add_query_arg(array(
-				'products_total' => count($post_ids),
-				'products_fail' => $cnt_fail), $redirect_to);
-		}
-		
-		return $redirect_to;
+			return $redirect_to;
 	}
-
+	
 	public function has_known_stock_type($product_id) {
 		$product_warehouse = get_post_meta($product_id, '_posti_wh_warehouse', true);
 		$type = $this->get_stock_type_by_warehouse($product_warehouse);
 		return 'Posti' === $type || 'Store' === $type || 'Catalog' === $type;
 	}
-
+	
 	public function woocom_simple_product_ean_field() {
 		global $woocommerce, $post;
 		$product = new \WC_Product(get_the_ID());
@@ -201,7 +201,7 @@ class Posti_Warehouse_Product {
 		<div id="posti_wh_tab" class="panel woocommerce_options_panel">
 			<?php
 			$warehouses = $this->api->getWarehouses();
-			$product_warehouse = $post->get_meta('_posti_wh_warehouse', true);
+			$product_warehouse = get_post_meta($post->ID, '_posti_wh_warehouse', true);
 			$type = $this->get_stock_type($warehouses, $product_warehouse);
 			if (!$type) {
 				$options = Posti_Warehouse_Settings::get();
@@ -292,7 +292,7 @@ class Posti_Warehouse_Product {
 		$product_whs_diffs = array();
 		$product_ids_map = array();
 		$warehouses = $this->api->getWarehouses();
-		$can_add_balances = $this->is_warehouse_supports_add_remove($warehouses, $product_warehouse_override);
+		$can_manage_inventory = $this->is_warehouse_supports_add_remove($warehouses, $product_warehouse_override);
 		$cnt_fail = 0;
 		foreach ($post_ids as $post_id) {
 			$product_warehouse = $this->get_update_warehouse_id($post_id, $product_warehouse_override, $product_whs_diffs);
@@ -312,17 +312,17 @@ class Posti_Warehouse_Product {
 			$product_type = $_product->get_type();
 			if ('variable' == $product_type) {
 				$this->collect_products_variations($post_id, $retailerId,
-					$_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs, $product_ids_map, $can_add_balances);
+					$_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs, $product_ids_map);
 			} else {
 				$this->collect_products_simple($post_id, $retailerId,
-					$_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs, $product_ids_map, $can_add_balances);
+					$_product, $product_distributor, $product_warehouse, $wholesale_price, $products, $product_id_diffs, $product_ids_map);
 			}
 		}
 		
 		if (count($product_whs_diffs) > 0 || count($product_id_diffs) > 0) {
 			$balances_obsolete = $this->get_balances_for_removal($product_whs_diffs, $product_ids_map, $warehouses);
 			if (count($balances_obsolete) > 0) {
-				$errors = $this->api->deleteInventoryBalances($balances_obsolete);
+				$errors = $can_manage_inventory ? $this->api->deleteInventoryBalances($balances_obsolete) : array();
 				if (false !== $errors) {
 					$cnt = count($balances_obsolete);
 					for ($i = 0; $i < $cnt; $i++) {
@@ -363,7 +363,7 @@ class Posti_Warehouse_Product {
 		}
 
 		if (count($products) > 0) {
-			$errors = $this->api->putInventory($products);
+			$errors = $can_manage_inventory ? $this->api->putInventory($products) : array();
 			if (false !== $errors) {
 				$cnt = count($products);
 				for ($i = 0; $i < $cnt; $i++) {
@@ -454,14 +454,14 @@ class Posti_Warehouse_Product {
 	}
 	
 	private function collect_products_variations($post_id, $retailerId,
-		$_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diffs, &$product_ids_map, $can_add_balances) {
+		$_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diffs, &$product_ids_map) {
 
 		$variations = $this->get_available_variations($_product);
 		foreach ($variations as $variation) {
 			$variation_post_id = $variation['variation_id'];
 			$variation_product_id = $this->get_update_product_id($variation_post_id, $variation['sku'], $product_id_diffs);
 			$variable_name = $_product->get_name();
-			$ean = $variation->get_meta('_ean', true);
+			$ean = get_post_meta($variation_post_id, '_ean', true);
 			$specifications = [];
 			$options = [
 				'type' => 'Options',
@@ -495,9 +495,9 @@ class Posti_Warehouse_Product {
 				'recommendedRetailPrice' => (float) $variation['display_regular_price'],
 				'currency' => get_woocommerce_currency(),
 				'distributor' => $product_distributor,
-			    'isFragile' => $_product->get_meta('_posti_fragile', true) ? true : false,
-			    'isDangerousGoods' => $_product->get_meta('_posti_lq', true) ? true : false,
-			    'isOversized' => $_product->get_meta('_posti_large', true) ? true : false,
+				'isFragile' => get_post_meta($post_id, '_posti_fragile', true) ? true : false,
+				'isDangerousGoods' => get_post_meta($post_id, '_posti_lq', true) ? true : false,
+				'isOversized' => get_post_meta($post_id, '_posti_large', true) ? true : false,
 			);
 
 			$weight = $variation['weight'] ? $variation['weight'] : 0;
@@ -520,16 +520,14 @@ class Posti_Warehouse_Product {
 			$product_ids_map[$variation_product_id] = $post_id;
 			$product_ids_map['VAR-' . $variation_product_id] = $variation_post_id;
 			if (!empty($product_warehouse)) {
-				if ($can_add_balances) {
-					$balances = array(
-						array(
-							'retailerId' => $retailerId,
-							'catalogExternalId' => $product_warehouse,
-							'wholesalePrice' => $wholesale_price ? $wholesale_price : (float) $variation['display_regular_price'],
-							'currency' => get_woocommerce_currency()
-						)
-					);
-				}
+				$balances = array(
+					array(
+						'retailerId' => $retailerId,
+						'catalogExternalId' => $product_warehouse,
+						'wholesalePrice' => $wholesale_price ? $wholesale_price : (float) $variation['display_regular_price'],
+						'currency' => get_woocommerce_currency()
+					)
+				);
 			}
 			else {
 				$product['status'] = 'EOS';
@@ -546,9 +544,9 @@ class Posti_Warehouse_Product {
 	}
 	
 	private function collect_products_simple($post_id, $retailerId,
-		$_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diffs, &$product_ids_map, $can_add_balances) {
+		$_product, $product_distributor, $product_warehouse, $wholesale_price, &$products, &$product_id_diffs, &$product_ids_map) {
 
-		    $ean = $_product->get_meta('_ean', true);
+		$ean = get_post_meta($post_id, '_ean', true);
 		if (!$wholesale_price) {
 			$wholesale_price = (float) $_product->get_price();
 		}
@@ -568,9 +566,9 @@ class Posti_Warehouse_Product {
 			'recommendedRetailPrice' => (float) $_product->get_price(),
 			'currency' => get_woocommerce_currency(),
 			'distributor' => $product_distributor,
-		    'isFragile' => $_product->get_meta('_posti_fragile', true) ? true : false,
-		    'isDangerousGoods' => $_product->get_meta('_posti_lq', true) ? true : false,
-		    'isOversized' => $_product->get_meta('_posti_large', true) ? true : false,
+			'isFragile' => get_post_meta($post_id, '_posti_fragile', true) ? true : false,
+			'isDangerousGoods' => get_post_meta($post_id, '_posti_lq', true) ? true : false,
+			'isOversized' => get_post_meta($post_id, '_posti_large', true) ? true : false,
 		);
 
 		$weight = $_product->get_weight();
@@ -592,16 +590,14 @@ class Posti_Warehouse_Product {
 
 		$product_ids_map[$product_id] = $post_id;
 		if (!empty($product_warehouse)) {
-			if ($can_add_balances) {
-				$balances = array(
-					array(
-						'retailerId' => $retailerId,
-						'catalogExternalId' => $product_warehouse,
-						'wholesalePrice' => $wholesale_price,
-						'currency' => get_woocommerce_currency()
-					)
-				);
-			}
+			$balances = array(
+				array(
+					'retailerId' => $retailerId,
+					'catalogExternalId' => $product_warehouse,
+					'wholesalePrice' => $wholesale_price,
+					'currency' => get_woocommerce_currency()
+				)
+			);
 		}
 		else {
 			$product['status'] = 'EOS';
@@ -767,7 +763,7 @@ class Posti_Warehouse_Product {
 				)
 			)
 		);
-		$posts = wc_get_products($posts_query);
+		$posts = get_posts($posts_query);
 		if (0 == count($posts)) {
 			if ($is_verbose) {
 				$this->logger->log('info', "No matched products for inventory update");
@@ -786,7 +782,7 @@ class Posti_Warehouse_Product {
 
 		$post_by_product_id = array();
 		foreach ($posts as $post) {
-		    $product_id = $post->get_meta('_posti_id', true);
+			$product_id = get_post_meta($post->ID, '_posti_id', true);
 			if (isset($product_id) && !empty($product_id)) {
 				if (isset($post_by_product_id[$product_id])) {
 					$post_ids = $post_by_product_id[$product_id];
