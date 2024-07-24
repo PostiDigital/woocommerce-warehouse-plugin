@@ -97,6 +97,8 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile additional service is added to order/delivery. 
 
 ## Version history
+- 3.0.0:
+    - Added HPOS support
 - 2.7.0:
     - Added sync of "Private note" and "Note to customer" comments. Comment deletion requires WooCommerce >= 9.1.0.
     - Bug fix: Limit 3376 additional service to Posti delivery operator.
