@@ -14,25 +14,26 @@ class Posti_Warehouse_Metabox {
 	public function __construct(Posti_Warehouse_Order $order) {
 		$this->postiOrder = $order;
 		add_action('add_meta_boxes', array($this, 'add_order_meta_box'), 10, 2);
-//		add_action('add_meta_boxes', array($this, 'add_order_meta_box'));
 		add_action('wp_ajax_posti_order_meta_box', array($this, 'parse_ajax_meta_box'));
 	}
-	
-	public function add_order_meta_box( $type, $post_or_order_object) {
-		$screen = class_exists('\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController')
-				&& wc_get_container()->get( CustomOrdersTableController::class )->custom_orders_table_usage_is_enabled()
-			? wc_get_page_screen_id( 'shop-order' )
-			: 'shop_order';
 
-		$order = $post_or_order_object instanceof WP_Post ? wc_get_order($post_or_order_object->ID) : $post_or_order_object;
-		if ($this->postiOrder->hasPostiProducts($order)) {
-			add_meta_box(
-				'posti_order_box_id',
-				'Posti Order',
-				array($this, 'add_order_meta_box_html'),
-				$screen,
-				'side',
-				'high');
+	public function add_order_meta_box( $type, $post_or_order_object) {
+		if ('woocommerce_page_wc-orders' === $type) {
+			$screen = class_exists('\Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableController')
+					&& wc_get_container()->get( CustomOrdersTableController::class )->custom_orders_table_usage_is_enabled()
+				? wc_get_page_screen_id( 'shop-order' )
+				: 'shop_order';
+
+			$order = $post_or_order_object instanceof WP_Post ? wc_get_order($post_or_order_object->ID) : $post_or_order_object;
+			if ($this->postiOrder->hasPostiProducts($order)) {
+				add_meta_box(
+					'posti_order_box_id',
+					'Posti Order',
+					array($this, 'add_order_meta_box_html'),
+					$screen,
+					'side',
+					'high');
+			}
 		}
 	}
 

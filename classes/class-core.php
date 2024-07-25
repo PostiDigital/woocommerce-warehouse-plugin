@@ -48,7 +48,7 @@ class Posti_Warehouse_Core {
 	public function getApi() {
 		return $this->api;
 	}
-
+	
 	public function install() {
 		Posti_Warehouse_Settings::install();
 		Posti_Warehouse_Api::install();
@@ -187,7 +187,7 @@ class Posti_Warehouse_Core {
 		try {
 			$sync_dttm = $this->get_option_datetime_sync($options, 'posti_wh_field_stock_sync_dttm');
 			$next_sync_dttm = ( new \DateTime() )->format(\DateTimeInterface::RFC3339_EXTENDED);
-			$synced = $this->product->sync($sync_dttm);
+			$synced = $this->product->sync_stock($sync_dttm);
 
 			return $synced ? $next_sync_dttm : false;
 
@@ -249,7 +249,11 @@ class Posti_Warehouse_Core {
 		
 		return $value;
 	}
-	
+
+	public function get_product_manager() {
+		return $this->product;
+	}
+
 	private function load_options() {
 		$options = Posti_Warehouse_Settings::get();
 		$this->is_test = Posti_Warehouse_Settings::is_test($options);

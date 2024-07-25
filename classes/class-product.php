@@ -38,14 +38,14 @@ class Posti_Warehouse_Product {
 		add_action('manage_product_posts_custom_column', array($this, 'custom_columns_show'), 10, 2);
 	}
 	
-	public function custom_columns_register( $columns) {
+	function custom_columns_register( $columns) {
 		$columns['warehouse'] = '<span class="parent-tips" data-tip="' . esc_html(Posti_Warehouse_Text::column_warehouse()) . '"><img class="posti_wh-icon" src="' . $this->assets_url . '/img/warehouse.svg" /></span>';
 		return $columns;
 	}
 	
-	public function custom_columns_show( $column, $product_id) {
+	function custom_columns_show( $column, $product_id) {
 		if ('warehouse' === $column) {
-			$externalId = get_post_meta($product_id, '_posti_wh_warehouse', true);
+			$externalId = $this->get_product_warehouse_field($product_id);
 			if (empty($externalId)) {
 				echo '';
 			}
@@ -57,14 +57,14 @@ class Posti_Warehouse_Product {
 		}
 	}
 	
-	public function bulk_actions_warehouse_products( $bulk_actions) {
+	function bulk_actions_warehouse_products( $bulk_actions) {
 		$bulk_actions['_posti_wh_bulk_actions_publish_products'] = Posti_Warehouse_Text::action_publish_to_warehouse();
 		$bulk_actions['_posti_wh_bulk_actions_remove_products'] = Posti_Warehouse_Text::action_remove_from_warehouse();
 		
 		return $bulk_actions;
 	}
 	
-	public function handle_bulk_actions_warehouse_products( $redirect_to, $action, $post_ids) {
+	function handle_bulk_actions_warehouse_products( $redirect_to, $action, $post_ids) {
 		if (count($post_ids) == 0) {
 			return $redirect_to;
 		}
@@ -76,11 +76,11 @@ class Posti_Warehouse_Product {
 				if ('_posti_wh_bulk_actions_publish_products' === $action) {
 					$warehouse = isset($_REQUEST['_posti_wh_warehouse_bulk_publish']) ? sanitize_text_field($_REQUEST['_posti_wh_warehouse_bulk_publish']) : null;
 					if (!empty($warehouse)) {
-						$cnt_fail = $this->handle_products($post_ids, $warehouse);
+						$cnt_fail = $this->handle_products($warehouse, $post_ids);
 					}
 					
 				} elseif ('_posti_wh_bulk_actions_remove_products' === $action) {
-					$cnt_fail = $this->handle_products($post_ids, '--delete');
+					$cnt_fail = $this->handle_products('--delete', $post_ids);
 					
 				}
 				
@@ -93,12 +93,12 @@ class Posti_Warehouse_Product {
 	}
 	
 	public function has_known_stock_type($product_id) {
-		$product_warehouse = get_post_meta($product_id, '_posti_wh_warehouse', true);
+		$product_warehouse = $this->get_product_warehouse_field($product_id);
 		$type = $this->get_stock_type_by_warehouse($product_warehouse);
 		return 'Posti' === $type || 'Store' === $type || 'Catalog' === $type;
 	}
 	
-	public function woocom_simple_product_ean_field() {
+	function woocom_simple_product_ean_field() {
 		global $woocommerce, $post;
 		$product = new \WC_Product(get_the_ID());
 		echo '<div id="ean_attr" class="options_group">';
@@ -114,7 +114,7 @@ class Posti_Warehouse_Product {
 		echo '</div>';
 	}
 	
-	public function woocom_simple_product_wholesale_field() {
+	function woocom_simple_product_wholesale_field() {
 		global $woocommerce, $post;
 		$product = new \WC_Product(get_the_ID());
 		echo '<div id="wholesale_attr" class="options_group">';
@@ -135,7 +135,7 @@ class Posti_Warehouse_Product {
 		echo '</div>';
 	}
 	
-	public function variation_settings_fields( $loop, $variation_data, $variation) {
+	function variation_settings_fields( $loop, $variation_data, $variation) {
 		woocommerce_wp_text_input(
 			array(
 				'id' => '_ean[' . $variation->ID . ']',
@@ -149,7 +149,7 @@ class Posti_Warehouse_Product {
 		wp_nonce_field('posti_wh_nonce_var', 'posti_wh_nonce_var_' . $variation->ID);
 	}
 	
-	public function variation_settings_fields_save( $post_id) {
+	function variation_settings_fields_save( $post_id) {
 		if (!check_admin_referer('posti_wh_nonce_var', 'posti_wh_nonce_var_' . $post_id)) {
 			throw new \Exception('Nonce check failed for save_variation_settings_fields');
 		}
@@ -164,7 +164,7 @@ class Posti_Warehouse_Product {
 		}
 	}
 	
-	public function posti_wh_product_tab( $product_data_tabs) {
+	function posti_wh_product_tab( $product_data_tabs) {
 		$product_data_tabs['posti-tab'] = array(
 			'label' => Posti_Warehouse_Text::company(),
 			'target' => 'posti_wh_tab',
@@ -172,7 +172,7 @@ class Posti_Warehouse_Product {
 		return $product_data_tabs;
 	}
 	
-	public function get_ajax_posti_warehouse() {
+	function get_ajax_posti_warehouse() {
 		if (!isset($_REQUEST['security']) || !wp_verify_nonce(sanitize_key($_REQUEST['security']), 'posti_wh_nonce')) {
 			throw new \Exception('Nonce check failed for get_ajax_posti_warehouse');
 		}
@@ -194,14 +194,14 @@ class Posti_Warehouse_Product {
 		die();
 	}
 	
-	public function posti_wh_product_tab_fields() {
+	function posti_wh_product_tab_fields() {
 		global $woocommerce, $post;
 		?>
 		<!-- id below must match target registered in posti_wh_product_tab function -->
 		<div id="posti_wh_tab" class="panel woocommerce_options_panel">
 			<?php
 			$warehouses = $this->api->getWarehouses();
-			$product_warehouse = get_post_meta($post->ID, '_posti_wh_warehouse', true);
+			$product_warehouse = $this->get_product_warehouse_field($post->ID);
 			$type = $this->get_stock_type($warehouses, $product_warehouse);
 			if (!$type) {
 				$options = Posti_Warehouse_Settings::get();
@@ -260,7 +260,7 @@ class Posti_Warehouse_Product {
 		<?php
 	}
 
-	public function posti_wh_product_tab_fields_save( $post_id) {
+	function posti_wh_product_tab_fields_save( $post_id) {
 		if (!check_admin_referer('posti_wh_nonce_prod', 'posti_wh_nonce_prod')) {
 			throw new \Exception('Nonce check failed for save_variation_settings_fields');
 		}
@@ -278,15 +278,67 @@ class Posti_Warehouse_Product {
 		update_post_meta($post_id, '_posti_wh_warehouse_single', ( empty($warehouse) ? '--delete' : $warehouse ));
 	}
 	
-	public function after_product_save( $post_id) {
+	function after_product_save( $post_id) {
 		$warehouse = get_post_meta($post_id, '_posti_wh_warehouse_single', true);
-		$cnt_fail = $this->handle_products([$post_id], $warehouse);
+		$cnt_fail = $this->handle_products($warehouse, [$post_id]);
 		if (isset($cnt_fail) && $cnt_fail > 0) {
 			update_post_meta($post_id, '_posti_last_sync', 0);
 		}
 	}
+
+	public function set_warehouse($product_id, string $value) {
+		update_post_meta($product_id, '_posti_wh_warehouse', $value);
+	}
 	
-	public function handle_products( $post_ids, $product_warehouse_override) {
+	public function set_distributor($product_id, string $value) {
+		update_post_meta($product_id, '_posti_wh_distribution', $value);
+	}
+	
+	public function set_ean($product_id, string $value) {
+		update_post_meta($product_id, '_ean', $value);
+	}
+	
+	public function set_wholesale_price($product_id, float $value) {
+		update_post_meta($product_id, '_wholesale_price', $value);
+	}
+	
+	public function set_fragile($product_id, bool $value) {
+		update_post_meta($product_id, '_posti_fragile', $value ? 'yes' : '');
+	}
+	
+	public function set_dangerous($product_id, bool $value) {
+		update_post_meta($product_id, '_posti_lq', $value ? 'yes' : '');
+	}
+
+	public function set_large($product_id, bool $value) {
+		update_post_meta($product_id, '_posti_large', $value ? 'yes' : '');
+	}
+	
+	public function sync_products( &$product_ids) {
+		$product_ids_by_warehouse = array();
+		$cnt_fail = 0;
+		foreach ($product_ids as $product_id) {
+			$product_warehouse = $this->get_product_warehouse_field($product_id);
+			if (!empty($product_warehouse)) {
+				$product_ids_by_warehouse[$product_warehouse][] = $product_id;
+			}
+			else {
+				$cnt_fail++;
+			}
+		}
+
+		foreach ($product_ids_by_warehouse as $warehouse => $product_ids_group) {
+			$cnt_fail += $this->switch_products_warehouse($warehouse, $product_ids_group);
+		}
+
+		return $cnt_fail;
+	}
+
+	public function switch_products_warehouse($product_warehouse, &$product_ids) {
+		return $this->handle_products($product_warehouse, $product_ids);
+	}
+
+	private function handle_products($product_warehouse_override, $post_ids) {
 		$products = array();
 		$product_id_diffs = array();
 		$product_whs_diffs = array();
@@ -390,7 +442,7 @@ class Posti_Warehouse_Product {
 				$product_id = $product['product']['externalId'];
 				array_push($product_ids, $product_id);
 			}
-			$this->sync_by_ids($product_ids);
+			$this->sync_stock_by_ids($product_ids);
 			
 			if (false === $errors) {
 				$cnt_fail = count($post_ids);
@@ -433,6 +485,10 @@ class Posti_Warehouse_Product {
 */
 	private function unlink_balance_from_post( $post_id) {
 		delete_post_meta($post_id, '_posti_wh_warehouse', '');
+	}
+
+	private function get_product_warehouse_field($product_id) {
+		return get_post_meta($product_id, '_posti_wh_warehouse', true);
 	}
 	
 	private function can_publish_product( $_product) {
@@ -663,7 +719,7 @@ class Posti_Warehouse_Product {
 		return $balances_obsolete;
 	}
 
-	public function posti_notices() {
+	function posti_notices() {
 		$screen = get_current_screen();
 		if (( 'product' == $screen->id ) && ( 'edit' == $screen->parent_base )) {
 			global $post;
@@ -689,16 +745,16 @@ class Posti_Warehouse_Product {
 		wp_nonce_field('posti_wh_nonce', 'posti_wh_nonce');
 	}
 
-	public function sync( $datetime) {
+	public function sync_stock( $datetime) {
 		$response = $this->api->getBalancesUpdatedSince($datetime, 100);
-		if (!$this->sync_page($response)) {
+		if (!$this->sync_stock_page($response)) {
 			return false;
 		}
 
 		$pages = $response['page']['totalPages'];
 		for ($page = 1; $page < $pages; $page++) {
 			$page_response = $this->api->getBalancesUpdatedSince($datetime, 100, $page);
-			if (!$this->sync_page($page_response)) {
+			if (!$this->sync_stock_page($page_response)) {
 				break;
 			}
 		}
@@ -706,18 +762,18 @@ class Posti_Warehouse_Product {
 		return true;
 	}
 	
-	private function sync_by_ids( &$product_ids) {
+	private function sync_stock_by_ids( &$product_ids) {
 		$product_ids_chunks = array_chunk($product_ids, 30);
 		foreach ($product_ids_chunks as $product_ids_chunk) {
 			$response = $this->api->getBalances($product_ids_chunk);
 			$balances = isset($response['content']) ? $response['content'] : null;
 			if (isset($balances) && is_array($balances) && count($balances) > 0) {
-				$this->sync_products($balances);
+				$this->sync_stock_items($balances);
 			}
 		}
 	}
 	
-	private function sync_page( &$page) {
+	private function sync_stock_page( &$page) {
 		if (!isset($page) || false === $page) {
 			return false;
 		}
@@ -727,12 +783,12 @@ class Posti_Warehouse_Product {
 			return false;
 		}
 
-		$this->sync_products($balances);
+		$this->sync_stock_items($balances);
 
 		return true;
 	}
 	
-	private function sync_products( &$balances) {
+	private function sync_stock_items( &$balances) {
 		if (0 == count($balances)) {
 			return;
 		}
@@ -800,20 +856,20 @@ class Posti_Warehouse_Product {
 			if (isset($post_by_product_id[$product_id]) && !empty($post_by_product_id[$product_id])) {
 				$post_ids = $post_by_product_id[$product_id];
 				foreach ($post_ids as $post_id) {
-					$this->sync_product($post_id, $product_id, $balance);
+					$this->sync_stock_item($post_id, $product_id, $balance);
 				}
 			}
 		}
 	}
 	
-	private function sync_product( $id, $product_id, &$balance) {
+	private function sync_stock_item( $id, $product_id, &$balance) {
 		$_product = wc_get_product($id);
 		if (!isset($_product)) {
 			return;
 		}
 
 		$main_id = 'variation' == $_product->get_type() ? $_product->get_parent_id() : $id;
-		$product_warehouse = get_post_meta($main_id, '_posti_wh_warehouse', true);
+		$product_warehouse = $this->get_product_warehouse_field($main_id);
 		if (!empty($product_warehouse)) {
 			if (isset($balance['quantity']) && $product_warehouse === $balance['catalogExternalId']) {
 				$totalStock = $balance['quantity'];
@@ -872,7 +928,7 @@ class Posti_Warehouse_Product {
 	}
 	
 	private function get_update_warehouse_id( $post_id, $product_warehouse_override, &$product_whs_diffs) {
-		$product_warehouse = get_post_meta($post_id, '_posti_wh_warehouse', true);
+		$product_warehouse = $this->get_product_warehouse_field($post_id);
 		if ('--delete' === $product_warehouse_override) {
 			if (!empty($product_warehouse)) {
 				array_push($product_whs_diffs, array('id' => $post_id, 'from' => $product_warehouse, 'to' => ''));
@@ -895,7 +951,7 @@ class Posti_Warehouse_Product {
 		return $this->get_warehouse_property($warehouses, $product_warehouse, 'catalogType', 'Not_in_stock');
 	}
 	
-	public function get_warehouse_name( $warehouses, $product_warehouse) {
+	function get_warehouse_name( $warehouses, $product_warehouse) {
 		return $this->get_warehouse_property($warehouses, $product_warehouse, 'catalogName', '');
 	}
 	

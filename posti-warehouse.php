@@ -46,4 +46,14 @@ add_action( 'before_woocommerce_init', function() {
 
 use Posti_Warehouse\Posti_Warehouse_Core;
 
-new Posti_Warehouse_Core();
+$core = new Posti_Warehouse_Core();
+
+function posti_wh_get_products_manager() {
+	global $core;
+	return $core->get_product_manager();
+}
+
+function posti_wh_sync_products($product_ids) {
+	$pm = posti_wh_get_products_manager();
+	return $pm->sync_products($product_ids);
+}
