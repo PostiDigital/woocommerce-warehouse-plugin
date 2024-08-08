@@ -84,6 +84,10 @@ class Posti_Warehouse_Settings {
 	public static function uninstall() {
 	}
 	
+	public static function get_service( $options) {
+		return self::get_value($options, 'posti_wh_field_service');
+	}
+	
 	public static function is_debug( $options) {
 		return self::is_option_true($options, 'posti_wh_field_debug');
 	}
@@ -533,7 +537,7 @@ class Posti_Warehouse_Settings {
 		$posts = wc_get_orders($posts_query);
 		if (count($posts) > 0) {
 			foreach ($posts as $post) {
-			    $product_id = $post->get_meta('_posti_id', true);
+				$product_id = $post->get_meta('_posti_id', true);
 				if (isset($product_id) && !empty($product_id)) {
 					if (substr_compare($product_id, $business_id, 0, strlen($business_id)) === 0) {
 						update_post_meta($post->ID, '_posti_id', sanitize_text_field(substr($product_id, strlen($business_id) + 1)));

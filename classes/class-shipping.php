@@ -25,8 +25,8 @@ function posti_warehouse_define_shipping_method() {
 				$this->options = Posti_Warehouse_Settings::get();
 				$this->is_test = Posti_Warehouse_Settings::is_test($this->options);
 				$this->debug = Posti_Warehouse_Settings::is_debug($this->options);
-				
-				$this->delivery_service = Posti_Warehouse_Settings::get_value($this->options, 'posti_wh_field_service');
+
+				$this->delivery_service = Posti_Warehouse_Settings::get_service($this->options);
 				$this->logger = new Posti_Warehouse_Logger();
 				$this->logger->setDebug($this->debug);
 				
@@ -292,8 +292,18 @@ function posti_warehouse_define_shipping_method() {
 				}
 
 				foreach ($all_shipping_methods as $shipping_method) {
+					$provider = $shipping_method->provider;
+					if ('Unifaun' === $provider) {
+						$provider = 'nShift';
+					}
+					
+					$deliveryOperator = $shipping_method->deliveryOperator;
+					if (!empty($provider) && $provider !== $deliveryOperator) {
+					    $deliveryOperator = $deliveryOperator . ' (' . $provider . ')';
+					}
+					
 					$value = isset($shipping_method->description[$user_lang]) ? $shipping_method->description[$user_lang] : $shipping_method->description['en'];
-					$services[strval($shipping_method->id)] = sprintf('%1$s: %2$s', $shipping_method->deliveryOperator, $value);
+					$services[strval($shipping_method->id)] = sprintf('%1$s: %2$s', $deliveryOperator, $value);
 				}
 
 				uasort($services, function ($a, $b) {

@@ -21,8 +21,17 @@ class Posti_Warehouse_Service {
 		$all_shipping_methods = get_transient($transient_name);
 		if (empty($all_shipping_methods)) {
 			try {
-				$all_shipping_methods = $this->api->getDeliveryServices($this->delivery_service);
-				
+				$settings = Posti_Warehouse_Settings::get();
+				$delivery_service = Posti_Warehouse_Settings::get_service($settings);
+				$all_shipping_methods = $this->api->getDeliveryServices($delivery_service);
+				foreach ($all_shipping_methods as $shipping_method) {
+					if (!empty($shipping_method->provider)) {
+						if ($shipping_method->provider === 'Unifaun') {
+							$shipping_method->provider = 'nShift';
+						}
+					}
+				}
+
 				$log_msg = ( empty($all_shipping_methods) ) ? 'An empty list was received' : 'List received successfully';
 				$this->logger->log('info', 'Trying to get list of shipping methods... ' . $log_msg);
 			} catch (\Exception $ex) {
