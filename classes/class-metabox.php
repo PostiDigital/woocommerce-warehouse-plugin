@@ -59,7 +59,7 @@ class Posti_Warehouse_Metabox {
 			<label><?php echo esc_html(Posti_Warehouse_Text::order_status()); ?> </label>
 
 			<?php
-				$order = wc_get_order($post_or_order_object->ID);
+				$order = is_a($post_or_order_object, 'WP_Post') ? wc_get_order($post_or_order_object->ID) : $post_or_order_object;
 				$status = Posti_Warehouse_Text::order_not_placed();
 				$warehouse_order = $this->postiOrder->getOrder($order);
 				if ($warehouse_order) {

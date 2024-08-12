@@ -254,7 +254,9 @@ class Posti_Warehouse_Order {
 		$comment = get_comment($order_note_id);
 		$is_customer_note = get_comment_meta($order_note_id, 'is_customer_note', true);
 		$posti_order_id = $this->get_order_external_id_field($order);
-		if (!empty($posti_order_id)) {
+		if (!empty($posti_order_id)
+			&& 'WooCommerce' !== $comment->comment_author) { // automatic internal comment
+
 			$posti_comment = array(
 				'externalId' => (string) $order_note_id,
 				'author' => $comment->comment_author_email,
