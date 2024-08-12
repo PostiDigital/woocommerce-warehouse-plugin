@@ -35,6 +35,20 @@ class Posti_Warehouse_Metabox {
 					'high');
 			}
 		}
+		else {
+			// non-HPOS
+			if ($this->postiOrder->hasPostiProducts($post_or_order_object->ID)) {
+				foreach (wc_get_order_types('order-meta-boxes') as $type) {
+					add_meta_box(
+						'posti_order_box_id',
+						'Posti Order',
+						array($this, 'add_order_meta_box_html'),
+						$type,
+						'side',
+						'default');
+				}
+			}
+		}
 	}
 
 	public function add_order_meta_box_html( $post_or_order_object) {
@@ -45,7 +59,7 @@ class Posti_Warehouse_Metabox {
 			<label><?php echo esc_html(Posti_Warehouse_Text::order_status()); ?> </label>
 
 			<?php
-				$order = $post_or_order_object instanceof WP_Post ? wc_get_order($post_or_order_object->ID) : $post_or_order_object;
+				$order = wc_get_order($post_or_order_object->ID);
 				$status = Posti_Warehouse_Text::order_not_placed();
 				$warehouse_order = $this->postiOrder->getOrder($order);
 				if ($warehouse_order) {
