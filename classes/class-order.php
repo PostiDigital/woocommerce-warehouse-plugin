@@ -262,6 +262,7 @@ class Posti_Warehouse_Order {
 				'author' => $comment->comment_author_email,
 				'value' => (string) $comment->comment_content,
 				'type' => ($is_customer_note == 1 ? 'pickingNote' : 'passThrough'),
+				'createdDate' => date('c', strtotime($comment->comment_date_gmt)),
 				'origin' => 'WOOCOMMERCE'
 			);
 			$this->api->addOrderComment($posti_order_id, $posti_comment);
