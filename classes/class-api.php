@@ -282,3 +282,4 @@ class Posti_Warehouse_Api {
 		return json_decode(wp_remote_retrieve_body($response));
 	}
 }
+
