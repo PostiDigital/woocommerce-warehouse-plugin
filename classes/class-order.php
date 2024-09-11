@@ -42,7 +42,6 @@ class Posti_Warehouse_Order {
 		if ($this->addTracking) {
 			add_action('woocommerce_email_order_meta', array($this, 'addTrackingToEmail'), 10, 4);
 		}
-		
 	}
 
 	public function change_metadata_title_for_order_shipping_method( $key, $meta, $item) {
@@ -304,14 +303,9 @@ class Posti_Warehouse_Order {
 			'post_type' => 'shop_order',
 			'post_status' => 'any',
 			'numberposts' => -1,
-			'meta_query' => array(
-				'relation' => 'AND',
-				array(
-					'key' => '_posti_id',
-					'value' => $order_ids,
-					'compare' => 'IN'
-				)
-			)
+			'meta_key' => '_posti_id',
+			'meta_value' => $order_ids,
+			'meta_compare' => 'IN'
 		);
 		$posts = wc_get_orders($posts_query);
 		if (count($posts) == 0) {

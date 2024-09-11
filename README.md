@@ -97,6 +97,8 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile additional service is added to order/delivery. 
 
 ## Version history
+- 3.0.1:
+    - Bug fix: Order filter "meta_query" was not being applied during order status sync when HPOS is disabled.
 - 3.0.0:
     - Added HPOS support
 - 2.7.0:
