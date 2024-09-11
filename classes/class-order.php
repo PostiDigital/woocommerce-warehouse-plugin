@@ -43,6 +43,7 @@ class Posti_Warehouse_Order {
 			add_action('woocommerce_email_order_meta', array($this, 'addTrackingToEmail'), 10, 4);
 		}
 		
+		add_filter('woocommerce_order_data_store_cpt_get_orders_query', array($this, 'handle_meta_query_workaround'), 10, 2);
 	}
 
 	public function change_metadata_title_for_order_shipping_method( $key, $meta, $item) {
@@ -234,6 +235,9 @@ class Posti_Warehouse_Order {
 	}
 	
 	public function sync( $datetime) {
+//	    $orderClass = WC_Data_Store::load( 'order' )->get_current_class_name();
+//	    $this->logger->log('info', "orderClass: " . $orderClass);
+	    
 		$response = $this->api->getOrdersUpdatedSince($datetime, 30);
 		if (!$this->sync_page($response)) {
 			return false;
@@ -304,14 +308,22 @@ class Posti_Warehouse_Order {
 			'post_type' => 'shop_order',
 			'post_status' => 'any',
 			'numberposts' => -1,
-			'meta_query' => array(
+			'meta_query_workaround' => array( // non-HPOS
 				'relation' => 'AND',
 				array(
 					'key' => '_posti_id',
 					'value' => $order_ids,
 					'compare' => 'IN'
 				)
-			)
+			),
+		    'meta_query' => array( // HPOS
+		        'relation' => 'AND',
+		        array(
+		            'key' => '_posti_id',
+		            'value' => $order_ids,
+		            'compare' => 'IN'
+		        )
+		    )
 		);
 		$posts = wc_get_orders($posts_query);
 		if (count($posts) == 0) {
@@ -347,6 +359,15 @@ class Posti_Warehouse_Order {
 		}
 
 		return true;
+	}
+
+	// meta_query is ignored by wc_get_orders when HPOS is disabled
+	function handle_meta_query_workaround( $query, $query_vars) {
+	    if (!empty($query_vars['meta_query_workaround'])) {
+	        $query['meta_query'][] = $query_vars['meta_query_workaround'];
+	    }
+
+	    return $query;
 	}
 
 	public function sync_order( $id, $order_external_id, $warehouse_order, $autocomplete, $is_verbose) {
