@@ -235,9 +235,6 @@ class Posti_Warehouse_Order {
 	}
 	
 	public function sync( $datetime) {
-//	    $orderClass = WC_Data_Store::load( 'order' )->get_current_class_name();
-//	    $this->logger->log('info', "orderClass: " . $orderClass);
-	    
 		$response = $this->api->getOrdersUpdatedSince($datetime, 30);
 		if (!$this->sync_page($response)) {
 			return false;
@@ -316,14 +313,14 @@ class Posti_Warehouse_Order {
 					'compare' => 'IN'
 				)
 			),
-		    'meta_query' => array( // HPOS
-		        'relation' => 'AND',
-		        array(
-		            'key' => '_posti_id',
-		            'value' => $order_ids,
-		            'compare' => 'IN'
-		        )
-		    )
+			'meta_query' => array( // HPOS
+				'relation' => 'AND',
+				array(
+					'key' => '_posti_id',
+					'value' => $order_ids,
+					'compare' => 'IN'
+				)
+			)
 		);
 		$posts = wc_get_orders($posts_query);
 		if (count($posts) == 0) {
@@ -363,11 +360,11 @@ class Posti_Warehouse_Order {
 
 	// meta_query is ignored by wc_get_orders when HPOS is disabled
 	function handle_meta_query_workaround( $query, $query_vars) {
-	    if (!empty($query_vars['meta_query_workaround'])) {
-	        $query['meta_query'][] = $query_vars['meta_query_workaround'];
-	    }
+		if (!empty($query_vars['meta_query_workaround'])) {
+			$query['meta_query'][] = $query_vars['meta_query_workaround'];
+		}
 
-	    return $query;
+		return $query;
 	}
 
 	public function sync_order( $id, $order_external_id, $warehouse_order, $autocomplete, $is_verbose) {
