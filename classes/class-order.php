@@ -127,7 +127,8 @@ class Posti_Warehouse_Order {
 			return [ 'error' => 'ERROR: Shipping method not configured.' ];
 		}
 
-		$order_id = (string) $order->get_id();
+		//$order_id = (string) $order->get_id();
+		$order_number = (string) $order->get_order_number();
 		$existing_order_id = $this->get_order_external_id_field($order);
 		if (!empty($existing_order_id)) {
 			$existing_order = $this->api->getOrder($existing_order_id);
@@ -139,7 +140,7 @@ class Posti_Warehouse_Order {
 			}
 		}
 
-		$external_id = empty($existing_order_id) ? $order_id : $existing_order_id;
+		$external_id = empty($existing_order_id) ? $order_number : $existing_order_id;
 		$data = null;
 		try {
 			$preferences = ['autoSubmit' => ($order_status !== 'on-hold')];
@@ -170,7 +171,7 @@ class Posti_Warehouse_Order {
 		}
 
 		if ($status >= 200 && $status < 300) {
-			$order->update_meta_data('_posti_id', (string) $order->get_id());
+		    $order->update_meta_data('_posti_id', $order_number);
 		} else {
 			$order->update_status('failed', Posti_Warehouse_Text::order_failed(), true);
 		}
@@ -180,7 +181,7 @@ class Posti_Warehouse_Order {
 			return [ 'error' => Posti_Warehouse_Text::error_order_not_placed() ];
 		}
 
-		$this->trigger_sync_order($order_id, $existing_order_id);
+		$this->trigger_sync_order($order->get_id(), $existing_order_id);
 
 		return [];
 	}
