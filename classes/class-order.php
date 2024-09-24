@@ -127,7 +127,6 @@ class Posti_Warehouse_Order {
 			return [ 'error' => 'ERROR: Shipping method not configured.' ];
 		}
 
-		//$order_id = (string) $order->get_id();
 		$order_number = (string) $order->get_order_number();
 		$existing_order_id = $this->get_order_external_id_field($order);
 		if (!empty($existing_order_id)) {
