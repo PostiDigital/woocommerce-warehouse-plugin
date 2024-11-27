@@ -78,7 +78,7 @@ class Posti_Warehouse_Text {
 	
 	public static function tracking_number( $number) {
 		/* translators: $number, not translatable */
-		return sprintf(__('Tracking number: %1$s', 'posti-warehouse'), \esc_html($number));
+		return sprintf(__('Tracking number: %1$s', 'posti-warehouse'), $number);
 	}
 	
 	public static function column_warehouse() {

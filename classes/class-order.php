@@ -40,7 +40,7 @@ class Posti_Warehouse_Order {
 		add_filter('woocommerce_order_item_display_meta_key', array($this, 'change_metadata_title_for_order_shipping_method'), 20, 3 );
 		
 		if ($this->addTracking) {
-			add_action('woocommerce_email_order_meta', array($this, 'addTrackingToEmail'), 10, 4);
+			add_action('woocommerce_email_order_meta', array($this, 'add_tracking_to_email'), 10, 4);
 		}
 	}
 
@@ -170,7 +170,7 @@ class Posti_Warehouse_Order {
 		}
 
 		if ($status >= 200 && $status < 300) {
-		    $order->update_meta_data('_posti_id', $order_number);
+			$order->update_meta_data('_posti_id', $order_number);
 		} else {
 			$order->update_status('failed', Posti_Warehouse_Text::order_failed(), true);
 		}
@@ -367,6 +367,12 @@ class Posti_Warehouse_Order {
 					$tracking = implode(', ', $tracking);
 				}
 				$order->update_meta_data('_posti_api_tracking', sanitize_text_field($tracking));
+
+				$delivery_operator = isset($warehouse_order['deliveryOperator']) ? $warehouse_order['deliveryOperator'] : '';
+				if (!empty($delivery_operator)) {
+					$order->update_meta_data('_posti_api_operator', sanitize_text_field($delivery_operator));
+				}
+
 				$order_updated = true;
 			}
 
@@ -699,16 +705,56 @@ class Posti_Warehouse_Order {
 	public function posti_tracking_column_data( $column_name, $order_id) {
 		if ('posti_api_tracking' == $column_name) {
 			$order = wc_get_order($order_id);
-			$tracking = $order ? $order->get_meta('_posti_api_tracking', true) : false;
-			echo $tracking ? esc_html($tracking) : '–';
+			$tracking_link = Posti_Warehouse_Order::get_tracking_link($order);
+			echo !empty($tracking_link) ? $tracking_link : '–';
 		}
 	}
 
-	public function addTrackingToEmail( $order, $sent_to_admin, $plain_text, $email) {
-		$tracking = $order->get_meta('_posti_api_tracking', true);
-		if ($tracking) {
-			echo esc_html(Posti_Warehouse_Text::tracking_number($tracking));
+	public function add_tracking_to_email( $order, $sent_to_admin, $plain_text, $email) {
+		$tracking_link = Posti_Warehouse_Order::get_tracking_link($order);
+		if (!empty($tracking_link)) {
+		    echo '<p>' . Posti_Warehouse_Text::tracking_number($tracking_link) . '</p>';
 		}
 	}
 
+	private static function get_tracking_link( &$order) {
+		if (!$order) {
+			return null;
+		}
+
+		$tracking_code = $order->get_meta('_posti_api_tracking', true);
+		if (empty($tracking_code)) {
+		    return $tracking_code;
+		}
+
+		$operator = $order->get_meta('_posti_api_operator', true);
+		if (empty($operator)) {
+		    return $tracking_code;
+		}
+
+		$delivery_operator_link = Posti_Warehouse_Order::get_delivery_operator_url($operator);
+		if (empty($delivery_operator_link)) {
+		    return $tracking_code;
+		}
+
+		return '<a target="_blank" href="' . esc_url($delivery_operator_link . $tracking_code) . '">' . esc_html($tracking_code) . '</a>';
+	}
+
+	private static function get_delivery_operator_url( $operator) {
+		$op = strtolower(str_replace(' ', '', $operator));
+		if ($op === 'posti') {
+			return "https://www.posti.fi/fi/seuranta#/lahetys/";
+		}
+		else if ('postnord' === $op) {
+			return "https://www.postnord.se/en/our-tools/track-and-trace/?shipmentId=";
+		}
+		else if ('matkahuolto' === $op) {
+			return "https://www.matkahuolto.fi/tracking?parcelNumber=";
+		}
+		else if ('dbschenker' === $op) {
+			return "https://www.dbschenker.com/app/tracking-public/?refType=WaybillNo&refNumber=";
+		}
+
+		return null;
+	}
 }

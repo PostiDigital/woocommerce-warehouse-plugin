@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name: Posti Warehouse
- * Version: 3.1.0
+ * Version: 3.2.0
  * Description: Provides integration to Posti warehouse and dropshipping services.
  * Author: Posti
  * Author URI: https://www.posti.fi/
@@ -46,11 +46,11 @@ add_action( 'before_woocommerce_init', function() {
 
 use Posti_Warehouse\Posti_Warehouse_Core;
 
-$core = new Posti_Warehouse_Core();
+$posti_warehouse_core = new Posti_Warehouse_Core();
 
 function posti_wh_get_products_manager() {
-	global $core;
-	return $core->get_product_manager();
+    global $posti_warehouse_core;
+    return $posti_warehouse_core->get_product_manager();
 }
 
 function posti_wh_sync_products($product_ids) {
