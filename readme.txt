@@ -2,7 +2,7 @@
 Contributors: pampyras, markakk, suhhomi1
 Tags: woocommerce, warehouse, posti
 Requires at least: 5.0
-Tested up to: 6.6
+Tested up to: 6.7
 Requires PHP: 7.1
 Stable tag: 3.2.0
 License: GPLv3 or later
