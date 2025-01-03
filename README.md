@@ -97,6 +97,8 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile additional service is added to order/delivery. 
 
 ## Version history
+- 3.2.1:
+    - Added GLS, UPS tracking links.
 - 3.2.0:
     - Added clickable tracking link to order table and email.
 - 3.1.0:

@@ -713,7 +713,7 @@ class Posti_Warehouse_Order {
 	public function add_tracking_to_email( $order, $sent_to_admin, $plain_text, $email) {
 		$tracking_link = Posti_Warehouse_Order::get_tracking_link($order);
 		if (!empty($tracking_link)) {
-		    echo '<p>' . Posti_Warehouse_Text::tracking_number($tracking_link) . '</p>';
+			echo '<p>' . Posti_Warehouse_Text::tracking_number($tracking_link) . '</p>';
 		}
 	}
 
@@ -724,17 +724,17 @@ class Posti_Warehouse_Order {
 
 		$tracking_code = $order->get_meta('_posti_api_tracking', true);
 		if (empty($tracking_code)) {
-		    return $tracking_code;
+			return $tracking_code;
 		}
 
 		$operator = $order->get_meta('_posti_api_operator', true);
 		if (empty($operator)) {
-		    return $tracking_code;
+			return $tracking_code;
 		}
 
 		$delivery_operator_link = Posti_Warehouse_Order::get_delivery_operator_url($operator);
 		if (empty($delivery_operator_link)) {
-		    return $tracking_code;
+			return $tracking_code;
 		}
 
 		return '<a target="_blank" href="' . esc_url($delivery_operator_link . $tracking_code) . '">' . esc_html($tracking_code) . '</a>';
@@ -753,6 +753,12 @@ class Posti_Warehouse_Order {
 		}
 		else if ('dbschenker' === $op) {
 			return "https://www.dbschenker.com/app/tracking-public/?refType=WaybillNo&refNumber=";
+		}
+		else if ('gls' === $op) {
+			return "https://gls-group.eu/GROUP/en/parcel-tracking?match=";
+		}
+		else if ('ups' === $op) {
+			return "https://www.ups.com/track?loc=en_US&requester=ST/&tracknum=";
 		}
 
 		return null;
