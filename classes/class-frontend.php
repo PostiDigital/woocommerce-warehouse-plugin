@@ -178,7 +178,6 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 			$pickup_point = isset($_POST[$key]) ? sanitize_text_field($_POST[$key]) : array();
 
 			$key_id = $this->add_prefix('_pickup_point_id');
-			
 			if (empty($pickup_point)) {
 				$pickup_point = WC()->session->get($key_id);
 				WC()->session->set($key_id, null);
@@ -187,13 +186,23 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 			if (!empty($pickup_point)) {
 				$order = wc_get_order($order_id);
 				$order->update_meta_data('_' . $key, sanitize_text_field($pickup_point));
-				// Find string like '(#6681)'
-				preg_match('/\(#[A-Za-z0-9\-]+\)/', $pickup_point, $matches);
-				// Cut the number out from a string of the form '(#6681)'
-				$pickup_point_id = ( !empty($matches) ) ? substr($matches[0], 2, -1) : '';
-				$order->update_meta_data('_' . $key_id, sanitize_text_field($pickup_point_id));
-				$order->save();
+
+				$pickup_point_ref = $this->extract_pickup_point_ref($pickup_point);
+				if (!empty($pickup_point_ref)) {
+					$order->update_meta_data('_' . $key_id, sanitize_text_field($pickup_point_ref));
+					$order->save();
+				}
 			}
+		}
+
+		private function extract_pickup_point_ref($pickup_point) {
+			$preamble = ' (#';
+			$preamble_start = strpos($pickup_point, $preamble);
+			if ($preamble_start && $preamble_start > 0) {
+				return substr($pickup_point, $preamble_start + strlen($preamble), -1);
+			}
+
+			return null;
 		}
 
 		private function shipping_needs_pickup_points() {
@@ -538,10 +547,13 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 						continue;
 					}
 
+					$external_id = isset($pickup_point['externalId']) ? $pickup_point['externalId'] : null;
+					$pickup_point_ref = !empty($external_id) ? $external_id : base64_encode(json_encode($pickup_point));
+
 					$key_part = empty($serviceProvider) ? $type : $serviceProvider;
 					$pickup_point_key = $key_part
 							. ': ' . $pickup_point['name']
-							. ' (#' . $pickup_point['externalId'] . ')';
+							. ' (#' . $pickup_point_ref . ')';
 					$pickup_point_value = $pickup_point['name']
 							. ' (' . $pickup_point['streetAddress'] . ')';
 
@@ -573,10 +585,12 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 			$pickup_point = $order->get_meta('_' . $this->add_prefix('_pickup_point'));
 
 			if (!empty($pickup_point)) {
+				$pickup_point_preamble_start = strpos($pickup_point, ' (#');
+				$pickup_point_text = strlen($pickup_point) - $pickup_point_preamble_start > 36 ? substr($pickup_point, 0, $pickup_point_preamble_start) : $pickup_point;
 				wc_get_template(
 					$this->core->templates['account_order'],
 					array(
-						'pickup_point' => esc_attr($pickup_point),
+						'pickup_point' => esc_attr($pickup_point_text),
 						'texts' => array(
 							'title' => Posti_Warehouse_Text::pickup_point_title()
 						)

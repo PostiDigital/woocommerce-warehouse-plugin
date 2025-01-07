@@ -545,6 +545,8 @@ class Posti_Warehouse_Order {
 		$item_counter = 1;
 		$service_code = $order_services['service'];
 		$pickup_point = $_order->get_meta('_warehouse_pickup_point_id', true); //_woo_posti_shipping_pickup_point_id
+		$pickup_point_id = strlen($pickup_point) <= 36 ? $pickup_point : null;
+		$pickup_point_embed = empty($pickup_point_id) ? json_decode(base64_decode($pickup_point), true) : null;
 
 		foreach ($_order->get_items('shipping') as $item_id => $shipping_item_obj) {
 			$item_service_code = $shipping_item_obj->get_meta('service_code');
@@ -622,16 +624,8 @@ class Posti_Warehouse_Order {
 				'telephone' => $_order->get_billing_phone(),
 				'email' => $_order->get_billing_email()
 			],
-			'deliveryAddress' => [
-				'name' => $_order->get_shipping_first_name() . ' ' . $_order->get_shipping_last_name(),
-				'streetAddress' => $_order->get_shipping_address_1(),
-				'postalCode' => $_order->get_shipping_postcode(),
-				'postOffice' => $_order->get_shipping_city(),
-				'country' => $_order->get_shipping_country(),
-				'telephone' => $phone,
-				'email' => $email
-			],
-			'pickupPointId' => $pickup_point,
+			'deliveryAddress' => $this->getDeliveryAddress($_order, $phone, $email, $pickup_point_embed),
+			'pickupPointId' => $pickup_point_id,
 			'currency' => $_order->get_currency(),
 			'serviceCode' => (string) $service_code,
 			'totalPrice' => $total_price,
@@ -715,6 +709,31 @@ class Posti_Warehouse_Order {
 		if (!empty($tracking_link)) {
 			echo '<p>' . Posti_Warehouse_Text::tracking_number($tracking_link) . '</p>';
 		}
+	}
+
+	private static function getDeliveryAddress($order, $phone, $email, $pickup_point_embed) {
+		$name = $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name();
+		if (isset($pickup_point_embed) && $pickup_point_embed) {
+			return array(
+				'name' => isset($pickup_point_embed['name']) ? $name . ' c/o ' . $pickup_point_embed['name'] : $name,
+				'streetAddress' => isset($pickup_point_embed['streetAddress']) ? $pickup_point_embed['streetAddress'] : null,
+				'postalCode' => isset($pickup_point_embed['postalCode']) ? $pickup_point_embed['postalCode'] : null,
+				'postOffice' => isset($pickup_point_embed['postOffice']) ? $pickup_point_embed['postOffice'] : null,
+				'country' => isset($pickup_point_embed['country']) ? $pickup_point_embed['country'] : null,
+				'telephone' => $phone,
+				'email' => $email
+			);
+		}
+
+		return array(
+			'name' => $name,
+			'streetAddress' => $order->get_shipping_address_1(),
+			'postalCode' => $order->get_shipping_postcode(),
+			'postOffice' => $order->get_shipping_city(),
+			'country' => $order->get_shipping_country(),
+			'telephone' => $phone,
+			'email' => $email
+		);
 	}
 
 	private static function get_tracking_link( &$order) {
