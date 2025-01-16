@@ -544,9 +544,8 @@ class Posti_Warehouse_Order {
 		$items = $_order->get_items();
 		$item_counter = 1;
 		$service_code = $order_services['service'];
-		$pickup_point = $_order->get_meta('_warehouse_pickup_point_id', true); //_woo_posti_shipping_pickup_point_id
-		$pickup_point_id = strlen($pickup_point) <= 36 ? $pickup_point : null;
-		$pickup_point_embed = empty($pickup_point_id) ? json_decode(base64_decode($pickup_point), true) : null;
+		$pickup_point_ref = $_order->get_meta('_warehouse_pickup_point_id', true); //_woo_posti_shipping_pickup_point_id
+		$pickup_point = empty($pickup_point_ref) ? null : json_decode(base64_decode($pickup_point_ref), true);
 
 		foreach ($_order->get_items('shipping') as $item_id => $shipping_item_obj) {
 			$item_service_code = $shipping_item_obj->get_meta('service_code');
@@ -624,8 +623,7 @@ class Posti_Warehouse_Order {
 				'telephone' => $_order->get_billing_phone(),
 				'email' => $_order->get_billing_email()
 			],
-			'deliveryAddress' => $this->getDeliveryAddress($_order, $phone, $email, $pickup_point_embed),
-			'pickupPointId' => $pickup_point_id,
+			'deliveryAddress' => $this->getDeliveryAddress($_order, $phone, $email),
 			'currency' => $_order->get_currency(),
 			'serviceCode' => (string) $service_code,
 			'totalPrice' => $total_price,
@@ -633,6 +631,10 @@ class Posti_Warehouse_Order {
 			'totalWholeSalePrice' => $total_price + $total_tax,
 			'rows' => $order_items
 		);
+
+		if (isset($pickup_point) && $pickup_point) {
+		    $order['pickupPoint'] = $this->getPickupPoint($pickup_point);
+		}
 
 		$note = $_order->get_customer_note();
 		if (!empty($note)) {
@@ -711,22 +713,9 @@ class Posti_Warehouse_Order {
 		}
 	}
 
-	private static function getDeliveryAddress($order, $phone, $email, $pickup_point_embed) {
-		$name = $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name();
-		if (isset($pickup_point_embed) && $pickup_point_embed) {
-			return array(
-				'name' => isset($pickup_point_embed['name']) ? $name . ' c/o ' . $pickup_point_embed['name'] : $name,
-				'streetAddress' => isset($pickup_point_embed['streetAddress']) ? $pickup_point_embed['streetAddress'] : null,
-				'postalCode' => isset($pickup_point_embed['postalCode']) ? $pickup_point_embed['postalCode'] : null,
-				'postOffice' => isset($pickup_point_embed['postOffice']) ? $pickup_point_embed['postOffice'] : null,
-				'country' => isset($pickup_point_embed['country']) ? $pickup_point_embed['country'] : null,
-				'telephone' => $phone,
-				'email' => $email
-			);
-		}
-
+	private static function getDeliveryAddress($order, $phone, $email) {
 		return array(
-			'name' => $name,
+		    'name' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
 			'streetAddress' => $order->get_shipping_address_1(),
 			'postalCode' => $order->get_shipping_postcode(),
 			'postOffice' => $order->get_shipping_city(),
@@ -734,6 +723,17 @@ class Posti_Warehouse_Order {
 			'telephone' => $phone,
 			'email' => $email
 		);
+	}
+
+	private static function getPickupPoint($pickup_point) {
+        return array(
+            'externalId' => isset($pickup_point['externalId']) ? $pickup_point['externalId'] : null,
+            'name' => isset($pickup_point['name']) ? $pickup_point['name'] : null,
+            'streetAddress' => isset($pickup_point['streetAddress']) ? $pickup_point['streetAddress'] : null,
+            'postalCode' => isset($pickup_point['postalCode']) ? $pickup_point['postalCode'] : null,
+            'postOffice' => isset($pickup_point['postOffice']) ? $pickup_point['postOffice'] : null,
+            'country' => isset($pickup_point['country']) ? $pickup_point['country'] : null
+        );
 	}
 
 	private static function get_tracking_link( &$order) {

@@ -547,9 +547,7 @@ if (!class_exists(__NAMESPACE__ . '\Posti_Warehouse_Frontend')) {
 						continue;
 					}
 
-					$external_id = isset($pickup_point['externalId']) ? $pickup_point['externalId'] : null;
-					$pickup_point_ref = !empty($external_id) ? $external_id : base64_encode(json_encode($pickup_point));
-
+					$pickup_point_ref = base64_encode(json_encode($pickup_point));
 					$key_part = empty($serviceProvider) ? $type : $serviceProvider;
 					$pickup_point_key = $key_part
 							. ': ' . $pickup_point['name']
