@@ -121,6 +121,14 @@ class Posti_Warehouse_Text {
 		return __('Distributor ID', 'posti-warehouse');
 	}
 	
+	public static function field_country_of_origin() {
+	    return __('Country of origin', 'posti-warehouse');
+	}
+	
+	public static function field_hs_tariff_number() {
+	    return __('HS tariff number', 'posti-warehouse');
+	}
+	
 	public static function confirm_selection() {
 		return __('Confirm selection', 'posti-warehouse');
 	}

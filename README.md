@@ -97,6 +97,8 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile additional service is added to order/delivery. 
 
 ## Version history
+- 3.4.0:
+    - Added HS tariff number, Country of origin fields to Posti tab in Product data.
 - 3.3.0:
     - Added GLS, UPS tracking links.
 - 3.2.0:

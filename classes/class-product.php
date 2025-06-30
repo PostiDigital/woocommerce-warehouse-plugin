@@ -245,6 +245,26 @@ class Posti_Warehouse_Product {
 					)
 			);
 
+			woocommerce_wp_text_input(
+				array(
+					'id' => '_posti_wh_hs_tariff_number',
+					'label' => Posti_Warehouse_Text::field_hs_tariff_number(),
+					'placeholder' => '',
+					'type' => 'text',
+				)
+			);
+
+			$wc_countries = new \WC_Countries();
+			$all_countries = $wc_countries->get_countries();
+			woocommerce_wp_select(
+				array(
+					'id' => '_posti_wh_country_of_origin',
+					'class' => 'select short posti-wh-select2',
+					'label' => Posti_Warehouse_Text::field_country_of_origin(),
+					'options' => array( '' => '-' ) + $all_countries,
+				)
+			);
+
 			foreach (Posti_Warehouse_Dataset::getServicesTypes() as $id => $name) {
 				woocommerce_wp_checkbox(
 						array(
@@ -259,7 +279,7 @@ class Posti_Warehouse_Product {
 		</div>
 		<?php
 	}
-
+	
 	function posti_wh_product_tab_fields_save( $post_id) {
 		if (!check_admin_referer('posti_wh_nonce_prod', 'posti_wh_nonce_prod')) {
 			throw new \Exception('Nonce check failed for save_variation_settings_fields');
@@ -267,6 +287,8 @@ class Posti_Warehouse_Product {
 		
 		$this->save_form_field('_posti_wh_product', $post_id);
 		$this->save_form_field('_posti_wh_distribution', $post_id);
+		$this->save_form_field('_posti_wh_country_of_origin', $post_id);
+		$this->save_form_field('_posti_wh_hs_tariff_number', $post_id);
 		$this->save_form_field('_ean', $post_id);
 		$this->save_form_field('_wholesale_price', $post_id);
 
@@ -625,6 +647,8 @@ class Posti_Warehouse_Product {
 			'isFragile' => get_post_meta($post_id, '_posti_fragile', true) ? true : false,
 			'isDangerousGoods' => get_post_meta($post_id, '_posti_lq', true) ? true : false,
 			'isOversized' => get_post_meta($post_id, '_posti_large', true) ? true : false,
+		    'countryCode' => get_post_meta($post_id, '_posti_wh_country_of_origin', true),
+		    'cnCode' => get_post_meta($post_id, '_posti_wh_hs_tariff_number', true),
 		);
 
 		$weight = $_product->get_weight();
