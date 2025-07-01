@@ -564,6 +564,7 @@ class Posti_Warehouse_Product {
 					'en' => array(
 						'name' => self::strip_html($variable_name),
 						'description' => self::strip_html($_product->get_description()),
+						'shortDescription' => self::strip_html($_product->get_short_description()),
 						'specifications' => $specifications,
 					)
 				),
@@ -576,6 +577,8 @@ class Posti_Warehouse_Product {
 				'isFragile' => get_post_meta($post_id, '_posti_fragile', true) ? true : false,
 				'isDangerousGoods' => get_post_meta($post_id, '_posti_lq', true) ? true : false,
 				'isOversized' => get_post_meta($post_id, '_posti_large', true) ? true : false,
+				'countryCode' => get_post_meta($post_id, '_posti_wh_country_of_origin', true),
+				'cnCode' => get_post_meta($post_id, '_posti_wh_hs_tariff_number', true),
 			);
 
 			$weight = $variation['weight'] ? $variation['weight'] : 0;
@@ -635,7 +638,8 @@ class Posti_Warehouse_Product {
 			'descriptions' => array(
 				'en' => array(
 					'name' => self::strip_html($_product->get_name()),
-					'description' => self::strip_html($_product->get_description())
+					'description' => self::strip_html($_product->get_description()),
+					'shortDescription' => self::strip_html($_product->get_short_description())
 				)
 			),
 			'eanCode' => $ean,
@@ -647,8 +651,8 @@ class Posti_Warehouse_Product {
 			'isFragile' => get_post_meta($post_id, '_posti_fragile', true) ? true : false,
 			'isDangerousGoods' => get_post_meta($post_id, '_posti_lq', true) ? true : false,
 			'isOversized' => get_post_meta($post_id, '_posti_large', true) ? true : false,
-		    'countryCode' => get_post_meta($post_id, '_posti_wh_country_of_origin', true),
-		    'cnCode' => get_post_meta($post_id, '_posti_wh_hs_tariff_number', true),
+			'countryCode' => get_post_meta($post_id, '_posti_wh_country_of_origin', true),
+			'cnCode' => get_post_meta($post_id, '_posti_wh_hs_tariff_number', true),
 		);
 
 		$weight = $_product->get_weight();

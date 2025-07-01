@@ -99,6 +99,7 @@ Select your existing product or create a new, and update the product information
 ## Version history
 - 3.4.0:
     - Added HS tariff number, Country of origin fields to Posti tab in Product data.
+    - Added sending of Product short description to warehouse.
 - 3.3.0:
     - Added GLS, UPS tracking links.
 - 3.2.0:
