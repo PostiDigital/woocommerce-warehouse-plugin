@@ -100,7 +100,6 @@ class Posti_Warehouse_Order {
 
 	public function getOrder( $order) {
 		$posti_order_id = $this->get_order_external_id_field($order);
-		$this->logger->log('info', print_r($order, true));
 		if ($posti_order_id) {
 			return $this->api->getOrder($posti_order_id);
 		}
@@ -127,59 +126,58 @@ class Posti_Warehouse_Order {
 			return [ 'error' => 'ERROR: Shipping method not configured.' ];
 		}
 
-		$order_number = (string) $order->get_order_number();
+		$added_order_id = '';
 		$existing_order_id = $this->get_order_external_id_field($order);
-		if (!empty($existing_order_id)) {
-			$existing_order = $this->api->getOrder($existing_order_id);
-			if ($existing_order) {
-				$status = isset($existing_order['status']) && isset($existing_order['status']['value']) ? $existing_order['status']['value'] : '';
-				if ('Cancelled' !== $status && 'Delivered' !== $status) {
-					return [ 'error' => 'ERROR: Already ordered.' ];
+		try {
+			$order_number = (string) $order->get_order_number();
+			if (!empty($existing_order_id)) {
+				$existing_order = $this->api->getOrder($existing_order_id);
+				if ($existing_order) {
+					$status = isset($existing_order['status']) && isset($existing_order['status']['value']) ? $existing_order['status']['value'] : '';
+					if ('Cancelled' !== $status && 'Delivered' !== $status) {
+						return [ 'error' => 'ERROR: Already ordered.' ];
+					}
 				}
 			}
-		}
+	
+			$external_id = empty($existing_order_id) ? $order_number : $existing_order_id;
+			$data = null;
 
-		$external_id = empty($existing_order_id) ? $order_number : $existing_order_id;
-		$data = null;
-		try {
 			$preferences = ['autoSubmit' => ($order_status !== 'on-hold')];
 			$data = $this->prepare_posti_order($external_id, $order, $order_services, $preferences);
 
+			if (empty($existing_order_id)) {
+				$result = $this->api->addOrder($data);
+			}
+			else {
+				$result = $this->api->reopenOrder($existing_order_id, $data);
+			}
+
+			if (false === $result) {
+				for ($i = 0; $i < 3; $i++) {
+					sleep(1);
+					$result = $this->api->addOrder($data);
+					if (false === $result) {
+						break;
+					}
+				}
+			}
+
+			$added_order_id = isset($result['externalId']) ? $result['externalId'] : '';
+
 		} catch (\Exception $e) {
 			$this->logger->log('error', $e->getMessage());
+			$order->update_status('failed', Posti_Warehouse_Text::order_failed(), true);
 			return [ 'error' => $e->getMessage() ];
 		}
 
-		if (empty($existing_order_id)) {
-			$result = $this->api->addOrder($data);
-		}
-		else {
-			$result = $this->api->reopenOrder($existing_order_id, $data);
-		}
-
-		$status = $this->api->getLastStatus();
-		if (502 == $status || 503 == $status) {
-			for ($i = 0; $i < 3; $i++) {
-				sleep(1);
-				$result = $this->api->addOrder($data);
-				$status = $this->api->getLastStatus();
-				if (200 == $status) {
-					break;
-				}
-			}
-		}
-
-		if ($status >= 200 && $status < 300) {
-			$order->update_meta_data('_posti_id', $order_number);
-		} else {
+		if (empty($added_order_id)) {
 			$order->update_status('failed', Posti_Warehouse_Text::order_failed(), true);
-		}
-		$order->save();
-
-		if (false === $result) {
 			return [ 'error' => Posti_Warehouse_Text::error_order_not_placed() ];
 		}
 
+		$order->update_meta_data('_posti_id', $order_number);
+		$order->save();
 		$this->trigger_sync_order($order->get_id(), $existing_order_id);
 
 		return [];
@@ -568,11 +566,9 @@ class Posti_Warehouse_Order {
 				}
 				
 				$external_id = $_product->get_meta('_posti_id', true);
-				$ean = $_product->get_meta('_ean', true);
 				$order_items[] = [
 					'externalId' => (string) $item_counter,
 					'externalProductId' => $external_id,
-					'productEANCode' => $ean,
 					'productUnitOfMeasure' => 'KPL',
 					'productDescription' => $item['name'],
 					'externalWarehouseId' => $product_warehouse,
@@ -633,7 +629,7 @@ class Posti_Warehouse_Order {
 		);
 
 		if (isset($pickup_point) && $pickup_point) {
-		    $order['pickupPoint'] = $this->getPickupPoint($pickup_point);
+			$order['pickupPoint'] = $this->getPickupPoint($pickup_point);
 		}
 
 		$note = $_order->get_customer_note();
@@ -715,7 +711,7 @@ class Posti_Warehouse_Order {
 
 	private static function getDeliveryAddress($order, $phone, $email) {
 		return array(
-		    'name' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
+			'name' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
 			'streetAddress' => $order->get_shipping_address_1(),
 			'postalCode' => $order->get_shipping_postcode(),
 			'postOffice' => $order->get_shipping_city(),
@@ -726,14 +722,14 @@ class Posti_Warehouse_Order {
 	}
 
 	private static function getPickupPoint($pickup_point) {
-        return array(
-            'externalId' => isset($pickup_point['externalId']) ? $pickup_point['externalId'] : null,
-            'name' => isset($pickup_point['name']) ? $pickup_point['name'] : null,
-            'streetAddress' => isset($pickup_point['streetAddress']) ? $pickup_point['streetAddress'] : null,
-            'postalCode' => isset($pickup_point['postalCode']) ? $pickup_point['postalCode'] : null,
-            'postOffice' => isset($pickup_point['postOffice']) ? $pickup_point['postOffice'] : null,
-            'country' => isset($pickup_point['country']) ? $pickup_point['country'] : null
-        );
+		return array(
+			'externalId' => isset($pickup_point['externalId']) ? $pickup_point['externalId'] : null,
+			'name' => isset($pickup_point['name']) ? $pickup_point['name'] : null,
+			'streetAddress' => isset($pickup_point['streetAddress']) ? $pickup_point['streetAddress'] : null,
+			'postalCode' => isset($pickup_point['postalCode']) ? $pickup_point['postalCode'] : null,
+			'postOffice' => isset($pickup_point['postOffice']) ? $pickup_point['postOffice'] : null,
+			'country' => isset($pickup_point['country']) ? $pickup_point['country'] : null
+		);
 	}
 
 	private static function get_tracking_link( &$order) {

@@ -11,9 +11,8 @@ class Posti_Warehouse_Api {
 	private $token = null;
 	private $test = false;
 	private $logger;
-	private $last_status = false;
 	private $token_option = 'posti_wh_api_auth';
-	private $user_agent = 'woo-wh-client/3.4.0';
+	private $user_agent = 'woo-wh-client/3.5.0';
 
 	public function __construct(Posti_Warehouse_Logger $logger, array &$options) {
 		$this->logger = $logger;
@@ -39,10 +38,6 @@ class Posti_Warehouse_Api {
 	
 	public function getUserAgent() {
 		return $this->user_agent;
-	}
-	
-	public function getLastStatus() {
-		return $this->last_status;
 	}
 
 	public function getToken() {
@@ -96,7 +91,6 @@ class Posti_Warehouse_Api {
 		$response = wp_remote_request($this->getBaseUrl() . $url, $request_args);
 		$response_body = wp_remote_retrieve_body($response);
 		$http_status = wp_remote_retrieve_response_code($response);
-		$this->last_status = $http_status;
 
 		$env = $this->test ? 'TEST ': '';
 		if ($http_status < 200 || $http_status >= 300) {

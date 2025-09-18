@@ -97,6 +97,9 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile additional service is added to order/delivery. 
 
 ## Version history
+- 3.5.0:
+    - Changed ordering to use SKU only instead of SKU + EAN.
+    - Changed ordering to ensure setting order failed status on unexpected error.
 - 3.4.0:
     - Added HS tariff number, Country of origin fields to Posti tab in Product data.
     - Added sending of Product short description to warehouse.
