@@ -97,6 +97,8 @@ Select your existing product or create a new, and update the product information
 - **Posti > Fragile** - if enabled then Fragile additional service is added to order/delivery. 
 
 ## Version history
+- 3.5.1:
+    - TODO
 - 3.5.0:
     - Changed ordering to use SKU only instead of SKU + EAN.
     - Changed ordering to ensure setting order failed status on unexpected error.
