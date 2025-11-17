@@ -98,7 +98,7 @@ Select your existing product or create a new, and update the product information
 
 ## Version history
 - 3.5.1:
-    - Bug fix: Pickup point label was not displayed on Order review in My account
+    - Bug fix: Pickup point label was not displayed on Order review in My account.
 - 3.5.0:
     - Changed ordering to use SKU only instead of SKU + EAN.
     - Changed ordering to ensure setting order failed status on unexpected error.
